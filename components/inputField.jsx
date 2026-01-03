@@ -1,28 +1,33 @@
 import { TextInput, StyleSheet } from "react-native";
 
-export default function InputField({ value, onChangeText, placeholder }) {
+export default function InputField({
+  value,
+  onChangeText,
+  placeholder,
+  secure = false,
+}) {
   return (
     <TextInput
-      label="이메일"
-      placeholder="email@example.com"
-      placeholderTextColor="#9E9E9E" 
       style={styles.input}
       value={value}
       onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor="#bdbdbd"
       autoCapitalize="none"
-      keyboardType="email-address"
+      secureTextEntry={secure}
     />
   );
 }
 
 const styles = StyleSheet.create({
   input: {
-    width: 290,
+    width: "100%",
     height: 50,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 10,
     paddingHorizontal: 10,
-    marginVertical: 10,
+    fontSize: 16,
+    marginTop: 6,
   },
 });

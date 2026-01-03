@@ -16,6 +16,10 @@ export default function EmailLogin() {
     router.push("/login/verify");
   };
 
+  const nextPage = () => {
+    router.push("/sign-up/verify");
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <View style={styles.container}>
@@ -27,8 +31,11 @@ export default function EmailLogin() {
         <Text style={styles.heading2}>3초만에 회원가입!</Text>
 
         <Text style={styles.subtext}>이메일을 입력해주세요.</Text>
-        <Text style={styles.subtext2}>이메일 </Text>
-        <Text style={styles.subtext3}>*</Text>
+        <View style={{ flexDirection: "row", alignSelf: "flex-start" }}>
+        <Text style={styles.subtext2}>이메일</Text>
+        <Text style={styles.star}> *</Text>
+      </View>
+
 
         <InputField
           value={email}
@@ -39,7 +46,7 @@ export default function EmailLogin() {
 
 
       <View style={{ marginBottom: 20, width: "100%" }}>
-        <NextButton title="다음" onPress={handleSend} />
+        <NextButton title="다음" onPress={nextPage} />
       </View>
     </View>
   );
@@ -49,12 +56,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 60,
-    alignItems: "center",
+    paddingHorizontal: 30,
     backgroundColor: "#fff",
   },
   header: {
     width: "100%",
-    paddingHorizontal: 10,
+    paddingHorizontal: 1,
   },
   heading: {
     marginTop: 30,
@@ -65,27 +72,25 @@ const styles = StyleSheet.create({
   heading2: {
     marginTop: 5,
     fontSize: 20,
-    marginRight: 140,
+    alignSelf: "flex-start",
     fontWeight: "600",
     color: "#1e1d1dff",
   },
   subtext: {
     marginTop: 70,
-    marginRight: 140,
+    alignSelf: "flex-start",
     fontSize: 16,
     fontWeight: "500",
     color: "#1e1d1dff",
   },
   subtext2: {
-    marginTop: 20,
-    marginRight: 255,
+    alignSelf: "flex-start",
     fontSize: 12,
     color: "#1e1d1dff",
     marginVertical: 10,
   },
-    subtext3: {
-    marginTop: -25,
-    marginRight: 215,
+    star: {
+    alignSelf: "flex-start",
     fontSize: 12,
     color: "#fa1212ff",
     marginVertical: 10,

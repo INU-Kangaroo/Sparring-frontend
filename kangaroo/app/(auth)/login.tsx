@@ -5,11 +5,11 @@ import { router } from "expo-router";
 
 export default function LoginScreen() {
   const onGoogleLogin = () => {
-    router.replace("/");
+    router.replace("/survey");
   };
 
   const onKakaoLogin = () => {
-    router.replace("/");
+    router.replace("/survey");
   };
 
   const goSignup = () => {

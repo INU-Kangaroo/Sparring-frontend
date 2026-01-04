@@ -20,7 +20,7 @@ export default function Password() {
 
   const handleNext = () => {
     if (!isValidPassword || !isMatch) return;
-    router.push("/sign-up/complete");
+    router.push("/sign-up/gender");
   };
 
   return (
@@ -133,3 +133,4 @@ const styles = StyleSheet.create({
     color: "#e53935",
   },
 });
+

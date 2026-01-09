@@ -4,8 +4,13 @@ import { useRouter } from "expo-router";
 
 import BackButton from "../../components/backButton";
 import NextButton from "../../components/nextButton";
+type ChipProps = {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+};
 
-const Chip = ({ label, selected, onPress }) => (
+const Chip = ({ label, selected, onPress }: ChipProps) => (
   <Pressable
     onPress={onPress}
     style={[styles.chip, selected && styles.chipSelected]}
@@ -19,12 +24,12 @@ const Chip = ({ label, selected, onPress }) => (
 export default function Survey() {
   const router = useRouter();
 
-  const [bloodSugar, setBloodSugar] = useState(null);
-  const [bloodPressure, setBloodPressure] = useState(null);
+  const [bloodSugar, setBloodSugar] = useState<string | null>(null);
+  const [bloodPressure, setBloodPressure] = useState<string | null>(null);
+  const [familyHistory, setFamilyHistory] = useState<string | null>(null);
   const [medication, setMedication] = useState("");
   const [allergy, setAllergy] = useState("");
   const [goal, setGoal] = useState("");
-  const [familyHistory, setFamilyHistory] = useState(null);
 
   const handleNext = () => {
     if (

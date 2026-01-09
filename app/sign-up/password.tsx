@@ -111,6 +111,10 @@ const styles = StyleSheet.create({
     color: "#1e1d1dff",
     marginBottom: -10,
   },
+  label: {
+    fontSize: 12,
+    color: "#1e1d1dff",
+  },
   labelRow: {
     flexDirection: "row",
     marginTop: 30,

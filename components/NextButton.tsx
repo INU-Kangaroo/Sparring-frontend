@@ -1,6 +1,10 @@
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
 
-export default function NextButton({ title = "다음", onPress }) {
+type NextButtonProps = {
+  title?: string; 
+  onPress: () => void;
+};
+export default function NextButton({ title = "다음", onPress }: NextButtonProps) {
   return (
     <TouchableOpacity style={styles.button} onPress={onPress}>
       <Text style={styles.text}>{title}</Text>

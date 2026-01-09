@@ -1,7 +1,13 @@
+import type { Dispatch, SetStateAction } from "react";
 import { View, TextInput, StyleSheet } from "react-native";
 
-export default function codeInput({ code, setCode }) {
-  const handleChange = (text, index) => {
+type CodeInputProps = {
+  code: string[];
+  setCode: Dispatch<SetStateAction<string[]>>;
+};
+
+export default function CodeInput({ code, setCode }: CodeInputProps) {
+  const handleChange = (text: string, index: number) => {
     if (!/^\d?$/.test(text)) return;
 
     const newCode = [...code];

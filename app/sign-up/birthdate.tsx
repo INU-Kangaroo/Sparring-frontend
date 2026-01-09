@@ -2,8 +2,8 @@ import { useState } from "react";
 import { View, Text, StyleSheet, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 
-import BackButton from "../../components/backButton"
-import NextButton from "../../components/nextButton";
+import BackButton from "../../components/BackButton"
+import NextButton from "../../components/NextButton";
 
 export default function Birthdate() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function Birthdate() {
         </View>
 
         <Text style={styles.heading}>나의 건강 시그널을 확인하고 싶다면?</Text>
-        <Text style22={styles.heading2}>3초만에 회원가입!</Text>
+        <Text style={styles.heading2}>3초만에 회원가입!</Text>
 
         <Text style={styles.subtext}>생년 월일을 입력해주세요</Text>
 

@@ -5,8 +5,9 @@ import { useRouter } from "expo-router";
 import BackButton from "../../components/backButton";
 import NextButton from "../../components/nextButton";
 
+
 export default function EmailLogin() {
-  const [gender, setGender] = useState(null);
+  const [gender, setGender] = useState<"male" | "female" | null>(null);
   const router = useRouter();
 
   const nextPage = () => {

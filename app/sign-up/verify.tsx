@@ -2,9 +2,9 @@ import { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 
-import BackButton from "../../components/backButton";
-import CodeInput from "../../components/codeInput";
-import NextButton from "../../components/nextButton";
+import BackButton from "../../components/BackButton";
+import CodeInput from "../../components/CodeInput";
+import NextButton from "../../components/NextButton";
 
 export default function Verify() {
   const router = useRouter();

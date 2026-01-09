@@ -2,8 +2,8 @@ import { useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 
-import BackButton from "../../components/backButton";
-import NextButton from "../../components/nextButton";
+import BackButton from "../../components/BackButton";
+import NextButton from "../../components/NextButton";
 
 
 export default function EmailLogin() {

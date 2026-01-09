@@ -3,9 +3,9 @@ import { View, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
-import BackButton from "../../components/backButton";
-import InputField from "../../components/inputField";
-import NextButton from "../../components/nextButton";
+import BackButton from "../../components/BackButton";
+import InputField from "../../components/InputField";
+import NextButton from "../../components/NextButton";
 
 export default function Password() {
   const router = useRouter();

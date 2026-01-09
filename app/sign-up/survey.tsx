@@ -2,8 +2,8 @@ import { useState } from "react";
 import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 
-import BackButton from "../../components/backButton";
-import NextButton from "../../components/nextButton";
+import BackButton from "../../components/BackButton";
+import NextButton from "../../components/NextButton";
 type ChipProps = {
   label: string;
   selected: boolean;
@@ -42,7 +42,7 @@ export default function Survey() {
     )
       return;
 
-    router.push("/sign-up/complete"); // 다음 단계
+    router.push("/survey/survey1"); // 다음 단계
   };
 
   return (

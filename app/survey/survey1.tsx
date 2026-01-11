@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import NextButton from "../../components/NextButton";
 
 type Option = { label: string; value: string };
 
@@ -57,10 +58,10 @@ export default function Survey1Screen() {
     return !!(meals && foodType && snackFreq && caffeine);
   }, [meals, foodType, snackFreq, caffeine]);
 
-  const onNext = () => {
+  const handleNext = () => {
     // TODO: 저장/다음 페이지
     // router.push("/survey/survey2");
-    router.push("/"); // 임시
+    router.push("/main/main"); // 임시
   };
 
   return (
@@ -158,15 +159,9 @@ export default function Survey1Screen() {
       </ScrollView>
 
       {/* ✅ 버튼은 스크롤 밖에: 화면 맨 아래 고정 */}
-      <View style={styles.bottomBar}>
-        <Pressable
-          onPress={onNext}
-          disabled={!canNext}
-          style={[styles.nextBtn, !canNext && { opacity: 0.4 }]}
-        >
-          <Text style={styles.nextText}>다음</Text>
-        </Pressable>
-      </View>
+        <View style={{ marginTop: 40 }}>
+          <NextButton title="다음" onPress={handleNext} />
+        </View>
     </SafeAreaView>
   );
 }

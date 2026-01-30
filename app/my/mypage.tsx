@@ -10,13 +10,15 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function MyPage() {
   const goProfile = () => router.push("/my/profile");
+  const goHome = () => router.replace("/"); // 홈 경로에 맞게 수정 가능
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* ✅ 전체가 아래로 내려오게: contentWrapper에 marginTop */}
+      {/* 메인 콘텐츠 */}
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.scrollContent}
@@ -28,11 +30,7 @@ export default function MyPage() {
             <View />
             <View style={styles.topIcons}>
               <Pressable hitSlop={8}>
-                <Ionicons
-                  name="notifications-outline"
-                  size={22}
-                  color="#444"
-                />
+                <Ionicons name="notifications-outline" size={22} color="#444" />
               </Pressable>
               <Pressable hitSlop={8}>
                 <Ionicons name="settings-outline" size={22} color="#444" />
@@ -61,6 +59,23 @@ export default function MyPage() {
           </View>
         </View>
       </ScrollView>
+
+      {/* 하단 홈 버튼 */}
+      <View style={styles.homeBar}>
+        <Pressable
+          onPress={goHome}
+          style={({ pressed }) => pressed && { opacity: 0.9 }}
+        >
+          <LinearGradient
+            colors={["#6FA8FF", "#5A80FF"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.homeBtn}
+          >
+            <Ionicons name="home" size={20} color="white" />
+          </LinearGradient>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -85,14 +100,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
 
-  // ScrollView content padding (하단 여백)
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 120, // 홈 버튼 가리지 않게
   },
 
-  // ✅ 여기 marginTop으로 “전체 영역”을 아래로 내림
   contentWrapper: {
-    marginTop: 44, // 🔥 더 내리고 싶으면 32~40으로 올려도 됨
+    marginTop: 44,
   },
 
   /* 상단 */
@@ -108,7 +121,7 @@ const styles = StyleSheet.create({
     paddingRight: 6,
   },
 
-  /* 프로필 카드 (요청 스펙) */
+  /* 프로필 카드 */
   profileCard: {
     width: 339,
     height: 96,
@@ -139,17 +152,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // ✅ 폰트 스펙 반영
   userName: {
     fontSize: 15,
-    fontWeight: "600", // semibold
+    fontWeight: "600",
     color: "#111",
   },
 
   myInfoLink: {
     marginTop: 6,
     fontSize: 12,
-    fontWeight: "500", // medium
+    fontWeight: "500",
     color: "#9A9A9A",
   },
 
@@ -185,5 +197,26 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: "#111",
+  },
+
+  /* 하단 홈 버튼 */
+  homeBar: {
+    position: "absolute",
+    bottom: 24,
+    alignSelf: "center",
+  },
+
+  homeBtn: {
+    width: 140, // ⬅️ 가로 길게
+    height: 56,
+    borderRadius: 28, // height / 2 → 알약 모양
+    justifyContent: "center",
+    alignItems: "center",
+
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
 });

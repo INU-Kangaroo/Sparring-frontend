@@ -36,7 +36,7 @@ const FIELD_LABELS: Record<FieldKey, string> = {
 };
 
 export default function ProfileScreen() {
-  // ✅ 처음엔 전부 비어있게 => 화면에는 "+ 추가"로 뜸
+  // 처음엔 전부 비어있게 => 화면에는 "+ 추가"로 뜸
   const [form, setForm] = useState<ProfileForm>({
     name: "",
     birth: "",
@@ -46,7 +46,7 @@ export default function ProfileScreen() {
     weight: "",
   });
 
-  // ✅ 지금 수정 중인 "한 항목"만 input으로 만들기 위한 상태
+  //지금 수정 중인 "한 항목"만 input으로 만들기 위한 상태
   const [activeField, setActiveField] = useState<FieldKey | null>(null);
 
   // 입력 포커스용 ref
@@ -73,10 +73,10 @@ export default function ProfileScreen() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  // ✅ 헤더 우측 체크(또는 연필) 누르면 현재 입력만 종료
+  // 헤더 우측 체크(또는 연필) 누르면 현재 입력만 종료
   const closeEditing = () => setActiveField(null);
 
-  // ✅ 로그아웃 / 회원탈퇴 (예시)
+  // 로그아웃 / 회원탈퇴
   const handleLogout = () => {
     Alert.alert("로그아웃", "로그아웃 되었습니다.");
     router.replace("/login"); // 프로젝트 라우트에 맞게 변경
@@ -100,7 +100,7 @@ export default function ProfileScreen() {
     const value = form[key]?.trim();
     const isEmpty = !value;
 
-    // ✅ 핵심: "지금 선택한 항목(activeField)만" input으로 보여줌
+
     const shouldShowInput = activeField === key;
 
     return (
@@ -110,7 +110,9 @@ export default function ProfileScreen() {
         <View style={styles.valueArea}>
           {shouldShowInput ? (
             <TextInput
-              ref={(r) => (inputRefs.current[key] = r)}
+              ref={(r) => {
+                if (r) inputRefs.current[key] = r;
+              }}
               value={form[key]}
               onChangeText={(t) => updateField(key, t)}
               placeholder="+ 추가"
@@ -118,7 +120,7 @@ export default function ProfileScreen() {
               style={styles.input}
               returnKeyType="done"
               blurOnSubmit
-              onSubmitEditing={() => setActiveField(null)} // ✅ 엔터 누르면 이 항목만 종료
+              onSubmitEditing={() => setActiveField(null)} // 엔터 누르면 이 항목만 종료
             />
           ) : (
             <Pressable onPress={() => focusField(key)} hitSlop={10}>
@@ -162,7 +164,7 @@ export default function ProfileScreen() {
             <Text style={styles.headerTitle}>프로필 설정</Text>
 
             <Pressable onPress={closeEditing} hitSlop={10}>
-              {/* ✅ 입력 중이면 체크, 아니면 연필 */}
+              {/* 입력 중이면 체크, 아니면 연필 */}
               <Ionicons
                 name={activeField ? "checkmark" : "create-outline"}
                 size={20}
@@ -258,12 +260,11 @@ const styles = StyleSheet.create({
     color: "#111",
   },
 
-  // ✅ 전체적으로 아래로 내려오기
   section: {
     marginTop: 28,
   },
 
-  // ✅ "기본 정보" 18pt semibold (+ 라벨 기준선 맞추고 싶으면 paddingLeft 같이)
+  // "기본 정보" 18pt semibold (+ 라벨 기준선 맞추고 싶으면 paddingLeft 같이)
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
@@ -284,7 +285,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
 
-  // ✅ 라벨(이름/생년월일/...) 살짝 오른쪽으로
   label: {
     width: 90,
     fontSize: 15,
@@ -293,7 +293,6 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
   },
 
-  // ✅ 값 컬럼은 왼쪽 정렬
   valueArea: {
     flex: 1,
     alignItems: "center"

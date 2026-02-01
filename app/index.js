@@ -1,16 +1,18 @@
-import { View, Text, TouchableOpacity } from "react-native";
+// app/index.js
+import { useEffect } from "react";
 import { useRouter } from "expo-router";
 
-export default function Home() {
+export default function Index() {
   const router = useRouter();
 
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>홈 화면</Text>
+  useEffect(() => {
+    // 0ms 지연으로 RootLayout 마운트 후 navigation
+    const timeout = setTimeout(() => {
+      router.replace("/login");
+    }, 0);
 
-      <TouchableOpacity onPress={() => router.push("/sign-up/email")}>
-        <Text style={{ marginTop: 20, fontSize: 18 }}>회원가입</Text>
-      </TouchableOpacity>
-    </View>
-  );
+    return () => clearTimeout(timeout);
+  }, []);
+
+  return null;
 }

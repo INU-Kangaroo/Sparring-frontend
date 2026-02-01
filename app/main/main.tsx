@@ -59,10 +59,10 @@ export default function Main() {
   const menuItems: MenuItem[] = [
     { label: "루틴 쓰기", path: "/" },
     { label: "기록하기", path: "/record/bloodSugar" },
-    { label: "추천", path: "/" },
-    { label: "보고서", path: "/mypage/report" },
-    { label: "AI 챗봇", path: "/mypage/chatbot" },
-    { label: "마이페이지", path: "/mypage/mypage" },
+    { label: "추천", path: "/recommend/recommendation" },
+    { label: "보고서", path: "/report" },
+    { label: "AI 챗봇", path: "/AI/chatAI" },
+    { label: "마이페이지", path: "/my/mypage" },
   ];
 
   // 더미데이터

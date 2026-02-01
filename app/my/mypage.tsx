@@ -14,7 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 export default function MyPage() {
   const goProfile = () => router.push("/my/profile");
-  const goHome = () => router.replace("/"); // 홈 경로에 맞게 수정 가능
+  const goHome = () => router.replace("/main/main"); // 홈 경로에 맞게 수정 가능
 
   return (
     <SafeAreaView style={styles.safe}>

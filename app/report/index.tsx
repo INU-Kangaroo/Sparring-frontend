@@ -27,7 +27,7 @@ export default function ReportScreen() {
   const goBack = () => router.back();
   const goPastReports = () => {
     // TODO: 지난 보고서 화면 라우팅 연결
-    // router.push("/report/history");
+    router.push("/report/history");
     console.log("TODO: 지난 보고서 보러가기");
   };
 

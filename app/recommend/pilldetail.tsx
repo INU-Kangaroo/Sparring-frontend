@@ -165,8 +165,8 @@ export default function SupplementDetail() {
     <View style={[styles.safe, { paddingTop: insets.top + TOP_OFFSET }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.h1}>영양제</Text>
-        <Text style={styles.h2}>현재 건강상태에 맞는 영양제를 추천해드려요</Text>
+        <Text style={styles.h1}>영양성분</Text>
+        <Text style={styles.h2}>현재 건강상태에 맞는 영양성분을 추천해드려요</Text>
       </View>
 
       {/* List (상단 흰 카드) */}
@@ -208,8 +208,8 @@ export default function SupplementDetail() {
               scrollEnabled={sheetOpen}
               showsVerticalScrollIndicator={false}
             >
-              {/* ✅ 1) 요약 리스트(스샷 1처럼: 영양제 타이틀 + 블럭 3개) */}
-              <Text style={styles.sheetTopTitle}>영양제</Text>
+              {/* ✅ 1) 요약 리스트(스샷 1처럼: 영양성분 타이틀 + 블럭 3개) */}
+              <Text style={styles.sheetTopTitle}>영양성분</Text>
 
               <View style={styles.summaryWrap}>
                 {listData.map((it) => (
@@ -223,7 +223,7 @@ export default function SupplementDetail() {
                 ))}
               </View>
 
-              {/* ✅ 선택한 영양제 상세 (스샷 2 느낌) */}
+              {/* ✅ 선택한 영양성분 상세 (스샷 2 느낌) */}
               {selected && (
                 <>
                   <View style={styles.divider} />
@@ -235,7 +235,7 @@ export default function SupplementDetail() {
                 </>
               )}
 
-              {/* 아래에 다른 영양제들도 연속으로 상세를 다 보여주고 싶으면 아래 블록 켜기 */}
+              {/* 아래에 다른 영양성분들도 연속으로 상세를 다 보여주고 싶으면 아래 블록 켜기 */}
               {/* 
               <View style={styles.divider} />
               {listData
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
 
-  // 상단 카드(영양제는 스샷처럼 이름만)
+  // 상단 카드(영양성분은 스샷처럼 이름만)
   card: {
     width: CARD_W,
     height: CARD_H,

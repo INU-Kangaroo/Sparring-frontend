@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -24,12 +24,11 @@ type CardItem = { key: CardKey; title: string };
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
 export default function RecommendationScreen() {
-  // 식단 -> 운동 -> 영양제
   const base = useMemo<CardItem[]>(
     () => [
       { key: "diet", title: "식단" },
       { key: "workout", title: "운동" },
-      { key: "supp", title: "영양제" },
+      { key: "supp", title: "영양성분" },
     ],
     []
   );
@@ -49,17 +48,21 @@ export default function RecommendationScreen() {
     return arr;
   }, [base]);
 
-  // 가운데 블록에서 시작
   const START_BLOCK = Math.floor(LOOP / 2);
-  const START_INDEX = START_BLOCK * base.length + 0; // 0: 식단
+  const START_INDEX = START_BLOCK * base.length + 0; // diet로 시작
 
-  const [activeKey, setActiveKey] = useState<CardKey>("diet");
+  // ✅ "가운데 카드"는 key가 아니라 "index"로 관리
+  const [activeIndex, setActiveIndex] = useState<number>(START_INDEX);
+
+  // 파생: activeKey
+  const activeKey: CardKey = base[mod(activeIndex, base.length)].key;
+
   const listRef = useRef<FlatList<CardItem>>(null);
 
   useEffect(() => {
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       listRef.current?.scrollToIndex({ index: START_INDEX, animated: false });
-    }, 0);
+    });
   }, []);
 
   // 필터 이동
@@ -78,28 +81,44 @@ export default function RecommendationScreen() {
 
   const goHome = () => router.push("/");
 
-  // 스크롤 끝났을 때 활성 카드 계산
+  // ✅ 인덱스 계산 + 텔레포트(무한루프 안정화)
+  const syncActiveFromOffset = useCallback(
+    (x: number) => {
+      // padding은 contentContainerStyle에만 있고,
+      // 실제 snap은 ITEM_WIDTH 단위로 움직이기 때문에 x/ITEM_WIDTH로 잡는 게 제일 안정적임
+      const rawIndex = Math.round(x / ITEM_WIDTH);
+
+      setActiveIndex(rawIndex);
+
+      // 양 끝 근처면 가운데 블록으로 순간이동
+      const LEFT_LIMIT = base.length * 2;
+      const RIGHT_LIMIT = data.length - base.length * 2;
+
+      if (rawIndex < LEFT_LIMIT || rawIndex > RIGHT_LIMIT) {
+        const baseIdx = mod(rawIndex, base.length);
+        const newIndex = START_BLOCK * base.length + baseIdx;
+
+        requestAnimationFrame(() => {
+          listRef.current?.scrollToIndex({ index: newIndex, animated: false });
+        });
+
+        // 순간이동했으니 activeIndex도 같이 맞춰줘야 "가운데 카드"가 바로 파란색 됨
+        setActiveIndex(newIndex);
+      }
+    },
+    [ITEM_WIDTH, base.length, data.length, START_BLOCK, base]
+  );
+
+  // ✅ 스크롤 중에도 실시간으로 activeIndex 업데이트
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const x = e.nativeEvent.contentOffset.x;
+    const rawIndex = Math.round(x / ITEM_WIDTH);
+    setActiveIndex(rawIndex);
+  };
+
   const handleEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const x = e.nativeEvent.contentOffset.x;
-
-    // padding 포함해서 가운데 카드 인덱스 계산
-    const rawIndex = Math.round((x + SIDE_PADDING) / ITEM_WIDTH);
-    const idx = mod(rawIndex, data.length);
-
-    const baseIdx = mod(idx, base.length);
-    const nextKey = base[baseIdx].key;
-    setActiveKey(nextKey);
-
-    // 양 끝에 가까워지면 가운데 블록으로 텔레포트
-    const LEFT_LIMIT = base.length * 2;
-    const RIGHT_LIMIT = data.length - base.length * 2;
-
-    if (idx < LEFT_LIMIT || idx > RIGHT_LIMIT) {
-      const newIndex = START_BLOCK * base.length + baseIdx;
-      requestAnimationFrame(() => {
-        listRef.current?.scrollToIndex({ index: newIndex, animated: false });
-      });
-    }
+    syncActiveFromOffset(x);
   };
 
   return (
@@ -124,14 +143,20 @@ export default function RecommendationScreen() {
             offset: ITEM_WIDTH * index,
             index,
           })}
+          // ✅ 스크롤 중 실시간 업데이트
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          // ✅ 빠르게 넘길 때
           onMomentumScrollEnd={handleEnd}
-          renderItem={({ item }) => {
-            const isActive = item.key === activeKey;
+          // ✅ 천천히 드래그할 때도 반응하도록
+          onScrollEndDrag={handleEnd}
+          renderItem={({ item, index }) => {
+            const isActive = index === activeIndex; // ✅ 딱 "가운데 1장"만 active
 
             return (
               <View style={{ width: CARD_WIDTH, marginRight: GAP }}>
                 <Pressable
-                  disabled={!isActive} // 가운데 카드만 클릭
+                  disabled={!isActive} // ✅ 가운데 카드만 클릭
                   onPress={() => goDetailByKey(item.key)}
                   style={{ borderRadius: 22 }}
                 >
@@ -177,10 +202,12 @@ export default function RecommendationScreen() {
           }}
         />
 
-        <Pressable onPress={goFilter} style={styles.filterBtn}>
-          <Text style={styles.filterText}>필터 선택하기</Text>
-          <View style={styles.filterUnderline} />
-        </Pressable>
+        {activeKey !== "supp" ? (
+          <Pressable onPress={goFilter} style={styles.filterBtn}>
+            <Text style={styles.filterText}>필터 선택하기</Text>
+            <View style={styles.filterUnderline} />
+          </Pressable>
+        ) : null}
       </View>
 
       {/* 하단 홈 버튼 */}

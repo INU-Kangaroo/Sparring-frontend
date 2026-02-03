@@ -10,7 +10,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  Modal,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,6 +35,8 @@ const FIELD_LABELS: Record<FieldKey, string> = {
   weight: "몸무게",
 };
 
+type ConfirmModalType = "logout" | "withdraw" | null;
+
 export default function ProfileScreen() {
   // 처음엔 전부 비어있게 => 화면에는 "+ 추가"로 뜸
   const [form, setForm] = useState<ProfileForm>({
@@ -48,6 +50,9 @@ export default function ProfileScreen() {
 
   //지금 수정 중인 "한 항목"만 input으로 만들기 위한 상태
   const [activeField, setActiveField] = useState<FieldKey | null>(null);
+
+  // 확인 모달 상태
+  const [modalType, setModalType] = useState<ConfirmModalType>(null);
 
   // 입력 포커스용 ref
   const inputRefs = useRef<Record<FieldKey, TextInput | null>>({
@@ -78,28 +83,25 @@ export default function ProfileScreen() {
 
   // 로그아웃 / 회원탈퇴
   const handleLogout = () => {
-    Alert.alert("로그아웃", "로그아웃 되었습니다.");
-    router.replace("/login"); // 프로젝트 라우트에 맞게 변경
+    setModalType("logout");
   };
 
   const handleWithdraw = () => {
-    Alert.alert("회원탈퇴", "정말 회원탈퇴 하시겠어요?", [
-      { text: "취소", style: "cancel" },
-      {
-        text: "탈퇴",
-        style: "destructive",
-        onPress: () => {
-          Alert.alert("완료", "회원탈퇴가 처리되었습니다.");
-          router.replace("/login");
-        },
-      },
-    ]);
+    setModalType("withdraw");
+  };
+
+  const confirmAction = () => {
+    setModalType(null);
+    router.replace("/login");
+  };
+
+  const cancelAction = () => {
+    setModalType(null);
   };
 
   const renderRow = (key: FieldKey) => {
     const value = form[key]?.trim();
     const isEmpty = !value;
-
 
     const shouldShowInput = activeField === key;
 
@@ -215,6 +217,70 @@ export default function ProfileScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* 로그아웃 확인 모달 */}
+      <Modal
+        visible={modalType === "logout"}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelAction}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>로그아웃</Text>
+            <Text style={styles.modalMessage}>로그아웃 하시겠습니까?</Text>
+
+            <View style={styles.modalButtons}>
+              <Pressable
+                onPress={cancelAction}
+                style={[styles.modalBtn, styles.modalBtnCancel]}
+              >
+                <Text style={styles.modalBtnTextCancel}>취소</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={confirmAction}
+                style={[styles.modalBtn, styles.modalBtnConfirm]}
+              >
+                <Text style={styles.modalBtnTextConfirm}>확인</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 회원탈퇴 확인 모달 */}
+      <Modal
+        visible={modalType === "withdraw"}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelAction}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>정말로 회원을 탈퇴하시겠습니까?</Text>
+            <Text style={styles.modalMessage}>
+              회원을 탈퇴하면 그 동안의 기록과{"\n"}데이터가 모두 삭제됩니다.
+            </Text>
+
+            <View style={styles.modalButtons}>
+              <Pressable
+                onPress={cancelAction}
+                style={[styles.modalBtn, styles.modalBtnCancel]}
+              >
+                <Text style={styles.modalBtnTextCancel}>취소</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={confirmAction}
+                style={[styles.modalBtn, styles.modalBtnConfirm, styles.modalBtnWithdraw]}
+              >
+                <Text style={styles.modalBtnTextConfirm}>확인했습니다</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -264,7 +330,6 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
 
-  // "기본 정보" 18pt semibold (+ 라벨 기준선 맞추고 싶으면 paddingLeft 같이)
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
@@ -295,7 +360,7 @@ const styles = StyleSheet.create({
 
   valueArea: {
     flex: 1,
-    alignItems: "center"
+    alignItems: "center",
   },
 
   valueText: {
@@ -344,5 +409,76 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     fontSize: 15,
     color: "#C7C7C7",
+  },
+
+  // 모달 스타일
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  modalContent: {
+    width: 300,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
+  },
+
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#111",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+
+  modalMessage: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+
+  modalButtons: {
+    flexDirection: "row",
+    gap: 10,
+    width: "100%",
+  },
+
+  modalBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  modalBtnCancel: {
+    backgroundColor: "#E6E6E6",
+  },
+
+  modalBtnConfirm: {
+    backgroundColor: "#3F7BFF",
+  },
+
+  modalBtnWithdraw: {
+    backgroundColor: "#FF4444",
+  },
+
+  modalBtnTextCancel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#666",
+  },
+
+  modalBtnTextConfirm: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

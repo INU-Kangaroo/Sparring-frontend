@@ -79,7 +79,7 @@ export default function RecommendationScreen() {
     else router.push("/recommend/pilldetail");
   };
 
-  const goHome = () => router.push("/");
+  const goHome = () => router.push("/main/main");
 
   // ✅ 인덱스 계산 + 텔레포트(무한루프 안정화)
   const syncActiveFromOffset = useCallback(

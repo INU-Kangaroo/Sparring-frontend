@@ -30,6 +30,7 @@ export default function ReportScreen() {
     router.push("/report/history");
     console.log("TODO: 지난 보고서 보러가기");
   };
+  const goHome = () => router.push("/main/main");
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -107,6 +108,23 @@ export default function ReportScreen() {
         >
           <Text style={styles.btnText}>지난 보고서 보러가기</Text>
         </Pressable>
+
+        {/* 하단 홈 버튼 */}
+        <View style={styles.homeBar}>
+          <Pressable
+            onPress={goHome}
+            style={({ pressed }) => [pressed && { opacity: 0.9 }]}
+          >
+            <LinearGradient
+              colors={["#6FA8FF", "#5A80FF"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.homeBtn}
+            >
+              <Ionicons name="home" size={20} color="white" />
+            </LinearGradient>
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -262,5 +280,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+
+  /* 홈 버튼 */
+  homeBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  homeBtn: {
+    width: 120,
+    height: 46,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
   },
 });

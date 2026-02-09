@@ -60,6 +60,6 @@ const styles = StyleSheet.create({
   startText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#C4C4C4", // 이미지처럼 비활성 느낌의 회색
+    color: "#113ed2", // 이미지처럼 비활성 느낌의 회색
   },
 });

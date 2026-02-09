@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,29 +7,57 @@ import BackButton from "../../components/BackButton";
 import InputField from "../../components/InputField";
 import NextButton from "../../components/NextButton";
 
-export default function Password() {
+export default function Login() {
   const router = useRouter();
 
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
 
-  const isValidPassword =
-    /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&]).{8,}$/.test(password);
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isValidPassword = password.length >= 1; // 로그인에서는 길이만 체크
 
-  const isMatch = password === confirm;
+  const handleLogin = () => {
+    if (!isValidEmail || !isValidPassword) return;
 
-  const handleNext = () => {
-    if (!isValidPassword || !isMatch) return;
-    router.push("/sign-up/nickname");
+    // 개발 중: API 없이 바로 이동
+    if (__DEV__) {
+      console.log("[DEV] 로그인 스킵:", email);
+      router.replace("/survey");
+      return;
+    }
+
+    // TODO: 실제 로그인 API 연동
   };
 
   return (
     <View style={styles.container}>
-      <BackButton onPress={() => router.back()} />
+      <View style={styles.header}>
+        <BackButton onPress={() => router.back()} />
+      </View>
 
-        <Text style={styles.heading}>나의 건강 시그널을 확인하고 싶다면?</Text>
-        <Text style={styles.heading2}>3초만에 회원가입!</Text>
-      <Text style={styles.subtext}>비밀번호를 입력해주세요.</Text>
+      <Text style={styles.heading}>나의 건강 시그널 확인하고 싶다면?</Text>
+      <Text style={styles.heading2}>로그인해주세요!</Text>
+
+      {/* 이메일 */}
+       <Text style={styles.subtext}>이메일과 비밀번호를 입력해주세요</Text>
+      <View style={styles.labelRow}>
+        <Text style={styles.label}>이메일</Text>
+        <Text style={styles.star}> *</Text>
+      </View>
+
+      <InputField
+        value={email}
+        onChangeText={setEmail}
+        placeholder="inu@inu.ac.kr"
+        keyboardType="email-address"
+      />
+
+      {email.length > 0 && !isValidEmail && (
+        <View style={styles.errorRow}>
+          <Ionicons name="alert-circle" size={16} color="#e53935" />
+          <Text style={styles.errorText}>이메일 형식이 올바르지 않습니다.</Text>
+        </View>
+      )}
 
       {/* 비밀번호 */}
       <View style={styles.labelRow}>
@@ -41,45 +68,24 @@ export default function Password() {
       <InputField
         value={password}
         onChangeText={setPassword}
-        placeholder="1234abcd!"
+        placeholder="비밀번호 입력"
         secure
       />
 
-      {!isValidPassword && password.length > 0 && (
+      {password.length === 0 && (
         <View style={styles.errorRow}>
           <Ionicons name="alert-circle" size={16} color="#e53935" />
-          <Text style={styles.errorText}>
-            비밀번호는 영문, 숫자, 특수문자 포함 8자 이상이어야 합니다.
-          </Text>
-        </View>
-      )}
-
-      {/* 비밀번호 재입력 */}
-      <View style={styles.labelRow}>
-        <Text style={styles.label}>비밀번호 재입력</Text>
-        <Text style={styles.star}> *</Text>
-      </View>
-
-      <InputField
-        value={confirm}
-        onChangeText={setConfirm}
-        placeholder="1234abcd!"
-        secure
-      />
-
-      {confirm.length > 0 && !isMatch && (
-        <View style={styles.errorRow}>
-          <Ionicons name="alert-circle" size={16} color="#e53935" />
-          <Text style={styles.errorText}>일치하지 않습니다.</Text>
+          <Text style={styles.errorText}>비밀번호를 입력해주세요.</Text>
         </View>
       )}
 
       <View style={{ marginTop: "auto", width: "100%" }}>
-        <NextButton title="다음" onPress={handleNext} />
+        <NextButton title="로그인" onPress={handleLogin} />
       </View>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -87,7 +93,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     backgroundColor: "#fff",
   },
-   header: {
+  header: {
     width: "100%",
     paddingHorizontal: 1,
   },
@@ -97,20 +103,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#111",
   },
-    heading2: {
+  heading2: {
     marginTop: 5,
     fontSize: 20,
     alignSelf: "flex-start",
     fontWeight: "600",
     color: "#1e1d1dff",
   },
-    subtext: {
+  subtext: {
     marginTop: 70,
     alignSelf: "flex-start",
     fontSize: 16,
     fontWeight: "500",
     color: "#1e1d1dff",
-    marginBottom: -10,
   },
   label: {
     fontSize: 12,
@@ -121,7 +126,7 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   star: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#e53935",
   },
   errorRow: {
@@ -129,12 +134,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  errorIcon: {
-    color: "#e53935",
-    marginRight: 6,
-  },
   errorText: {
     fontSize: 12,
     color: "#e53935",
+    marginLeft: 4,
   },
 });

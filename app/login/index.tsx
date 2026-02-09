@@ -2,7 +2,7 @@ import React from "react";
 import { Alert, View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { signInWithKaKao } from "../api/kakaoOuth";
+import { signInWithKakao } from "../api/kakaoOuth";
 import { useKakaoLogin } from "../../hooks/useKakaoLogin";
 
 export default function LoginScreen() {

@@ -42,7 +42,7 @@ export default function Survey() {
     )
       return;
 
-    router.push("/survey/survey1"); // 다음 단계
+    router.push("/login/login"); // 다음 단계
   };
 
   return (

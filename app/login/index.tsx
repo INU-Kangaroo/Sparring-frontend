@@ -1,16 +1,26 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable, Image } from "react-native";
+import { Alert, View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { signInWithKaKao } from "../api/kakaoOuth";
+import { useKakaoLogin } from "../../hooks/useKakaoLogin";
 
 export default function LoginScreen() {
+
+  const { login: kakaoLogin, disabled: kakaoDisabled, isLoading } = useKakaoLogin();
+
   const onGoogleLogin = () => {
     router.replace("/");
   };
 
-  const onKakaoLogin = () => {
-    router.replace("/");
-  };
+  const onKakaoLogin = async () => {
+      try {
+        await kakaoLogin();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "카카오 로그인에 실패했습니다.";
+        Alert.alert("로그인 실패", message);
+      }
+    };
 
   const goSignup = () => {
     router.push({ pathname: "/sign-up/email" as any });
@@ -19,7 +29,7 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.container}>
-        {/* Center (문구 + 로고 + 부제) */}
+        {/* Center */}
         <View style={styles.centerWrap}>
           <Text style={styles.topText}>
             나의 건강 시그널을 확인하고 싶다면 ?
@@ -45,13 +55,17 @@ export default function LoginScreen() {
             <Text style={styles.btnText}>Google 로그인</Text>
           </Pressable>
 
-          <Pressable style={styles.socialBtn} onPress={onKakaoLogin}>
+          <Pressable
+            style={[styles.socialBtn, kakaoDisabled ? styles.disabledBtn : null]}
+            onPress={onKakaoLogin}
+            disabled={kakaoDisabled}
+          >
             <Image
               source={require("../../assets/images/kakao.png")}
               style={styles.leftIcon}
               resizeMode="contain"
             />
-            <Text style={styles.btnText}>Kakao 로그인</Text>
+            <Text style={styles.btnText}>{isLoading ? "로그인 중..." : "Kakao 로그인"}</Text>
           </Pressable>
 
           <Pressable onPress={goSignup} style={styles.signupWrap}>
@@ -138,6 +152,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingVertical: 8,
   },
+
+    disabledBtn: {
+    opacity: 0.6,
+  },
+
   signupText: {
     fontSize: 12,
     color: "#C4C4C4",

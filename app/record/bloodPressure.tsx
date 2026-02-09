@@ -254,7 +254,7 @@ function SummaryRow({ label, sub, values }: SummaryRowProps) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, marginTop: 20, backgroundColor: "#F5F5F5" },
+  safe: { flex: 1, backgroundColor: "#F5F5F5" },
   header: {
     height: 52,
     paddingHorizontal: 16,

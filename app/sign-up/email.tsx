@@ -1,24 +1,33 @@
 import { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
 import InputField from "../../components/InputField";
 import NextButton from "../../components/NextButton";
+import { sendVerificationCode } from "../api/auth";
 
 export default function EmailLogin() {
   const [email, setEmail] = useState("");
   const router = useRouter();
 
-  const handleSend = () => {
-    if (!email) return;
+  const nextPage = async () => {
+    if (!email) {
+      Alert.alert("이메일을 입력해주세요");
+      return;
+    }
 
-    router.push("/login/verify");
+    try {
+      await sendVerificationCode(email);
+
+      router.push({
+        pathname: "/sign-up/verify",
+        params: { email },
+      });
+    } catch (e) {
+      Alert.alert("인증코드 전송 실패", "이메일을 다시 확인해주세요.");
+    }
   };
-
-  const nextPage = () => {
-    router.push("/sign-up/verify");
-  }
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -32,18 +41,17 @@ export default function EmailLogin() {
 
         <Text style={styles.subtext}>이메일을 입력해주세요.</Text>
         <View style={{ flexDirection: "row", alignSelf: "flex-start" }}>
-        <Text style={styles.subtext2}>이메일</Text>
-        <Text style={styles.star}> *</Text>
-      </View>
-
+          <Text style={styles.subtext2}>이메일</Text>
+          <Text style={styles.star}> *</Text>
+        </View>
 
         <InputField
           value={email}
           onChangeText={setEmail}
           placeholder="inu@inu.ac.kr"
+          keyboardType="email-address"
         />
       </View>
-
 
       <View style={{ marginBottom: 20, width: "100%" }}>
         <NextButton title="다음" onPress={nextPage} />

@@ -189,7 +189,7 @@ export default function BloodRecordScreen() {
 
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, backgroundColor: "#F5F5F5"  },
   header: {
     height: 52,
     flexDirection: "row",
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   headerTitle: { fontWeight: "700" },
-  container: { padding: 20 },
+  container: { padding: 20, backgroundColor: "#F5F5F5"  },
   datePill: {
     flexDirection: "row",
     backgroundColor: "#3C3C3C",

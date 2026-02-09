@@ -13,21 +13,27 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.kangaroo"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.kangaroo"
     },
     "web": {
       "bundler": "metro",
       "output": "static"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "@react-native-community/datetimepicker",
+      "expo-build-properties",
+      "expo-font",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": false

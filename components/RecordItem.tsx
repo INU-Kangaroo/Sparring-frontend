@@ -8,12 +8,20 @@ type RecordItemProps = {
   dotColor?: string;
 };
 
-export default function RecordItem({ title, value, time, dotColor }: RecordItemProps) {
+export default function RecordItem({
+  title,
+  value,
+  time,
+  dotColor,
+}: RecordItemProps) {
   return (
     <View style={styles.container}>
       <View style={styles.left}>
         {dotColor && <View style={[styles.dot, { backgroundColor: dotColor }]} />}
-        <Text style={styles.value}>{value}</Text>
+        <View>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.value}>{value}</Text>
+        </View>
       </View>
       <Text style={styles.time}>{time}</Text>
     </View>
@@ -44,6 +52,12 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     marginRight: 8,
+  },
+  title: {
+    fontSize: 12,
+    color: "#777",
+    fontWeight: "600",
+    marginBottom: 2,
   },
   value: {
     fontSize: 16,

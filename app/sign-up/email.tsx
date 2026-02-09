@@ -17,6 +17,17 @@ export default function EmailLogin() {
       return;
     }
 
+    // 개발 중일 때: API 무시하고 바로 이동
+    if (__DEV__) {
+      console.log("[DEV] 이메일 인증 API 스킵:", email);
+      router.push({
+        pathname: "/sign-up/verify",
+        params: { email },
+      });
+      return;
+    }
+
+    // 실제 서버 연동 시
     try {
       await sendVerificationCode(email);
 

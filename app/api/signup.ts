@@ -1,25 +1,28 @@
+// app/api/signup.ts
 import { post } from "./index";
 
-const getTokenFromStorage = async () => {
+type SignupRequest = Record<string, any>;
+type SignupResponse = any;
+
+const getFcmTokenFromStorage = async (): Promise<string> => {
   if (typeof localStorage !== "undefined") {
     return localStorage.getItem("fcmToken") ?? "";
   }
-
-  return globalThis.__fcmToken ?? "";
+  return ((globalThis as any).__fcmToken as string) ?? "";
 };
 
-export const signupApi = async (data) => {
+export const signupApi = async (data: SignupRequest): Promise<SignupResponse> => {
   try {
-    const fcmToken = await getTokenFromStorage();
+    const fcmToken = await getFcmTokenFromStorage();
 
     const requestData = {
       ...data,
       fcmToken,
     };
 
-    const response = await post("/api/auth/sign-up", requestData);
+    const response = await post<SignupResponse>("/api/auth/sign-up", requestData);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     if (error?.response) {
       console.error("응답 오류 데이터:", error.response.data);
       console.error("응답 상태 코드:", error.response.status);

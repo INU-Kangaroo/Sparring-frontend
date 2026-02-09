@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -13,17 +13,23 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LineChart } from "react-native-chart-kit";
 
-import RecordItem from "../../components/RecordItem";
 import HomeFab from "../../components/HomeButton";
 import InfoModal from "../../components/InfoModal";
-import BloodInputSheet from "../../components/BloodInput";
+import BloodInputModal from "../../components/BloodInput";
 
 const screenWidth = Dimensions.get("window").width;
+
 type BloodRecord = {
-  value: number;
-  time: string;
-  type: "공복" | "식후"; 
+  title: string;        
+  value: number;        
+  measuredAt: Date;     
 };
+
+const formatTime = (d: Date) =>
+  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(
+    2,
+    "0"
+  )}`;
 
 export default function BloodRecordScreen() {
   const router = useRouter();
@@ -32,18 +38,19 @@ export default function BloodRecordScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [inputVisible, setInputVisible] = useState(false);
-  const [bloodRecords, setBloodRecords] = useState<BloodRecord[]>([]); // 초기값 없음
+  const [bloodRecords, setBloodRecords] = useState<BloodRecord[]>([]);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalContent, setModalContent] = useState("");
 
-  const getNowTime = () => {
-    const d = new Date();
-    return `${String(d.getHours()).padStart(2, "0")}:${String(
-      d.getMinutes()
-    ).padStart(2, "0")}`;
-  };
+  // ✅ 차트 데이터
+  const chartData = useMemo(() => {
+    return {
+      labels: bloodRecords.map((_, i) => (i + 1).toString()),
+      values: bloodRecords.map((r) => r.value),
+    };
+  }, [bloodRecords]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -75,30 +82,24 @@ export default function BloodRecordScreen() {
         )}
 
         {/* Records */}
-        <View>
-       {bloodRecords.map((record, index) => (
-          <View key={index} style={styles.recordRow}>
-            {/* 점 */}
-            <View
-              style={[
-                styles.dot,
-                { backgroundColor: record.type === "공복" ? "red" : "blue" },
-              ]}
-            />
-
-            {/* 텍스트: 공복/식후 + 값 + 시간 */}
-            <View style={styles.recordText}>
-              <Text style={styles.recordTitle}>{record.type} 혈당</Text>
-              <Text style={styles.recordValue}>
-                {record.value} mg/dL ({record.time})
-              </Text>
-            </View>
-          </View>
-        ))}
-
-
-
-
+        <View style={{ marginTop: 6 }}>
+          {bloodRecords.length === 0 ? (
+            <Text style={{ color: "#777", fontSize: 12, marginTop: 10 }}>
+              아직 기록이 없어요. 아래 ＋ 버튼으로 추가해줘!
+            </Text>
+          ) : (
+            bloodRecords.map((record, index) => (
+              <View key={`${record.title}-${index}`} style={styles.recordRow}>
+                <View style={styles.dot} />
+                <View style={styles.recordText}>
+                  <Text style={styles.recordTitle}>{record.title}</Text>
+                  <Text style={styles.recordValue}>
+                    {record.value} mg/dL ({formatTime(record.measuredAt)})
+                  </Text>
+                </View>
+              </View>
+            ))
+          )}
         </View>
 
         {/* Add */}
@@ -114,10 +115,10 @@ export default function BloodRecordScreen() {
               setModalTitle("혈당 측정 방법");
               setModalContent(
                 "1. 손을 깨끗이 씻고 말립니다.\n" +
-                "2. 테스트 스트립을 측정기에 삽입합니다.\n" +
-                "3. 채혈기로 손가락 끝을 살짝 찔러 혈액을 채취합니다.\n" +
-                "4. 혈액을 테스트 스트립에 묻힙니다.\n" +
-                "5. 결과를 기록합니다."
+                  "2. 테스트 스트립을 측정기에 삽입합니다.\n" +
+                  "3. 채혈기로 손가락 끝을 살짝 찔러 혈액을 채취합니다.\n" +
+                  "4. 혈액을 테스트 스트립에 묻힙니다.\n" +
+                  "5. 결과를 기록합니다."
               );
               setModalVisible(true);
             }}
@@ -131,7 +132,7 @@ export default function BloodRecordScreen() {
               setModalTitle("혈당 정상 수치");
               setModalContent(
                 "✔ 공복 혈당: 70-99 mg/dL\n" +
-                "✔ 식후 2시간 혈당: 140 mg/dL 미만"
+                  "✔ 식후 2시간 혈당: 140 mg/dL 미만"
               );
               setModalVisible(true);
             }}
@@ -145,25 +146,31 @@ export default function BloodRecordScreen() {
           <Text style={styles.statsTitle}>혈당 통계</Text>
           <LineChart
             data={{
-              labels: bloodRecords.map((_, i) => (i + 1).toString()),
-              datasets: [{ data: bloodRecords.map(r => r.value), color: () => "#3C3C3C"}],
+              labels: chartData.labels,
+              datasets: [
+                {
+                  data: chartData.values.length ? chartData.values : [0],
+                  color: () => "#ca1515",
+                },
+              ],
             }}
-            width={screenWidth - 40}
+            width={screenWidth - 70}
             height={200}
             chartConfig={{
               backgroundGradientFrom: "#fff",
               backgroundGradientTo: "#fff",
               decimalPlaces: 0,
               color: () => "#3C3C3C",
+              labelColor: () => "#333",
             }}
-            style={{ borderRadius: 16 }}
+            style={{ borderRadius: 17 }}
           />
         </View>
       </ScrollView>
 
       <HomeFab onPress={() => router.push("/main/main")} />
 
-      {/* Modals */}
+      {/* Info Modal */}
       <InfoModal
         visible={modalVisible}
         title={modalTitle}
@@ -171,25 +178,26 @@ export default function BloodRecordScreen() {
         onClose={() => setModalVisible(false)}
       />
 
-      {/* Blood Input Sheet */}
-      <BloodInputSheet
+      {/* ✅ Blood Input Modal */}
+      <BloodInputModal
         visible={inputVisible}
         onClose={() => setInputVisible(false)}
-        onSubmit={(v, type) => {
-          setBloodRecords([
-            ...bloodRecords,
-            { value: v, time: getNowTime(), type }, 
+        onSubmit={({ title, value, measuredAt }) => {
+          // 제목 비어있으면 기본값(원하면 Alert로 막아도 됨)
+          const safeTitle = title.trim() || "혈당 기록";
+
+          setBloodRecords((prev) => [
+            ...prev,
+            { title: safeTitle, value, measuredAt },
           ]);
         }}
       />
-
     </SafeAreaView>
   );
 }
 
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F5F5F5"  },
+  safe: { flex: 1, backgroundColor: "#F5F5F5" },
   header: {
     height: 52,
     flexDirection: "row",
@@ -198,17 +206,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   headerTitle: { fontWeight: "700" },
-  container: { padding: 20, backgroundColor: "#F5F5F5"  },
+
+  container: { padding: 20, backgroundColor: "#F5F5F5" },
+
   datePill: {
     flexDirection: "row",
     backgroundColor: "#3C3C3C",
     padding: 10,
     borderRadius: 20,
     marginBottom: 16,
+    alignSelf: "flex-start",
+    alignItems: "center",
   },
   dateText: { color: "#fff", marginLeft: 6 },
+
   addBtn: {
-    height : 50,
+    height: 50,
     backgroundColor: "#3C3C3C",
     borderRadius: 24,
     justifyContent: "center",
@@ -216,6 +229,7 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   addText: { color: "#fff", fontSize: 28 },
+
   infoRow: { flexDirection: "row", marginBottom: 20 },
   infoBtn: {
     flex: 1,
@@ -227,33 +241,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   infoText: { color: "#fff", fontSize: 12 },
+
   statsCard: {
     backgroundColor: "#eee",
     padding: 16,
     borderRadius: 16,
   },
   statsTitle: { fontWeight: "700", marginBottom: 10 },
-  recordRow: {
-  flexDirection: "row",
-  alignItems: "center",
-  marginBottom: 12,
-},
-dot: {
-  width: 12,
-  height: 12,
-  borderRadius: 6,
-  marginRight: 12,
-},
-recordText: {
-  flexDirection: "column",
-},
-recordTitle: {
-  fontWeight: "700",
-  fontSize: 14,
-},
-recordValue: {
-  fontSize: 12,
-  color: "#555",
-},
 
+  recordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    backgroundColor: "#f0f0f089",
+    borderRadius: 5,
+    padding: 10,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
+    backgroundColor: "#d30c0c",
+  },
+  recordText: { flexDirection: "column" },
+  recordTitle: { fontWeight: "700", fontSize: 14 },
+  recordValue: { fontSize: 12, color: "#555" },
 });

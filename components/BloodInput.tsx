@@ -1,73 +1,154 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  Modal,
   View,
   Text,
+  Modal,
   Pressable,
   TextInput,
   StyleSheet,
+  Platform,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (value: number, type: "공복" | "식후") => void;
+  onSubmit: (payload: { title: string; value: number; measuredAt: Date }) => void;
+
+  // 수정(편집)까지 염두에 둔 optional props
+  initialTitle?: string;
+  initialValue?: number;
+  initialMeasuredAt?: Date;
 };
 
-export default function BloodInputSheet({
+const formatTime = (d: Date) =>
+  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(
+    2,
+    "0"
+  )}`;
+
+export default function BloodInputModal({
   visible,
   onClose,
   onSubmit,
+  initialTitle,
+  initialValue,
+  initialMeasuredAt,
 }: Props) {
-  const [value, setValue] = useState("");
-  const [type, setType] = useState<"공복" | "식후">("공복"); // 혈당 타입 상태
+  const [title, setTitle] = useState("");
+  const [value, setValue] = useState<string>("");
+
+  const [measuredAt, setMeasuredAt] = useState<Date>(new Date());
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    setTitle(initialTitle ?? "");
+    setValue(
+      typeof initialValue === "number" && Number.isFinite(initialValue)
+        ? String(initialValue)
+        : ""
+    );
+    setMeasuredAt(initialMeasuredAt ?? new Date());
+    setShowTimePicker(false);
+  }, [visible, initialTitle, initialValue, initialMeasuredAt]);
+
+  const timeLabel = useMemo(() => formatTime(measuredAt), [measuredAt]);
+
+  const handleSave = () => {
+    const n = parseInt(value, 10);
+    const safeValue = Number.isFinite(n) ? n : 0;
+
+    onSubmit({
+      title: title.trim(),
+      value: safeValue,
+      measuredAt,
+    });
+
+    onClose();
+  };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.sheet}>
-          <Text style={styles.title}>혈당 입력</Text>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <View style={styles.modal}>
+          <Text style={styles.titleText}>혈당 입력</Text>
 
-          {/* 혈당 값 입력 */}
-          <TextInput
-            style={styles.input}
-            placeholder="mg/dL"
-            keyboardType="numeric"
-            value={value}
-            onChangeText={setValue}
-          />
-
-          {/* 혈당 타입 선택 */}
-          <View style={styles.typeRow}>
-            <Pressable
-              style={[styles.typeBtn, type === "공복" && styles.selected]}
-              onPress={() => setType("공복")}
-            >
-              <Text style={styles.typeText}>공복</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.typeBtn, type === "식후" && styles.selected]}
-              onPress={() => setType("식후")}
-            >
-              <Text style={styles.typeText}>식후</Text>
-            </Pressable>
+          {/* 제목 */}
+          <View style={styles.field}>
+            <Text style={styles.label}>제목</Text>
+            <TextInput
+              style={styles.textInput}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="예: 아침 공복 혈당"
+              returnKeyType="done"
+            />
           </View>
 
-          {/* 저장 버튼 */}
+          {/* 측정시간 */}
           <Pressable
-            style={styles.submit}
-            onPress={() => {
-              if (!value) return;
-              onSubmit(Number(value), type); // 타입과 함께 전달
-              setValue("");
-              setType("공복"); // 초기화
-              onClose();
-            }}
+            style={styles.timeRow}
+            onPress={() => setShowTimePicker((prev) => !prev)}
           >
-            <Text style={styles.submitText}>저장</Text>
+            <Text style={styles.timeLeft}>측정 시간</Text>
+            <Text style={styles.timeRight}>{timeLabel}</Text>
           </Pressable>
-        </Pressable>
-      </Pressable>
+
+          {showTimePicker && (
+            <View style={{ marginBottom: 8 }}>
+              <DateTimePicker
+                value={measuredAt}
+                mode="time"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={(_, selected) => {
+                  if (Platform.OS !== "ios") setShowTimePicker(false);
+                  if (selected) setMeasuredAt(selected);
+                }}
+              />
+
+              {Platform.OS === "ios" && (
+                <Pressable
+                  style={[styles.btn, { alignSelf: "flex-end", marginTop: 8 }]}
+                  onPress={() => setShowTimePicker(false)}
+                >
+                  <Text>시간 선택 완료</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+
+          {/* 혈당 값 */}
+          <View style={styles.field}>
+            <Text style={styles.label}>혈당(mg/dL)</Text>
+            <TextInput
+              style={styles.textInput}
+              keyboardType="number-pad"
+              value={value}
+              onChangeText={setValue}
+              placeholder="예: 95"
+            />
+          </View>
+
+          {/* 버튼 */}
+          <View style={styles.buttons}>
+            <Pressable
+              style={styles.btn}
+              onPress={() => {
+                setShowTimePicker(false);
+                onClose();
+              }}
+            >
+              <Text>취소</Text>
+            </Pressable>
+
+            <Pressable style={[styles.btn, styles.saveBtn]} onPress={handleSave}>
+              <Text style={{ color: "#fff" }}>저장</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -75,57 +156,51 @@ export default function BloodInputSheet({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-end",
+    backgroundColor: "#00000077",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  sheet: {
+  modal: {
+    width: "85%",
     backgroundColor: "#fff",
-    padding: 24,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 16,
+    padding: 20,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 12,
+  titleText: { fontWeight: "700", fontSize: 16, marginBottom: 12 },
+
+  field: { marginBottom: 10 },
+  label: { fontSize: 12, fontWeight: "700", marginBottom: 6, color: "#333" },
+  textInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
   },
-  input: {
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "#f2f2f2",
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  typeRow: {
+
+  timeRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  typeBtn: {
-    flex: 1,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "#f2f2f2",
-    justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    marginBottom: 10,
   },
-  selected: {
-    backgroundColor: "#3C3C3C",
+  timeLeft: { fontSize: 13, color: "#333", fontWeight: "600" },
+  timeRight: { fontSize: 13, color: "#111", fontWeight: "700" },
+
+  buttons: { flexDirection: "row", justifyContent: "flex-end", marginTop: 12 },
+  btn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginLeft: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
   },
-  typeText: {
-    fontWeight: "700",
-    color: "#000",
-  },
-  submit: {
-    height: 48,
-    backgroundColor: "#3C3C3C",
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  submitText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
+  saveBtn: { backgroundColor: "#3C3C3C", borderColor: "transparent" },
 });

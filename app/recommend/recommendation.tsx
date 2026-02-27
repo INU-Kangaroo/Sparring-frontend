@@ -33,14 +33,12 @@ export default function RecommendationScreen() {
     []
   );
 
-  // 카드 크기 / 간격
   const CARD_WIDTH = 209;
   const CARD_HEIGHT = 309;
   const GAP = 18;
   const ITEM_WIDTH = CARD_WIDTH + GAP;
   const SIDE_PADDING = (width - CARD_WIDTH) / 2;
 
-  // 무한루프용 데이터
   const LOOP = 60;
   const data = useMemo(() => {
     const arr: CardItem[] = [];
@@ -49,12 +47,9 @@ export default function RecommendationScreen() {
   }, [base]);
 
   const START_BLOCK = Math.floor(LOOP / 2);
-  const START_INDEX = START_BLOCK * base.length + 0; // diet로 시작
+  const START_INDEX = START_BLOCK * base.length + 0;
 
-  // ✅ "가운데 카드"는 key가 아니라 "index"로 관리
   const [activeIndex, setActiveIndex] = useState<number>(START_INDEX);
-
-  // 파생: activeKey
   const activeKey: CardKey = base[mod(activeIndex, base.length)].key;
 
   const listRef = useRef<FlatList<CardItem>>(null);
@@ -65,14 +60,12 @@ export default function RecommendationScreen() {
     });
   }, []);
 
-  // 필터 이동
   const goFilter = () => {
     if (activeKey === "diet") router.push("/recommend/foodfilter");
     else if (activeKey === "workout") router.push("/recommend/healthfilter");
     else router.push("/recommend/pillfilter");
   };
 
-  // 상세 이동
   const goDetailByKey = (key: CardKey) => {
     if (key === "diet") router.push("/recommend/fooddetail");
     else if (key === "workout") router.push("/recommend/healthdetail");
@@ -81,35 +74,26 @@ export default function RecommendationScreen() {
 
   const goHome = () => router.push("/main/main");
 
-  // ✅ 인덱스 계산 + 텔레포트(무한루프 안정화)
   const syncActiveFromOffset = useCallback(
     (x: number) => {
-      // padding은 contentContainerStyle에만 있고,
-      // 실제 snap은 ITEM_WIDTH 단위로 움직이기 때문에 x/ITEM_WIDTH로 잡는 게 제일 안정적임
       const rawIndex = Math.round(x / ITEM_WIDTH);
-
       setActiveIndex(rawIndex);
 
-      // 양 끝 근처면 가운데 블록으로 순간이동
       const LEFT_LIMIT = base.length * 2;
       const RIGHT_LIMIT = data.length - base.length * 2;
 
       if (rawIndex < LEFT_LIMIT || rawIndex > RIGHT_LIMIT) {
         const baseIdx = mod(rawIndex, base.length);
         const newIndex = START_BLOCK * base.length + baseIdx;
-
         requestAnimationFrame(() => {
           listRef.current?.scrollToIndex({ index: newIndex, animated: false });
         });
-
-        // 순간이동했으니 activeIndex도 같이 맞춰줘야 "가운데 카드"가 바로 파란색 됨
         setActiveIndex(newIndex);
       }
     },
     [ITEM_WIDTH, base.length, data.length, START_BLOCK, base]
   );
 
-  // ✅ 스크롤 중에도 실시간으로 activeIndex 업데이트
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const x = e.nativeEvent.contentOffset.x;
     const rawIndex = Math.round(x / ITEM_WIDTH);
@@ -143,20 +127,16 @@ export default function RecommendationScreen() {
             offset: ITEM_WIDTH * index,
             index,
           })}
-          // ✅ 스크롤 중 실시간 업데이트
           onScroll={handleScroll}
           scrollEventThrottle={16}
-          // ✅ 빠르게 넘길 때
           onMomentumScrollEnd={handleEnd}
-          // ✅ 천천히 드래그할 때도 반응하도록
           onScrollEndDrag={handleEnd}
           renderItem={({ item, index }) => {
-            const isActive = index === activeIndex; // ✅ 딱 "가운데 1장"만 active
-
+            const isActive = index === activeIndex;
             return (
               <View style={{ width: CARD_WIDTH, marginRight: GAP }}>
                 <Pressable
-                  disabled={!isActive} // ✅ 가운데 카드만 클릭
+                  disabled={!isActive}
                   onPress={() => goDetailByKey(item.key)}
                   style={{ borderRadius: 22 }}
                 >
@@ -171,7 +151,6 @@ export default function RecommendationScreen() {
                       ]}
                     >
                       <Text style={styles.cardTitleActive}>{item.title}</Text>
-
                       <View style={styles.dots}>
                         {base.map((b) => {
                           const active = b.key === activeKey;
@@ -202,12 +181,41 @@ export default function RecommendationScreen() {
           }}
         />
 
-        {activeKey !== "supp" ? (
-          <Pressable onPress={goFilter} style={styles.filterBtn}>
-            <Text style={styles.filterText}>필터 선택하기</Text>
-            <View style={styles.filterUnderline} />
-          </Pressable>
-        ) : null}
+        {/* ✅ 영양성분일 때도 자리 유지 - opacity로만 숨김 */}
+        <Pressable
+          onPress={activeKey !== "supp" ? goFilter : undefined}
+          style={[styles.filterBtn, activeKey === "supp" && { opacity: 0 }]}
+          pointerEvents={activeKey === "supp" ? "none" : "auto"}
+        >
+          <Text style={styles.filterText}>필터 선택하기</Text>
+          <View style={styles.filterUnderline} />
+        </Pressable>
+      </View>
+
+      {/* 오늘의 기록 입력 섹션 */}
+      <View style={styles.logSection}>
+        <View style={styles.logHeader}>
+          <Text style={styles.logTitle}>오늘의 기록</Text>
+          <Text style={styles.logSubtitle}>
+            식단과 운동을 입력하고 맞춤 추천을 받아보세요
+          </Text>
+        </View>
+
+        <Pressable
+          onPress={() => router.push("/recommend/input")}
+          style={({ pressed }) => [styles.logBtn, pressed && { opacity: 0.85 }]}
+        >
+          <View style={styles.logBtnLeft}>
+            <View style={styles.logIconBox}>
+              <Ionicons name="pencil" size={18} color="#5A80FF" />
+            </View>
+            <View>
+              <Text style={styles.logBtnTitle}>오늘 먹은 것 & 운동 입력</Text>
+              <Text style={styles.logBtnSub}>혈당·혈압 관리를 위한 맞춤 분석</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#C0C0C0" />
+        </Pressable>
       </View>
 
       {/* 하단 홈 버튼 */}
@@ -256,7 +264,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E2E2",
   },
-
   cardTitleActive: { color: "white", fontSize: 18, fontWeight: "800" },
   cardTitleInactive: { color: "#B7B7B7", fontSize: 18, fontWeight: "800" },
 
@@ -269,7 +276,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   dotsPlaceholder: { height: 15 },
-
   dot: {
     width: 7,
     height: 7,
@@ -288,6 +294,61 @@ const styles = StyleSheet.create({
     backgroundColor: "#d9d9d9",
     marginTop: 6,
     borderRadius: 999,
+  },
+
+  // 오늘의 기록 섹션
+  logSection: {
+    marginTop: 32,
+    paddingHorizontal: 4,
+  },
+  logHeader: {
+    marginBottom: 14,
+  },
+  logTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#1a1a1a",
+  },
+  logSubtitle: {
+    fontSize: 13,
+    color: "#aaa",
+    marginTop: 4,
+    fontWeight: "500",
+  },
+  logBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#F6F8FF",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: "#E4ECFF",
+  },
+  logBtnLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  logIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#EEF3FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logBtnTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#222",
+  },
+  logBtnSub: {
+    fontSize: 12,
+    color: "#aaa",
+    marginTop: 2,
+    fontWeight: "500",
   },
 
   homeBar: {

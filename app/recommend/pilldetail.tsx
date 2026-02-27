@@ -5,10 +5,10 @@ import {
   StyleSheet,
   Dimensions,
   Pressable,
-  FlatList,
   ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useSharedValue,
@@ -18,46 +18,22 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { Ionicons } from "@expo/vector-icons";
 
 const { height: H } = Dimensions.get("window");
 
-// 상단 카드(리스트) 스펙: 스샷처럼(흰 카드)
-const CARD_W = 339;
-const CARD_H = 67;
-const CARD_R = 15;
-
-// 바텀시트 위치
-const SHEET_TOP = 120;
-const SHEET_BOTTOM = H - 300;
-
-const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
+const SHEET_TOP = 100;
+const SHEET_BOTTOM = H - 280;
+const clamp = (v: number, min: number, max: number) =>
+  Math.min(Math.max(v, min), max);
 
 type SupplementItem = {
   id: string;
   name: string;
-
-  // 바텀시트 리스트(요약 블럭) 우측 텍스트: "1정 | 2회" 같은 형태
   doseSummary: string;
-
-  // 상세 설명(스샷 2처럼)
   description: string;
-
-  // 주의사항(불릿 목록)
   cautions: string[];
 };
-
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.summaryRow}>
-      <Text style={styles.summaryLabel} numberOfLines={1}>
-        {label}
-      </Text>
-      <Text style={styles.summaryValue} numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
-  );
-}
 
 function CautionBox({ title, bullets }: { title: string; bullets: string[] }) {
   return (
@@ -78,8 +54,7 @@ function CautionBox({ title, bullets }: { title: string; bullets: string[] }) {
 export default function SupplementDetail() {
   const insets = useSafeAreaInsets();
 
-  // ✅ 상단 추천 카드(백엔드로 교체 예정)
-  const listData = useMemo<SupplementItem[]>(
+  const data = useMemo<SupplementItem[]>(
     () => [
       {
         id: "1",
@@ -90,25 +65,27 @@ export default function SupplementDetail() {
         cautions: [
           "결핍 증상: 식욕 감퇴, 피로, 근육 경련, 저린 감각, 불안, 두통, 수면 장애 등",
           "과다 섭취 시 증상: 설사, 근육 쇠약 등",
-          "권장 섭취량: 2020 한국인 영양소 섭취기준에 따르면 성인 남성 350mg, 여성 280mg이며, 상한섭취량은 350mg입니다.",
+          "권장 섭취량: 성인 남성 350mg, 여성 280mg이며, 상한섭취량은 350mg입니다.",
         ],
       },
       {
         id: "2",
         name: "비타민 D",
         doseSummary: "1정 | 3회",
-        description: "인슐린 저항성을 개선하여 혈당 수치를\n낮추는 데 도움을 줍니다.",
+        description:
+          "인슐린 저항성을 개선하여 혈당 수치를\n낮추는 데 도움을 줍니다.",
         cautions: [
           "지용성 비타민: 과다 섭취 시 체내에 축적될 수 있으므로 하루 2,000 IU 이상 섭취는 주의해야 합니다.",
-          "유리창: 유리창을 통해 들어오는 햇빛은 비타민 D 합성에 효과가 없습니다.",
-          "개인차: 개인의 체중이나 건강 상태에 따라 적절한 용량이 다를 수 있습니다.",
+          "유리창을 통해 들어오는 햇빛은 비타민 D 합성에 효과가 없습니다.",
+          "개인의 체중이나 건강 상태에 따라 적절한 용량이 다를 수 있습니다.",
         ],
       },
       {
         id: "3",
         name: "오메가 3",
         doseSummary: "1정 | 3회",
-        description: "혈중 중성지방 개선과 염증 조절에 도움을 줄 수 있어\n전반적인 대사 건강 관리에 보조적으로 활용될 수 있습니다.",
+        description:
+          "혈중 중성지방 개선과 염증 조절에 도움을 줄 수 있어\n전반적인 대사 건강 관리에 보조적으로 활용될 수 있습니다.",
         cautions: [
           "항응고제 복용 중이거나 수술 예정인 경우 섭취 전 전문가와 상담하세요.",
           "위장 불편감이 있을 수 있어 식후 섭취를 권장합니다.",
@@ -119,19 +96,17 @@ export default function SupplementDetail() {
     []
   );
 
-  const [selected, setSelected] = useState<SupplementItem | null>(listData[0] ?? null);
+  const [selected, setSelected] = useState<SupplementItem>(data[0]);
 
-  // ===== Bottom sheet drag =====
+  // ── Bottom Sheet ──────────────────────────────────────────
   const top = useSharedValue(SHEET_BOTTOM);
   const startTop = useSharedValue(SHEET_BOTTOM);
-
-  // 시트가 완전히 열렸을 때만 내부 스크롤 ON
   const [sheetOpen, setSheetOpen] = useState(false);
+
   useAnimatedReaction(
     () => top.value,
     (v) => {
-      const open = Math.abs(v - SHEET_TOP) < 10;
-      runOnJS(setSheetOpen)(open);
+      runOnJS(setSheetOpen)(Math.abs(v - SHEET_TOP) < 10);
     }
   );
 
@@ -145,7 +120,6 @@ export default function SupplementDetail() {
     .onEnd((e) => {
       const mid = (SHEET_TOP + SHEET_BOTTOM) / 2;
       const shouldOpen = e.velocityY < -500 ? true : top.value < mid;
-
       top.value = withSpring(shouldOpen ? SHEET_TOP : SHEET_BOTTOM, {
         damping: 18,
         stiffness: 180,
@@ -154,44 +128,65 @@ export default function SupplementDetail() {
 
   const sheetStyle = useAnimatedStyle(() => ({ top: top.value }));
 
-  const openSheet = () => {
-    top.value = withSpring(SHEET_TOP, { damping: 18, stiffness: 180 });
+  // 버튼 눌러도 시트 위치 변경 없음 - 데이터만 교체
+  const selectItem = (item: SupplementItem) => {
+    setSelected(item);
   };
 
-  // 상단 전체 내려오는 정도
-  const TOP_OFFSET = 40;
-
   return (
-    <View style={[styles.safe, { paddingTop: insets.top + TOP_OFFSET }]}>
-      {/* Header */}
+    <View style={[styles.safe, { paddingTop: insets.top + 40 }]}>
+      {/* 헤더 */}
       <View style={styles.header}>
+        <Pressable
+          onPress={() => router.push("/recommend/recommendation")}
+          style={styles.backBtn}
+        >
+          <Ionicons name="chevron-back" size={22} color="#111" />
+        </Pressable>
         <Text style={styles.h1}>영양성분</Text>
         <Text style={styles.h2}>현재 건강상태에 맞는 영양성분을 추천해드려요</Text>
       </View>
 
-      {/* List (상단 흰 카드) */}
-      <FlatList
-        data={listData}
-        keyExtractor={(item) => item.id}
+      {/* 영양성분 버튼 리스트 */}
+      <ScrollView
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => {
-              setSelected(item);
-              openSheet();
-            }}
-            style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
-          >
-            <Text style={styles.cardOnlyTitle} numberOfLines={1}>
-              {item.name}
-            </Text>
-          </Pressable>
-        )}
-        ListFooterComponent={<View style={{ height: 140 }} />}
         showsVerticalScrollIndicator={false}
-      />
+      >
+        {data.map((item) => {
+          const isActive = selected.id === item.id;
+          return (
+            <Pressable
+              key={item.id}
+              onPress={() => selectItem(item)}
+              style={({ pressed }) => [pressed && { opacity: 0.85 }]}
+            >
+              {isActive ? (
+                <LinearGradient
+                  colors={["#0D99FF", "#1D4BFF"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.btnActive}
+                >
+                  <View style={styles.btnRow}>
+                    <Text style={styles.btnNameActive}>{item.name}</Text>
+                    <Text style={styles.btnDoseActive}>{item.doseSummary}</Text>
+                  </View>
+                </LinearGradient>
+              ) : (
+                <View style={styles.btnInactive}>
+                  <View style={styles.btnRow}>
+                    <Text style={styles.btnName}>{item.name}</Text>
+                    <Text style={styles.btnDose}>{item.doseSummary}</Text>
+                  </View>
+                </View>
+              )}
+            </Pressable>
+          );
+        })}
+        <View style={{ height: 160 }} />
+      </ScrollView>
 
-      {/* Bottom Sheet */}
+      {/* 바텀 시트 */}
       <GestureDetector gesture={pan}>
         <Animated.View style={[styles.sheet, sheetStyle]}>
           <LinearGradient
@@ -208,49 +203,19 @@ export default function SupplementDetail() {
               scrollEnabled={sheetOpen}
               showsVerticalScrollIndicator={false}
             >
-              {/* ✅ 1) 요약 리스트(스샷 1처럼: 영양성분 타이틀 + 블럭 3개) */}
-              <Text style={styles.sheetTopTitle}>영양성분</Text>
+              {/* 영양성분 이름 */}
+              <Text style={styles.sheetTitle}>{selected.name}</Text>
+              <Text style={styles.sheetDose}>{selected.doseSummary}</Text>
 
-              <View style={styles.summaryWrap}>
-                {listData.map((it) => (
-                  <Pressable
-                    key={it.id}
-                    onPress={() => setSelected(it)}
-                    style={({ pressed }) => [pressed && { opacity: 0.95 }]}
-                  >
-                    <SummaryRow label={it.name} value={it.doseSummary} />
-                  </Pressable>
-                ))}
-              </View>
+              {/* 설명 */}
+              <Text style={styles.sheetDesc}>{selected.description}</Text>
 
-              {/* ✅ 선택한 영양성분 상세 (스샷 2 느낌) */}
-              {selected && (
-                <>
-                  <View style={styles.divider} />
-
-                  <Text style={styles.detailTitle}>{selected.name}</Text>
-                  <Text style={styles.detailDesc}>{selected.description}</Text>
-
-                  <CautionBox title="주의사항" bullets={selected.cautions} />
-                </>
-              )}
-
-              {/* 아래에 다른 영양성분들도 연속으로 상세를 다 보여주고 싶으면 아래 블록 켜기 */}
-              {/* 
               <View style={styles.divider} />
-              {listData
-                .filter((x) => x.id !== selected?.id)
-                .map((it) => (
-                  <View key={it.id} style={{ marginTop: 18 }}>
-                    <Text style={styles.detailTitle}>{it.name}</Text>
-                    <Text style={styles.detailDesc}>{it.description}</Text>
-                    <CautionBox title="주의사항" bullets={it.cautions} />
-                    <View style={styles.divider} />
-                  </View>
-                ))}
-              */}
 
-              <View style={{ height: 90 }} />
+              {/* 주의사항 */}
+              <CautionBox title="주의사항" bullets={selected.cautions} />
+
+              <View style={{ height: 100 }} />
             </ScrollView>
           </LinearGradient>
         </Animated.View>
@@ -263,38 +228,60 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#FFFFFF" },
 
   header: { paddingHorizontal: 24 },
-  h1: { fontSize: 23, fontWeight: "700", color: "#111111" },
-  h2: {
-    marginTop: 10,
-    marginBottom: 28, // ✅ 첫 카드와 간격
-    fontSize: 15,
-    color: "#666666",
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#F4F4F4",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
   },
+  h1: { fontSize: 23, fontWeight: "700", color: "#111111" },
+  h2: { marginTop: 10, marginBottom: 20, fontSize: 15, color: "#666666" },
 
   listContent: {
     paddingHorizontal: 24,
-    alignItems: "center",
     gap: 12,
+    paddingTop: 4,
   },
 
-  // 상단 카드(영양성분은 스샷처럼 이름만)
-  card: {
-    width: CARD_W,
-    height: CARD_H,
-    borderRadius: CARD_R,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    justifyContent: "center",
+  // 활성 버튼
+  btnActive: {
+    borderRadius: 15,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    shadowColor: "#1D4BFF",
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
+  },
+  btnNameActive: { fontSize: 15, fontWeight: "700", color: "#fff" },
+  btnDoseActive: { fontSize: 14, fontWeight: "600", color: "rgba(255,255,255,0.85)" },
+
+  // 비활성 버튼
+  btnInactive: {
+    borderRadius: 15,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    backgroundColor: "#fff",
     shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-    borderWidth: 0,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
-  cardOnlyTitle: { fontSize: 15, fontWeight: "600", color: "#111111" },
+  btnName: { fontSize: 15, fontWeight: "600", color: "#111" },
+  btnDose: { fontSize: 14, fontWeight: "500", color: "#888" },
 
-  // ===== Bottom sheet =====
+  btnRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  // 바텀시트
   sheet: {
     position: "absolute",
     left: 0,
@@ -311,76 +298,54 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: "rgba(255,255,255,0.75)",
+    marginBottom: 16,
+  },
+  sheetScrollContent: { paddingHorizontal: 20, paddingBottom: 120 },
+
+  sheetTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#fff",
+    textAlign: "center",
+    marginBottom: 6,
+  },
+  sheetDose: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.8)",
+    textAlign: "center",
     marginBottom: 18,
   },
-  sheetScrollContent: { paddingHorizontal: 18, paddingBottom: 120 },
-
-  sheetTopTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    textAlign: "center",
-    marginBottom: 14,
-  },
-
-  // ✅ 요약 블럭(식단/운동이랑 동일 스펙)
-  summaryWrap: {
-    gap: 12,
-    alignItems: "center",
-  },
-  summaryRow: {
-    width: 333,
-    height: 54,
-    borderRadius: 20,
-    backgroundColor: "#1D82EF",
-    paddingHorizontal: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  summaryLabel: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
-  summaryValue: { fontSize: 15, fontWeight: "800", color: "#FFFFFF" },
-
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(255,255,255,0.45)",
-    marginVertical: 18,
-    marginHorizontal: 6,
-  },
-
-  // ✅ 상세(스샷 2)
-  detailTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    textAlign: "center",
-    marginTop: 6,
-  },
-  detailDesc: {
-    marginTop: 14,
-    fontSize: 12,
+  sheetDesc: {
+    fontSize: 14,
     fontWeight: "600",
-    lineHeight: 18,
-    color: "rgba(255,255,255,0.9)",
+    lineHeight: 22,
+    color: "rgba(255,255,255,0.95)",
     textAlign: "center",
     paddingHorizontal: 10,
   },
 
-  // ✅ 주의사항 박스(진한 파랑 + 둥근 사각형)
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.4)",
+    marginVertical: 20,
+  },
+
+  // 주의사항 박스
   cautionBox: {
-    marginTop: 16,
     alignSelf: "center",
-    width: 333,
+    width: "100%",
     borderRadius: 18,
-    backgroundColor: "rgba(29, 130, 239, 0.55)", // 진한 박스 느낌(2차에서 조절 가능)
+    backgroundColor: "rgba(29, 130, 239, 0.55)",
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
   cautionTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "800",
     color: "#FFFFFF",
     textAlign: "center",
+    marginBottom: 2,
   },
   bulletRow: {
     flexDirection: "row",
@@ -389,13 +354,13 @@ const styles = StyleSheet.create({
   },
   bulletDot: {
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
     color: "#FFFFFF",
   },
   bulletText: {
     flex: 1,
     fontSize: 12,
-    lineHeight: 18,
+    lineHeight: 20,
     fontWeight: "600",
     color: "rgba(255,255,255,0.92)",
   },

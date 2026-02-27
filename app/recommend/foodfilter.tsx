@@ -7,13 +7,6 @@ type Option = { id: string; label: string };
 const PRETENDARD = "Pretendard";
 const PRETENDARD_MEDIUM = "Pretendard-Medium";
 
-function toggleSet(prev: Set<string>, id: string) {
-  const next = new Set(prev);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
-  return next;
-}
-
 export default function FoodFilter() {
   const noneOption: Option = { id: "none", label: "없음" };
 
@@ -35,15 +28,23 @@ export default function FoodFilter() {
     []
   );
 
-  // ✅ 멀티 선택
+  const mealTimes: Option[] = [
+    { id: "morning", label: "아침" },
+    { id: "lunch", label: "점심" },
+    { id: "dinner", label: "저녁" },
+    { id: "snack", label: "간식" },
+  ];
+
+  // 음식 카테고리 멀티 선택
   const [selected, setSelected] = useState<Set<string>>(new Set(["dairy"]));
+  // 시간대 단일 선택
+  const [selectedMeal, setSelectedMeal] = useState<string>("morning");
 
   const isNoneSelected = selected.has("none");
 
   const onPressNone = () => {
     setSelected((prev) => {
-      // none을 켜면 다른 선택은 모두 해제하고 none만 남김
-      if (prev.has("none")) return new Set(); // 다시 누르면 해제
+      if (prev.has("none")) return new Set();
       return new Set(["none"]);
     });
   };
@@ -51,20 +52,15 @@ export default function FoodFilter() {
   const onPressChip = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-
-      // 다른 항목을 고르면 none은 자동 해제
       next.delete("none");
-
-      // 토글
       if (next.has(id)) next.delete(id);
       else next.add(id);
-
       return next;
     });
   };
 
   const onSave = () => {
-    // TODO: selected를 저장/전달 (나중에)
+    // TODO: selected, selectedMeal 저장/전달
     router.push("/recommend/recommendation");
   };
 
@@ -73,11 +69,40 @@ export default function FoodFilter() {
       <Text style={styles.title}>필터 선택하기</Text>
       <Text style={styles.subtitle}>필터 선택하기</Text>
 
-      <View style={{ height: 78 }} />
+      <View style={{ height: 40 }} />
 
+      {/* ── 시간대 선택 ── */}
+      <Text style={styles.desc}>추천받고 싶은 시간대를 선택해주세요.</Text>
+      <View style={styles.mealRow}>
+        {mealTimes.map((m) => (
+          <Pressable
+            key={m.id}
+            onPress={() => setSelectedMeal(m.id)}
+            style={[
+              styles.mealChip,
+              selectedMeal === m.id ? styles.mealChipActive : styles.mealChipInactive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.mealChipText,
+                selectedMeal === m.id
+                  ? styles.mealChipTextActive
+                  : styles.mealChipTextInactive,
+              ]}
+            >
+              {m.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.divider} />
+
+      {/* ── 음식 카테고리 선택 ── */}
       <Text style={styles.desc}>선호하는 음식 카테고리를 골라주세요.</Text>
 
-      {/* ✅ '없음' 단독 줄 (왼쪽 정렬) */}
+      {/* 없음 단독 줄 */}
       <View style={styles.noneRow}>
         <Chip
           label={noneOption.label}
@@ -86,7 +111,7 @@ export default function FoodFilter() {
         />
       </View>
 
-      {/* ✅ 아래는 3열 그리드 */}
+      {/* 3열 그리드 */}
       <FlatList
         data={options}
         keyExtractor={(item) => item.id}
@@ -103,7 +128,7 @@ export default function FoodFilter() {
         )}
       />
 
-      {/* ✅ 저장 버튼 */}
+      {/* 저장 버튼 */}
       <Pressable style={styles.saveBtn} onPress={onSave}>
         <Text style={styles.saveText}>저장</Text>
       </Pressable>
@@ -125,7 +150,12 @@ function Chip({
       onPress={onPress}
       style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
     >
-      <Text style={[styles.chipText, active ? styles.chipTextActive : styles.chipTextInactive]}>
+      <Text
+        style={[
+          styles.chipText,
+          active ? styles.chipTextActive : styles.chipTextInactive,
+        ]}
+      >
         {label}
       </Text>
     </Pressable>
@@ -140,47 +170,77 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
 
-  // ✅ 필터 선택하기 Bold ,25 (두껍게)
   title: {
     fontSize: 25,
     color: "#000000",
     fontFamily: PRETENDARD,
     fontWeight: "800",
   },
-
-  // medium, 18
   subtitle: {
     marginTop: 10,
     fontSize: 18,
     color: "#000000",
     fontFamily: PRETENDARD_MEDIUM,
   },
-
-  // medium, 16
   desc: {
     fontSize: 16,
     color: "#000000",
     fontFamily: PRETENDARD_MEDIUM,
   },
 
-  // ✅ 없음은 왼쪽 오이 위(단독 줄)
-  noneRow: {
-    marginTop: 26,
-    alignItems: "flex-start", // 🔥 왼쪽
+  // 시간대
+  mealRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  mealChip: {
+    flex: 1,
+    height: 44,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mealChipActive: {
+    backgroundColor: "#0D99FF",
+  },
+  mealChipInactive: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#EFEFEF",
+  },
+  mealChipText: {
+    fontSize: 15,
+    fontFamily: PRETENDARD_MEDIUM,
+  },
+  mealChipTextActive: { color: "#FFFFFF" },
+  mealChipTextInactive: { color: "#000000" },
+
+  divider: {
+    height: 1,
+    backgroundColor: "#F0F0F0",
+    marginVertical: 20,
   },
 
-  // ✅ 그리드
+  // 없음
+  noneRow: {
+    marginTop: 16,
+    alignItems: "flex-start",
+  },
+
+  // 그리드
   grid: {
     marginTop: 14,
-    paddingBottom: 90,
+    paddingBottom: 100,
   },
   gridRow: {
-    justifyContent: "flex-start", // 🔥 왼쪽 정렬
+    justifyContent: "flex-start",
     gap: 14,
     marginBottom: 14,
   },
 
-  // 칩: W90 H44 radius20
+  // 카테고리 칩
   chip: {
     width: 90,
     height: 44,
@@ -196,7 +256,6 @@ const styles = StyleSheet.create({
   chipActive: {
     backgroundColor: "#0D99FF",
   },
-
   chipText: {
     fontSize: 15,
     fontFamily: PRETENDARD_MEDIUM,
@@ -204,7 +263,7 @@ const styles = StyleSheet.create({
   chipTextInactive: { color: "#000000" },
   chipTextActive: { color: "#FFFFFF" },
 
-  // 저장 버튼: W129 H44 radius20 bg #3D3D3D
+  // 저장 버튼
   saveBtn: {
     position: "absolute",
     bottom: 34,

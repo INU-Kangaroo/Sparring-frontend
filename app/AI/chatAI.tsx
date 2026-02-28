@@ -24,11 +24,16 @@ type ChatMessage = {
 
 const BOT_NAME = "챗봇 이름";
 
-// .env에 넣어줘: EXPO_PUBLIC_GEMINI_API_KEY=xxxx
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-
-// 필요하면 모델 바꾸기
 const GEMINI_MODEL = "gemini-1.5-flash";
+
+const FAQ_LIST = [
+  "혈당이 높을 때 뭘 먹어야 해요?",
+  "운동은 언제 하는 게 좋나요?",
+  "저혈당 증상은 뭔가요?",
+  "식후 혈당을 낮추는 방법은?",
+  "혈당 측정은 하루 몇 번이 좋나요?",
+];
 
 export default function ChatAI() {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -41,15 +46,16 @@ export default function ChatAI() {
   ]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [faqVisible, setFaqVisible] = useState(true);
 
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  const canSend = useMemo(() => {
-    return input.trim().length > 0 && !isSending;
-  }, [input, isSending]);
+  const canSend = useMemo(
+    () => input.trim().length > 0 && !isSending,
+    [input, isSending]
+  );
 
   useEffect(() => {
-    // 메시지 추가될 때 아래로 스크롤
     const t = setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: true });
     }, 50);
@@ -60,25 +66,14 @@ export default function ChatAI() {
 
   const callGemini = async (prompt: string) => {
     if (!GEMINI_API_KEY) {
-      throw new Error(
-        "Gemini API Key가 없어요. .env에 EXPO_PUBLIC_GEMINI_API_KEY를 설정해줘!",
-      );
+      throw new Error("Gemini API Key가 없어요. .env에 EXPO_PUBLIC_GEMINI_API_KEY를 설정해줘!");
     }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
     const body = {
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }],
-        },
-      ],
-      // 필요하면 옵션 추가 가능
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 512,
-      },
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
     };
 
     const res = await fetch(url, {
@@ -93,19 +88,16 @@ export default function ChatAI() {
     }
 
     const data = await res.json();
-
-    // 응답 파싱 (형식이 바뀔 수 있어서 안전하게)
     const text =
-      data?.candidates?.[0]?.content?.parts
-        ?.map((p: any) => p?.text)
-        .join("") ?? "";
-
+      data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text).join("") ?? "";
     return text.trim() || "음… 잠시만요. 다시 한 번 말해줄래요?";
   };
 
-  const onSend = async () => {
-    const trimmed = input.trim();
+  const sendMessage = async (text: string) => {
+    const trimmed = text.trim();
     if (!trimmed || isSending) return;
+
+    setFaqVisible(false);
 
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
@@ -118,44 +110,35 @@ export default function ChatAI() {
     setInput("");
     setIsSending(true);
 
-    // 로딩용 임시 봇 메시지(점점점)
     const loadingId = `b-loading-${Date.now()}`;
     setMessages((prev) => [
       ...prev,
-      {
-        id: loadingId,
-        role: "bot",
-        text: "…",
-        createdAt: Date.now(),
-      },
+      { id: loadingId, role: "bot", text: "…", createdAt: Date.now() },
     ]);
 
     try {
       const answer = await callGemini(trimmed);
-
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === loadingId
-            ? { ...m, text: answer, createdAt: Date.now() }
-            : m,
-        ),
+          m.id === loadingId ? { ...m, text: answer, createdAt: Date.now() } : m
+        )
       );
     } catch (e: any) {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === loadingId
-            ? {
-                ...m,
-                text: "지금은 답변을 가져오지 못했어요. 네트워크/키 설정을 확인해줘!",
-              }
-            : m,
-        ),
+            ? { ...m, text: "지금은 답변을 가져오지 못했어요. 네트워크/키 설정을 확인해줘!" }
+            : m
+        )
       );
       console.log(e?.message ?? e);
     } finally {
       setIsSending(false);
     }
   };
+
+  const onSend = () => sendMessage(input);
+  const onFaqPress = (q: string) => sendMessage(q);
 
   const renderItem = ({ item }: { item: ChatMessage }) => {
     const isBot = item.role === "bot";
@@ -185,7 +168,6 @@ export default function ChatAI() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* 상단 바 */}
       <View style={styles.header}>
         <Pressable onPress={goBack} hitSlop={10} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={22} color="#111" />
@@ -197,7 +179,6 @@ export default function ChatAI() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 6 : 0}
       >
-        {/* 채팅 리스트 */}
         <FlatList
           ref={listRef}
           data={messages}
@@ -205,9 +186,34 @@ export default function ChatAI() {
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            faqVisible ? (
+              <View style={styles.faqSection}>
+                <View style={styles.faqTitleRow}>
+                  <Text style={styles.faqIcon}>💡</Text>
+                  <Text style={styles.faqTitle}>자주 묻는 질문</Text>
+                </View>
+                {/* ✅ 세로로 쌓이는 버튼 */}
+                <View style={styles.faqList}>
+                  {FAQ_LIST.map((q, i) => (
+                    <Pressable
+                      key={i}
+                      onPress={() => onFaqPress(q)}
+                      style={({ pressed }) => [
+                        styles.faqBtn,
+                        pressed && { opacity: 0.75 },
+                      ]}
+                    >
+                      <Text style={styles.faqBtnText}>{q}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : null
+          }
         />
 
-        {/* 하단 입력 영역 */}
+        {/* 하단 입력 */}
         <View style={styles.inputBar}>
           <View style={styles.inputWrap}>
             <TextInput
@@ -222,7 +228,6 @@ export default function ChatAI() {
               editable={!isSending}
             />
           </View>
-
           <Pressable
             onPress={onSend}
             disabled={!canSend}
@@ -243,35 +248,19 @@ export default function ChatAI() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  safe: { flex: 1, backgroundColor: "#F6F6F6" },
 
-  safe: {
-    flex: 1,
-    backgroundColor: "#F6F6F6",
-  },
-
-  header: {
-    height: 54,
-    justifyContent: "center",
-    paddingHorizontal: 14,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-  },
+  header: { height: 54, justifyContent: "center", paddingHorizontal: 14 },
+  backBtn: { width: 40, height: 40, justifyContent: "center" },
 
   listContent: {
-    paddingTop: 50, 
+    paddingTop: 50,
     paddingHorizontal: 18,
     paddingBottom: 14,
   },
 
-  /* 좌측(봇) */
-  rowLeft: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 18,
-  },
+  // 봇
+  rowLeft: { flexDirection: "row", alignItems: "flex-start", marginBottom: 18 },
   avatar: {
     width: 34,
     height: 34,
@@ -280,31 +269,18 @@ const styles = StyleSheet.create({
     marginRight: 10,
     marginTop: 2,
   },
-  leftBubbleWrap: {
-    maxWidth: "78%",
-  },
-  botName: {
-    fontSize: 12,
-    color: "#8C8C8C",
-    marginBottom: 6,
-  },
+  leftBubbleWrap: { maxWidth: "78%" },
+  botName: { fontSize: 12, color: "#8C8C8C", marginBottom: 6 },
   bubbleLeft: {
     backgroundColor: "#E7E7E7",
     borderRadius: 18,
     paddingVertical: 10,
     paddingHorizontal: 14,
   },
-  leftText: {
-    fontSize: 14,
-    color: "#333",
-    lineHeight: 20,
-  },
+  leftText: { fontSize: 14, color: "#333", lineHeight: 20 },
 
-  /* 우측(유저) */
-  rowRight: {
-    alignItems: "flex-end",
-    marginBottom: 18,
-  },
+  // 유저
+  rowRight: { alignItems: "flex-end", marginBottom: 18 },
   bubbleRight: {
     maxWidth: "78%",
     backgroundColor: "#6FA8FF",
@@ -312,13 +288,46 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
   },
-  rightText: {
-    fontSize: 14,
-    color: "#fff",
-    lineHeight: 20,
+  rightText: { fontSize: 14, color: "#fff", lineHeight: 20 },
+
+  // FAQ 섹션 - 세로 나열
+  faqSection: {
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  faqTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
+  faqIcon: { fontSize: 15 },
+  faqTitle: { fontSize: 14, fontWeight: "700", color: "#555" },
+
+  faqList: {
+    alignItems: "flex-start", // ✅ 오른쪽 정렬 (이미지처럼)
+    gap: 8,
+  },
+  faqBtn: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: "#E0E8FF",
+    shadowColor: "#4060FF",
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  faqBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#3F7BFF",
   },
 
-  /* 입력 바 */
+  // 입력 바
   inputBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -334,11 +343,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  input: {
-    fontSize: 14,
-    color: "#222",
-    maxHeight: 100,
-  },
+  input: { fontSize: 14, color: "#222", maxHeight: 100 },
   sendBtn: {
     marginLeft: 10,
     width: 38,
@@ -348,7 +353,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#EFEFEF",
   },
-  sendBtnDisabled: {
-    opacity: 0.6,
-  },
+  sendBtnDisabled: { opacity: 0.6 },
 });

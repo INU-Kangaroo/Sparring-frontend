@@ -2,11 +2,13 @@ import { useState } from "react";
 import { View, Text, StyleSheet, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 
-import BackButton from "../../components/BackButton"
+import BackButton from "../../components/BackButton";
 import NextButton from "../../components/NextButton";
+import { useSignupDraft } from "./signupContext";
 
 export default function Birthdate() {
   const router = useRouter();
+  const { setDraft } = useSignupDraft();
 
   const [year, setYear] = useState("");
   const [month, setMonth] = useState("");
@@ -14,7 +16,13 @@ export default function Birthdate() {
 
   const nextPage = () => {
     if (!year || !month || !day) return;
-    router.push("/sign-up/stats"); // 다음 경로로 수정
+
+    const y = year.padStart(4, "0");
+    const m = month.padStart(2, "0");
+    const d = day.padStart(2, "0");
+
+    setDraft({ birthDate: `${y}-${m}-${d}` });
+    router.push("/sign-up/stats");
   };
 
   return (
@@ -57,7 +65,7 @@ export default function Birthdate() {
 
           <TextInput
             style={styles.input}
-            placeholder="DAY"
+            placeholder="Day"
             placeholderTextColor="#ccc"
             keyboardType="number-pad"
             maxLength={2}
@@ -73,62 +81,16 @@ export default function Birthdate() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 30,
-    backgroundColor: "#fff",
-  },
-  header: {
-    width: "100%",
-  },
-  heading: {
-    marginTop: 30,
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1e1d1dff",
-  },
-  heading2: {
-    marginTop: 5,
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1e1d1dff",
-  },
-  subtext: {
-    marginTop: 70,
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#1e1d1dff",
-  },
-  labelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  subtext2: {
-    fontSize: 12,
-    color: "#1e1d1dff",
-  },
-  star: {
-    fontSize: 12,
-    color: "#fa1212ff",
-  },
-  dateRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-  },
-  input: {
-    width: "30%",
-    height: 56,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: "#ddd",
-    textAlign: "center",
-    fontSize: 16,
-    color: "#111",
-  },
+  container: { flex: 1, paddingTop: 60, paddingHorizontal: 30, backgroundColor: "#fff" },
+  header: { width: "100%" },
+  heading: { marginTop: 30, fontSize: 20, fontWeight: "600", color: "#1e1d1dff" },
+  heading2: { marginTop: 5, fontSize: 20, fontWeight: "600", color: "#1e1d1dff" },
+  subtext: { marginTop: 70, fontSize: 16, fontWeight: "500", color: "#1e1d1dff" },
+  labelRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  subtext2: { fontSize: 12, color: "#1e1d1dff" },
+  star: { fontSize: 12, color: "#fa1212ff" },
+  dateRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 20 },
+  input: { width: "30%", height: 56, borderRadius: 16, borderWidth: 1.5, borderColor: "#ddd", textAlign: "center", fontSize: 16, color: "#111" },
 });
-
-

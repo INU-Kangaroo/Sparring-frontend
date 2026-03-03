@@ -1,51 +1,44 @@
+import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-let AsyncStorageLib = null;
+const ACCESS_KEY = "accessToken";
+const REFRESH_KEY = "refreshToken";
 
-if (Platform.OS !== "web") {
-  try {
-    AsyncStorageLib =
-      require("@react-native-async-storage/async-storage").default;
-  } catch (e) {
-    console.error("AsyncStorage 로드 실패:", e);
-  }
+async function setItem(key: string, value: string) {
+  if (Platform.OS === "web") localStorage.setItem(key, value);
+  else await SecureStore.setItemAsync(key, value);
+}
+async function getItem(key: string) {
+  if (Platform.OS === "web") return localStorage.getItem(key);
+  return SecureStore.getItemAsync(key);
+}
+async function removeItem(key: string) {
+  if (Platform.OS === "web") localStorage.removeItem(key);
+  else await SecureStore.deleteItemAsync(key);
 }
 
-export const getTokenFromStorage = async () => {
-  try {
-    if (Platform.OS === "web") {
-      return localStorage.getItem("accessToken");
-    }
-    if (!AsyncStorageLib) return null;
-    return await AsyncStorageLib.getItem("accessToken");
-  } catch (e) {
-    console.error("토큰 가져오기 실패:", e);
-    return null;
-  }
-};
+export async function setTokensToStorage(accessToken: string, refreshToken?: string) {
+  await setItem(ACCESS_KEY, accessToken);
+  if (refreshToken) await setItem(REFRESH_KEY, refreshToken);
+}
 
-export const setTokenToStorage = async (token) => {
-  try {
-    if (Platform.OS === "web") {
-      localStorage.setItem("accessToken", token);
-      return;
-    }
-    if (!AsyncStorageLib) return;
-    await AsyncStorageLib.setItem("accessToken", token);
-  } catch (e) {
-    console.error("토큰 저장 실패:", e);
-  }
-};
+export async function getAccessTokenFromStorage() {
+  return (await getItem(ACCESS_KEY)) ?? "";
+}
 
-export const removeTokenFromStorage = async () => {
-  try {
-    if (Platform.OS === "web") {
-      localStorage.removeItem("accessToken");
-      return;
-    }
-    if (!AsyncStorageLib) return;
-    await AsyncStorageLib.removeItem("accessToken");
-  } catch (e) {
-    console.error("토큰 삭제 실패:", e);
-  }
-};
+export async function getRefreshTokenFromStorage() {
+  return (await getItem(REFRESH_KEY)) ?? "";
+}
+
+export async function removeTokenFromStorage() {
+  await removeItem(ACCESS_KEY);
+  await removeItem(REFRESH_KEY);
+}
+
+// 기존 코드 호환 (AccessToken만 쓰던 함수명)
+export async function setTokenToStorage(token: string) {
+  await setItem(ACCESS_KEY, token);
+}
+export async function getTokenFromStorage() {
+  return await getAccessTokenFromStorage();
+}

@@ -1,22 +1,20 @@
-// app/api/index.ts
 import axios, {
   AxiosHeaders,
   AxiosInstance,
   AxiosRequestConfig,
   AxiosResponse,
 } from "axios";
-import { getTokenFromStorage, removeTokenFromStorage } from "../utils/asyncStorage";
+import {
+  getAccessTokenFromStorage,
+  getRefreshTokenFromStorage,
+  removeTokenFromStorage,
+  setTokensToStorage,
+} from "../utils/asyncStorage";
 
 const baseURL =
   process.env.EXPO_PUBLIC_BACKEND_URL ||
   process.env.EXPO_PUBLIC_API_BASE_URL ||
   "http://localhost:8080";
-
-if (!process.env.EXPO_PUBLIC_BACKEND_URL && !process.env.EXPO_PUBLIC_API_BASE_URL) {
-  console.warn(
-    "[api] EXPO_PUBLIC_BACKEND_URL 또는 EXPO_PUBLIC_API_BASE_URL이 설정되지 않았습니다. 기본값(http://localhost:8080)을 사용합니다."
-  );
-}
 
 const api: AxiosInstance = axios.create({
   baseURL,
@@ -24,36 +22,91 @@ const api: AxiosInstance = axios.create({
   timeout: 15000,
 });
 
-// 요청마다 Authorization 자동 추가
-api.interceptors.request.use(
-  async (config) => {
-    const token = await getTokenFromStorage();
-    if (!token) return config;
+// accessToken 자동 첨부
+api.interceptors.request.use(async (config) => {
+  const token = await getAccessTokenFromStorage();
+  if (!token) return config;
 
-    // Axios v1: headers 타입이 object 또는 AxiosHeaders 일 수 있음
-    if (config.headers instanceof AxiosHeaders) {
-      config.headers.set("Authorization", `Bearer ${token}`);
-    } else {
-      config.headers = {
-        ...(config.headers ?? {}),
-        Authorization: `Bearer ${token}`,
-      } as any;
-    }
+  if (config.headers instanceof AxiosHeaders) {
+    config.headers.set("Authorization", `Bearer ${token}`);
+  } else {
+    config.headers = {
+      ...(config.headers ?? {}),
+      Authorization: `Bearer ${token}`,
+    } as any;
+  }
+  return config;
+});
 
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// 401 -> refresh 시도(1회) -> 실패하면 토큰 제거
+let isRefreshing = false;
+let refreshQueue: Array<(token: string) => void> = [];
 
-// 401이면 토큰 삭제(선택)
+async function doRefresh() {
+  const refreshToken = await getRefreshTokenFromStorage();
+  if (!refreshToken) throw new Error("No refresh token");
+
+  // 명세: POST /api/auth/refresh + 헤더 X-Refresh-Token
+  const res = await axios.post(
+    `${baseURL}/api/auth/refresh`,
+    {},
+    { headers: { "X-Refresh-Token": refreshToken } }
+  );
+
+  // 백엔드 응답 형태는 프로젝트마다 달라서 유연하게 처리
+  const data = res.data?.data ?? res.data;
+  const newAccess = data?.accessToken ?? data?.token;
+  const newRefresh = data?.refreshToken;
+
+  if (!newAccess) throw new Error("Refresh response missing accessToken");
+
+  await setTokensToStorage(newAccess, newRefresh);
+  return newAccess as string;
+}
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
-    if (error?.response?.status === 401) {
-      await removeTokenFromStorage();
-      // TODO: 필요하면 여기서 로그인 화면 이동 처리
+    const status = error?.response?.status;
+    const original = error?.config as AxiosRequestConfig & { _retry?: boolean };
+
+    if (status !== 401 || original?._retry) {
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    original._retry = true;
+
+    try {
+      if (isRefreshing) {
+        const newToken = await new Promise<string>((resolve) => {
+          refreshQueue.push(resolve);
+        });
+
+        // 새 토큰으로 재요청
+        original.headers = {
+          ...(original.headers ?? {}),
+          Authorization: `Bearer ${newToken}`,
+        } as any;
+        return api.request(original);
+      }
+
+      isRefreshing = true;
+      const newToken = await doRefresh();
+      refreshQueue.forEach((cb) => cb(newToken));
+      refreshQueue = [];
+
+      original.headers = {
+        ...(original.headers ?? {}),
+        Authorization: `Bearer ${newToken}`,
+      } as any;
+
+      return api.request(original);
+    } catch (e) {
+      await removeTokenFromStorage();
+      return Promise.reject(error);
+    } finally {
+      isRefreshing = false;
+    }
   }
 );
 
@@ -67,6 +120,12 @@ export const get = <T = any>(
   url: string,
   config?: AxiosRequestConfig
 ): Promise<AxiosResponse<T>> => api.get(url, config);
+
+export const patch = <T = any>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig
+): Promise<AxiosResponse<T>> => api.patch(url, data, config);
 
 export const put = <T = any>(
   url: string,

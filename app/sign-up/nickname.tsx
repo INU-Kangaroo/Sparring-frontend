@@ -5,26 +5,22 @@ import { useRouter } from "expo-router";
 import BackButton from "../../components/BackButton";
 import InputField from "../../components/InputField";
 import NextButton from "../../components/NextButton";
-import { sendVerificationCode } from "../api/auth";
+import { useSignupDraft } from "./signupContext";
 
 export default function Nickname() {
   const [nickname, setNickname] = useState("");
   const router = useRouter();
+  const { setDraft } = useSignupDraft();
 
-  const nextPage = async () => {
+  const nextPage = () => {
     if (!nickname) {
       Alert.alert("닉네임을 입력해주세요");
       return;
     }
 
-    // 개발 중일 때: API 무시하고 바로 이동
-    if (__DEV__) {
-      console.log("[DEV] 닉네임 저장:", nickname);
-      router.push({
-        pathname: "/sign-up/gender",
-      });
-      return;
-    }
+    // ✅ 명세 키: username
+    setDraft({ username: nickname });
+    router.push("/sign-up/gender");
   };
 
   return (
@@ -58,46 +54,11 @@ export default function Nickname() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 30,
-    backgroundColor: "#fff",
-  },
-  header: {
-    width: "100%",
-    paddingHorizontal: 1,
-  },
-  heading: {
-    marginTop: 30,
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1e1d1dff",
-  },
-  heading2: {
-    marginTop: 5,
-    fontSize: 20,
-    alignSelf: "flex-start",
-    fontWeight: "600",
-    color: "#1e1d1dff",
-  },
-  subtext: {
-    marginTop: 70,
-    alignSelf: "flex-start",
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#1e1d1dff",
-  },
-  subtext2: {
-    alignSelf: "flex-start",
-    fontSize: 12,
-    color: "#1e1d1dff",
-    marginVertical: 10,
-  },
-    star: {
-    alignSelf: "flex-start",
-    fontSize: 12,
-    color: "#fa1212ff",
-    marginVertical: 10,
-  },
+  container: { flex: 1, paddingTop: 60, paddingHorizontal: 30, backgroundColor: "#fff" },
+  header: { width: "100%", paddingHorizontal: 1 },
+  heading: { marginTop: 30, fontSize: 20, fontWeight: "600", color: "#1e1d1dff" },
+  heading2: { marginTop: 5, fontSize: 20, alignSelf: "flex-start", fontWeight: "600", color: "#1e1d1dff" },
+  subtext: { marginTop: 70, alignSelf: "flex-start", fontSize: 16, fontWeight: "500", color: "#1e1d1dff" },
+  subtext2: { alignSelf: "flex-start", fontSize: 12, color: "#1e1d1dff", marginVertical: 10 },
+  star: { alignSelf: "flex-start", fontSize: 12, color: "#fa1212ff", marginVertical: 10 },
 });

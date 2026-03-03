@@ -2,25 +2,33 @@ import React from "react";
 import { Alert, View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { signInWithKakao } from "../api/kakaoOuth";
-import { useKakaoLogin } from "../../hooks/useKakaoLogin";
+import { useOauthLogin } from "../../hooks/useOAuthLogin";
 
 export default function LoginScreen() {
+  const kakao = useOauthLogin("kakao");
+  const google = useOauthLogin("google");
 
-  const { login: kakaoLogin, disabled: kakaoDisabled, isLoading } = useKakaoLogin();
-
-  const onGoogleLogin = () => {
-    router.replace("/");
+  const onGoogleLogin = async () => {
+    try {
+      await google.login();
+      router.replace("/main/main"); 
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "구글 로그인에 실패했습니다.";
+      Alert.alert("로그인 실패", message);
+    }
   };
 
   const onKakaoLogin = async () => {
-      try {
-        await kakaoLogin();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "카카오 로그인에 실패했습니다.";
-        Alert.alert("로그인 실패", message);
-      }
-    };
+    try {
+      await kakao.login();
+      router.replace("/main/main"); // ✅ 화면에서 처리
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "카카오 로그인에 실패했습니다.";
+      Alert.alert("로그인 실패", message);
+    }
+  };
 
   const goSignup = () => {
     router.push({ pathname: "/sign-up/email" as any });
@@ -46,26 +54,34 @@ export default function LoginScreen() {
 
         {/* Buttons */}
         <View style={styles.buttonWrap}>
-          <Pressable style={styles.socialBtn} onPress={onGoogleLogin}>
+          <Pressable
+            style={[styles.socialBtn, google.disabled ? styles.disabledBtn : null]}
+            onPress={onGoogleLogin}
+            disabled={google.disabled}
+          >
             <Image
               source={require("../../assets/images/google.png")}
               style={styles.leftIcon}
               resizeMode="contain"
             />
-            <Text style={styles.btnText}>Google 로그인</Text>
+            <Text style={styles.btnText}>
+              {google.isLoading ? "로그인 중..." : "Google 로그인"}
+            </Text>
           </Pressable>
 
           <Pressable
-            style={[styles.socialBtn, kakaoDisabled ? styles.disabledBtn : null]}
+            style={[styles.socialBtn, kakao.disabled ? styles.disabledBtn : null]}
             onPress={onKakaoLogin}
-            disabled={kakaoDisabled}
+            disabled={kakao.disabled}
           >
             <Image
               source={require("../../assets/images/kakao.png")}
               style={styles.leftIcon}
               resizeMode="contain"
             />
-            <Text style={styles.btnText}>{isLoading ? "로그인 중..." : "Kakao 로그인"}</Text>
+            <Text style={styles.btnText}>
+              {kakao.isLoading ? "로그인 중..." : "Kakao 로그인"}
+            </Text>
           </Pressable>
 
           <Pressable onPress={goSignup} style={styles.signupWrap}>
@@ -81,49 +97,19 @@ const BORDER = "#C4C4C4";
 const TEXT_GRAY = "#C4C4C4";
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: "space-between",
-  },
-
-  /* 중앙 영역 */
-  centerWrap: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
+  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  container: { flex: 1, paddingHorizontal: 24, justifyContent: "space-between" },
+  centerWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
   topText: {
-    marginBottom: 24, // ⬅️ 로고 바로 위 느낌
+    marginBottom: 24,
     fontSize: 16,
     fontWeight: "700",
     color: "#000000",
     textAlign: "center",
   },
-
-  logo: {
-    width: 180,
-    height: 80,
-  },
-
-  subtitle: {
-    marginTop: 12,
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#000000",
-  },
-
-  /* 버튼 영역 */
-  buttonWrap: {
-    paddingBottom: 40,
-    gap: 12,
-    alignItems: "center",
-  },
+  logo: { width: 180, height: 80 },
+  subtitle: { marginTop: 12, fontSize: 14, fontWeight: "600", color: "#000000" },
+  buttonWrap: { paddingBottom: 40, gap: 12, alignItems: "center" },
   socialBtn: {
     width: "100%",
     maxWidth: 343,
@@ -136,31 +122,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     position: "relative",
   },
-  leftIcon: {
-    width: 20,
-    height: 20,
-    position: "absolute",
-    left: 18,
-  },
-  btnText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: TEXT_GRAY,
-  },
-
-  signupWrap: {
-    marginTop: 8,
-    paddingVertical: 8,
-  },
-
-    disabledBtn: {
-    opacity: 0.6,
-  },
-
+  leftIcon: { width: 20, height: 20, position: "absolute", left: 18 },
+  btnText: { fontSize: 14, fontWeight: "600", color: TEXT_GRAY },
+  signupWrap: { marginTop: 8, paddingVertical: 8 },
   signupText: {
     fontSize: 12,
     color: "#C4C4C4",
     textDecorationLine: "underline",
     fontWeight: "600",
   },
+  disabledBtn: { opacity: 0.6 },
 });

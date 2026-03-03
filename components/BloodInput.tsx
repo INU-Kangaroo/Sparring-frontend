@@ -7,6 +7,7 @@ import {
   TextInput,
   StyleSheet,
   Platform,
+  Alert,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -15,17 +16,13 @@ type Props = {
   onClose: () => void;
   onSubmit: (payload: { title: string; value: number; measuredAt: Date }) => void;
 
-  // 수정(편집)까지 염두에 둔 optional props
   initialTitle?: string;
   initialValue?: number;
   initialMeasuredAt?: Date;
 };
 
 const formatTime = (d: Date) =>
-  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(
-    2,
-    "0"
-  )}`;
+  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 
 export default function BloodInputModal({
   visible,
@@ -57,12 +54,21 @@ export default function BloodInputModal({
   const timeLabel = useMemo(() => formatTime(measuredAt), [measuredAt]);
 
   const handleSave = () => {
-    const n = parseInt(value, 10);
-    const safeValue = Number.isFinite(n) ? n : 0;
+    const trimmedTitle = title.trim();
+    const n = Number(value);
+
+    if (!Number.isFinite(n)) {
+      Alert.alert("입력 오류", "혈당 값을 숫자로 입력해주세요.");
+      return;
+    }
+    if (n <= 0) {
+      Alert.alert("입력 오류", "혈당 값은 0보다 커야 해요.");
+      return;
+    }
 
     onSubmit({
-      title: title.trim(),
-      value: safeValue,
+      title: trimmedTitle, // 비어있으면 부모에서 기본값 처리
+      value: Math.round(n),
       measuredAt,
     });
 

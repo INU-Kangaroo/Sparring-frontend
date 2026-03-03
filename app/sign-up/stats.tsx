@@ -1,19 +1,29 @@
 import { useState } from "react";
-import { View, Text, StyleSheet  } from "react-native";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
 import InputField from "../../components/InputField";
 import NextButton from "../../components/NextButton";
+import { useSignupDraft } from "./signupContext";
 
-export default function stats() {
+export default function Stats() {
   const router = useRouter();
+  const { setDraft } = useSignupDraft();
 
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
 
   const handleNext = () => {
-    if (!height || !weight) return;
+    const h = Number(height);
+    const w = Number(weight);
+
+    if (!h || !w) {
+      Alert.alert("입력 필요", "키/몸무게를 모두 입력해주세요.");
+      return;
+    }
+
+    setDraft({ height: h, weight: w });
     router.push("/sign-up/survey");
   };
 
@@ -58,51 +68,13 @@ export default function stats() {
     </View>
   );
 }
-const styles = StyleSheet.create({ 
-    container: { 
-        flex: 1, 
-        paddingTop: 60, 
-        paddingHorizontal: 30, 
-        backgroundColor: "#fff", 
-    }, 
-    header: { 
-        width: "100%", 
-        paddingHorizontal: 1, 
-    }, 
-    heading: { 
-        marginTop: 30, 
-        fontSize: 20, 
-        fontWeight: "600", 
-        color: "#111", 
-    }, 
-    heading2: { 
-        marginTop: 5, 
-        fontSize: 20, 
-        alignSelf: "flex-start", 
-        fontWeight: "600", 
-        color: "#1e1d1dff", 
-    }, 
-    subtext: { 
-        marginTop: 70, 
-        alignSelf: "flex-start", 
-        fontSize: 16, 
-        fontWeight: "500", 
-        color: "#1e1d1dff", 
-        marginBottom: -10, 
-    }, 
-   labelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 30,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#1e1d1dff",
-  },
-    star: { 
-        fontSize: 13, 
-        color: "#e53935", 
-    }, 
-});               
 
+const styles = StyleSheet.create({
+  container: { flex: 1, paddingTop: 60, paddingHorizontal: 30, backgroundColor: "#fff" },
+  heading: { marginTop: 30, fontSize: 20, fontWeight: "600", color: "#111" },
+  heading2: { marginTop: 5, fontSize: 20, alignSelf: "flex-start", fontWeight: "600", color: "#1e1d1dff" },
+  subtext: { marginTop: 70, alignSelf: "flex-start", fontSize: 16, fontWeight: "500", color: "#1e1d1dff", marginBottom: -10 },
+  labelRow: { flexDirection: "row", alignItems: "center", marginTop: 30 },
+  label: { fontSize: 14, fontWeight: "500", color: "#1e1d1dff" },
+  star: { fontSize: 13, color: "#e53935" },
+});

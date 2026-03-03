@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
@@ -7,9 +6,11 @@ import { Ionicons } from "@expo/vector-icons";
 import BackButton from "../../components/BackButton";
 import InputField from "../../components/InputField";
 import NextButton from "../../components/NextButton";
+import { useSignupDraft } from "./signupContext";
 
 export default function Password() {
   const router = useRouter();
+  const { setDraft } = useSignupDraft();
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -21,6 +22,8 @@ export default function Password() {
 
   const handleNext = () => {
     if (!isValidPassword || !isMatch) return;
+
+    setDraft({ password });
     router.push("/sign-up/nickname");
   };
 
@@ -28,11 +31,10 @@ export default function Password() {
     <View style={styles.container}>
       <BackButton onPress={() => router.back()} />
 
-        <Text style={styles.heading}>나의 건강 시그널을 확인하고 싶다면?</Text>
-        <Text style={styles.heading2}>3초만에 회원가입!</Text>
+      <Text style={styles.heading}>나의 건강 시그널을 확인하고 싶다면?</Text>
+      <Text style={styles.heading2}>3초만에 회원가입!</Text>
       <Text style={styles.subtext}>비밀번호를 입력해주세요.</Text>
 
-      {/* 비밀번호 */}
       <View style={styles.labelRow}>
         <Text style={styles.label}>비밀번호</Text>
         <Text style={styles.star}> *</Text>
@@ -54,7 +56,6 @@ export default function Password() {
         </View>
       )}
 
-      {/* 비밀번호 재입력 */}
       <View style={styles.labelRow}>
         <Text style={styles.label}>비밀번호 재입력</Text>
         <Text style={styles.star}> *</Text>
@@ -80,61 +81,15 @@ export default function Password() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 30,
-    backgroundColor: "#fff",
-  },
-   header: {
-    width: "100%",
-    paddingHorizontal: 1,
-  },
-  heading: {
-    marginTop: 30,
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#111",
-  },
-    heading2: {
-    marginTop: 5,
-    fontSize: 20,
-    alignSelf: "flex-start",
-    fontWeight: "600",
-    color: "#1e1d1dff",
-  },
-    subtext: {
-    marginTop: 70,
-    alignSelf: "flex-start",
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#1e1d1dff",
-    marginBottom: -10,
-  },
-  label: {
-    fontSize: 12,
-    color: "#1e1d1dff",
-  },
-  labelRow: {
-    flexDirection: "row",
-    marginTop: 30,
-  },
-  star: {
-    fontSize: 13,
-    color: "#e53935",
-  },
-  errorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  errorIcon: {
-    color: "#e53935",
-    marginRight: 6,
-  },
-  errorText: {
-    fontSize: 12,
-    color: "#e53935",
-  },
+  container: { flex: 1, paddingTop: 60, paddingHorizontal: 30, backgroundColor: "#fff" },
+  heading: { marginTop: 30, fontSize: 20, fontWeight: "600", color: "#111" },
+  heading2: { marginTop: 5, fontSize: 20, alignSelf: "flex-start", fontWeight: "600", color: "#1e1d1dff" },
+  subtext: { marginTop: 70, alignSelf: "flex-start", fontSize: 16, fontWeight: "500", color: "#1e1d1dff", marginBottom: -10 },
+  label: { fontSize: 12, color: "#1e1d1dff" },
+  labelRow: { flexDirection: "row", marginTop: 30 },
+  star: { fontSize: 13, color: "#e53935" },
+  errorRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
+  errorText: { fontSize: 12, color: "#e53935", marginLeft: 6 },
 });

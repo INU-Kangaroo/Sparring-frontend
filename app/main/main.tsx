@@ -26,21 +26,26 @@ const SCREEN_W = Dimensions.get("window").width;
 export default function MainScreen() {
   const router = useRouter();
 
+  /** ✅ Sidebar open 함수 저장 (상단바에서 호출) */
   const [openSidebar, setOpenSidebar] = useState<(() => void) | null>(null);
 
+  /** B: 기간 탭 */
   const [period, setPeriod] = useState<Period>("week");
 
+  /** A: 오늘의 한마디 */
   const [insight, setInsight] = useState<{ title: string; body: string }>({
     title: "오늘의 한마디",
     body: "불러오는 중...",
   });
 
+  /** C: 빠른 통계 */
   const [quick, setQuick] = useState<{ today: string; week: string; avg: string }>({
     today: "오늘: -",
     week: "이번 주: -",
     avg: "혈당 평균: -",
   });
 
+  /** B: 차트 데이터 */
   const [chart, setChart] = useState<{
     labels: string[];
     glucose: number[];
@@ -164,8 +169,8 @@ export default function MainScreen() {
           (period === "week"
             ? ["월", "화", "수", "목", "금", "토", "일"]
             : period === "month"
-            ? ["1주", "2주", "3주", "4주", "5주"]
-            : ["전체"]);
+              ? ["1주", "2주", "3주", "4주", "5주"]
+              : ["전체"]);
 
         const glucose = Array.isArray(data?.glucose) ? data.glucose : labels.map(() => 0);
         const systolic = Array.isArray(data?.systolic) ? data.systolic : labels.map(() => 0);
@@ -219,6 +224,7 @@ export default function MainScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+      {/* ✅ 상단바 */}
       <View style={styles.header}>
         <Text style={styles.title}>변화 차트</Text>
         <Pressable onPress={() => openSidebar?.()} hitSlop={10}>
@@ -226,10 +232,14 @@ export default function MainScreen() {
         </Pressable>
       </View>
 
+      {/* ✅ Sidebar (구조 유지) */}
       <SidebarMenu exposeOpen={(open) => setOpenSidebar(() => open)} />
 
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* A */}
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* A: 오늘의 한마디 */}
         <View style={styles.todayCard}>
           <Text style={styles.todayTitle}>💡 {insight.title}</Text>
           <Text style={styles.todayBody}>{insight.body}</Text>
@@ -245,22 +255,37 @@ export default function MainScreen() {
           </Pressable>
         </View>
 
-        {/* B */}
+        {/* B: 변화 차트 */}
         <View style={styles.card}>
           <View style={styles.cardHead}>
             <Text style={styles.cardTitle}>변화 차트</Text>
 
             <View style={styles.tabRow}>
-              <Pressable onPress={() => setPeriod("week")} style={[styles.tab, period === "week" && styles.tabSel]}>
-                <Text style={[styles.tabText, period === "week" && styles.tabTextSel]}>주간</Text>
+              <Pressable
+                onPress={() => setPeriod("week")}
+                style={[styles.tab, period === "week" && styles.tabSel]}
+              >
+                <Text style={[styles.tabText, period === "week" && styles.tabTextSel]}>
+                  주간
+                </Text>
               </Pressable>
 
-              <Pressable onPress={() => setPeriod("month")} style={[styles.tab, period === "month" && styles.tabSel]}>
-                <Text style={[styles.tabText, period === "month" && styles.tabTextSel]}>월간</Text>
+              <Pressable
+                onPress={() => setPeriod("month")}
+                style={[styles.tab, period === "month" && styles.tabSel]}
+              >
+                <Text style={[styles.tabText, period === "month" && styles.tabTextSel]}>
+                  월간
+                </Text>
               </Pressable>
 
-              <Pressable onPress={() => setPeriod("all")} style={[styles.tab, period === "all" && styles.tabSel]}>
-                <Text style={[styles.tabText, period === "all" && styles.tabTextSel]}>전체</Text>
+              <Pressable
+                onPress={() => setPeriod("all")}
+                style={[styles.tab, period === "all" && styles.tabSel]}
+              >
+                <Text style={[styles.tabText, period === "all" && styles.tabTextSel]}>
+                  전체
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -293,7 +318,9 @@ export default function MainScreen() {
               {["월", "화", "수", "목", "금", "토", "일"].map((d, idx) => (
                 <View key={d} style={styles.emojiItem}>
                   <Text style={styles.emojiDay}>{d}</Text>
-                  <Text style={styles.emoji}>{chart.emojis?.[idx] ? chart.emojis[idx] : "—"}</Text>
+                  <Text style={styles.emoji}>
+                    {chart.emojis?.[idx] ? chart.emojis[idx] : "—"}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -302,17 +329,24 @@ export default function MainScreen() {
           {loadingB && <Text style={styles.loadingHint}>차트 불러오는 중...</Text>}
         </View>
 
-        {/* C */}
+        {/* C: 빠른 버튼 */}
         <View style={styles.quickRow}>
-          <Pressable style={styles.quickBtn} onPress={() => router.push("/record/bloodPressure" as any)}>
+          <Pressable
+            style={styles.quickBtn}
+            onPress={() => router.push("/record/bloodPressure" as any)}
+          >
             <Text style={styles.quickBtnText}>혈압 기록하기</Text>
           </Pressable>
 
-          <Pressable style={styles.quickBtn} onPress={() => router.push("/record/bloodSugar" as any)}>
+          <Pressable
+            style={styles.quickBtn}
+            onPress={() => router.push("/record/bloodSugar" as any)}
+          >
             <Text style={styles.quickBtnText}>혈당 기록하기</Text>
           </Pressable>
         </View>
 
+        {/* C: 빠른 통계 */}
         <View style={styles.statsCard}>
           <Text style={styles.statsTitle}>📊 빠른 통계</Text>
           <Text style={styles.statsLine}>{quick.today}</Text>
@@ -349,11 +383,23 @@ const styles = StyleSheet.create({
   todayMoreText: { fontSize: 12, fontWeight: "700", color: "#3C3C3C" },
 
   card: { backgroundColor: "#fff", borderRadius: 18, padding: 16, marginBottom: 14 },
-  cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  cardHead: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
   cardTitle: { fontSize: 14, fontWeight: "800", color: "#111" },
 
   tabRow: { flexDirection: "row", gap: 8 },
-  tab: { height: 30, paddingHorizontal: 12, borderRadius: 14, backgroundColor: "#EFEFEF", alignItems: "center", justifyContent: "center" },
+  tab: {
+    height: 30,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: "#EFEFEF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   tabSel: { backgroundColor: "#3C3C3C" },
   tabText: { fontSize: 12, fontWeight: "700", color: "#666" },
   tabTextSel: { color: "#fff" },
@@ -366,7 +412,14 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 16 },
 
   quickRow: { flexDirection: "row", gap: 10, marginBottom: 14 },
-  quickBtn: { flex: 1, height: 48, borderRadius: 14, backgroundColor: "#3C3C3C", alignItems: "center", justifyContent: "center" },
+  quickBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#3C3C3C",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   quickBtnText: { color: "#fff", fontWeight: "800", fontSize: 13 },
 
   statsCard: { backgroundColor: "#fff", borderRadius: 18, padding: 16 },

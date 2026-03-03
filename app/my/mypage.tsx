@@ -1,4 +1,3 @@
-// app/my/mypage.tsx
 import React from "react";
 import {
   View,
@@ -14,49 +13,103 @@ import { LinearGradient } from "expo-linear-gradient";
 
 export default function MyPage() {
   const goProfile = () => router.push("/my/profile");
-  const goHome = () => router.replace("/"); // 홈 경로에 맞게 수정 가능
+  const goHome = () => router.replace("/main/main");
+
+  const userName = "유저 이름";
+  const totalMeasurements = 234;
+  const streakDays = 14;
+  const avgGlucose = 125;
+  const recentAvgGlucose = 120;
+
+  const basicInfo = {
+    name: "유저 이름",
+    birth: "0000.00.00",
+    gender: "미설정",
+    height: "000 cm",
+    weight: "00 kg",
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* 메인 콘텐츠 */}
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.contentWrapper}>
-          {/* 상단 아이콘 영역 */}
-          <View style={styles.topBar}>
-            <View />
-            <View style={styles.topIcons}>
-              <Pressable hitSlop={8}>
-                <Ionicons name="notifications-outline" size={22} color="#444" />
-              </Pressable>
-              <Pressable hitSlop={8}>
-                <Ionicons name="settings-outline" size={22} color="#444" />
-              </Pressable>
-            </View>
-          </View>
 
           {/* 프로필 카드 */}
           <View style={styles.profileCard}>
             <View style={styles.avatar} />
-
             <View style={styles.profileTextArea}>
-              <Text style={styles.userName}>유저 이름</Text>
-
+              <Text style={styles.userName}>{userName}</Text>
               <Pressable onPress={goProfile} hitSlop={10}>
-                <Text style={styles.myInfoLink}>내 정보 확인하기 &gt;</Text>
+                <Text style={styles.myInfoLink}>내 정보 수정하기 &gt;</Text>
               </Pressable>
             </View>
           </View>
 
-          {/* 요약 카드 */}
-          <View style={styles.summaryArea}>
-            <SummaryCard title="최근 혈압" value="120 / 80" />
-            <SummaryCard title="최근 혈당" value="98 mg/dL" />
-            <SummaryCard title="이번 주 기록" value="5회" />
+          {/* 나의 기록 섹션 */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionIcon}>📊</Text>
+            <Text style={styles.sectionTitle}>나의 기록</Text>
           </View>
+
+          <View style={styles.card}>
+            <View style={styles.statRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>총 측정 횟수</Text>
+                <Text style={styles.statValue}>
+                  <Text style={styles.statAccent}>{totalMeasurements}</Text>
+                  <Text style={styles.statUnit}>회</Text>
+                </Text>
+              </View>
+              <View style={styles.statDividerV} />
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>연속 측정</Text>
+                <Text style={styles.statValue}>
+                  <Text style={styles.statAccent}>{streakDays}</Text>
+                  <Text style={styles.statUnit}>일</Text>
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.statDividerH} />
+
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>평균 혈당</Text>
+              <Text style={styles.infoValueAccent}>{avgGlucose} mg/dL</Text>
+            </View>
+            <View style={[styles.infoRow, { marginTop: 10 }]}>
+              <Text style={styles.infoLabel}>최근 7일 평균</Text>
+              <Text style={styles.infoValueAccent}>{recentAvgGlucose} mg/dL</Text>
+            </View>
+          </View>
+
+          {/* 기본 정보 섹션 */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionIcon}>👤</Text>
+            <Text style={styles.sectionTitle}>기본 정보</Text>
+          </View>
+
+          <View style={styles.card}>
+            {Object.entries({
+              이름: basicInfo.name,
+              생년월일: basicInfo.birth,
+              성별: basicInfo.gender,
+              키: basicInfo.height,
+              몸무게: basicInfo.weight,
+            }).map(([label, value], i, arr) => (
+              <View key={label}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>{label}</Text>
+                  <Text style={styles.infoValue}>{value}</Text>
+                </View>
+                {i < arr.length - 1 && <View style={styles.statDividerH} />}
+              </View>
+            ))}
+          </View>
+
         </View>
       </ScrollView>
 
@@ -80,48 +133,12 @@ export default function MyPage() {
   );
 }
 
-function SummaryCard({ title, value }: { title: string; value: string }) {
-  return (
-    <View style={styles.summaryCard}>
-      <Text style={styles.summaryTitle}>{title}</Text>
-      <Text style={styles.summaryValue}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: "#F5F5F5",
-  },
+  safe: { flex: 1, backgroundColor: "#F5F5F5" },
+  container: { flex: 1, paddingHorizontal: 18 },
+  scrollContent: { paddingBottom: 120 },
+  contentWrapper: { marginTop: 44 },
 
-  container: {
-    flex: 1,
-    paddingHorizontal: 18,
-  },
-
-  scrollContent: {
-    paddingBottom: 120, // 홈 버튼 가리지 않게
-  },
-
-  contentWrapper: {
-    marginTop: 44,
-  },
-
-  /* 상단 */
-  topBar: {
-    height: 44,
-    justifyContent: "center",
-  },
-  topIcons: {
-    position: "absolute",
-    right: 0,
-    flexDirection: "row",
-    gap: 16,
-    paddingRight: 6,
-  },
-
-  /* 프로필 카드 */
   profileCard: {
     width: 339,
     height: 96,
@@ -132,53 +149,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     marginTop: 14,
-
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
     elevation: 3,
   },
+  avatar: { width: 58, height: 58, borderRadius: 999, backgroundColor: "#E6E6E6" },
+  profileTextArea: { marginLeft: 14, justifyContent: "center" },
+  userName: { fontSize: 15, fontWeight: "600", color: "#111" },
+  myInfoLink: { marginTop: 6, fontSize: 12, fontWeight: "500", color: "#9A9A9A" },
 
-  avatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 999,
-    backgroundColor: "#E6E6E6",
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 28,
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
+  sectionIcon: { fontSize: 16 },
+  sectionTitle: { fontSize: 15, fontWeight: "800", color: "#222" },
 
-  profileTextArea: {
-    marginLeft: 14,
-    justifyContent: "center",
-  },
-
-  userName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111",
-  },
-
-  myInfoLink: {
-    marginTop: 6,
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#9A9A9A",
-  },
-
-  /* 요약 카드 */
-  summaryArea: {
-    marginTop: 26,
-    gap: 16,
-  },
-
-  summaryCard: {
+  card: {
     width: 339,
     alignSelf: "center",
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
     paddingVertical: 18,
     paddingHorizontal: 20,
-
     shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 10,
@@ -186,33 +185,42 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  summaryTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#777",
+  statRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingVertical: 4,
   },
+  statItem: { alignItems: "center", flex: 1 },
+  statLabel: { fontSize: 12, fontWeight: "600", color: "#999", marginBottom: 6 },
+  statValue: { fontSize: 16 },
+  statAccent: { fontSize: 22, fontWeight: "800", color: "#3F7BFF" },
+  statUnit: { fontSize: 13, fontWeight: "600", color: "#555" },
+  statDividerV: { width: 1, height: 40, backgroundColor: "#F0F0F0" },
+  statDividerH: { height: 1, backgroundColor: "#F0F0F0", marginVertical: 12 },
 
-  summaryValue: {
-    marginTop: 8,
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#111",
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
+  infoLabel: { fontSize: 13, fontWeight: "600", color: "#888" },
+  infoValue: { fontSize: 13, fontWeight: "600", color: "#222" },
+  infoValueAccent: { fontSize: 13, fontWeight: "700", color: "#3F7BFF" },
 
-  /* 하단 홈 버튼 */
   homeBar: {
     position: "absolute",
     bottom: 24,
-    alignSelf: "center",
+    left: 0,
+    right: 0,
+    alignItems: "center",
   },
-
   homeBtn: {
-    width: 140, // ⬅️ 가로 길게
+    width: 140,
     height: 56,
-    borderRadius: 28, // height / 2 → 알약 모양
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowRadius: 10,

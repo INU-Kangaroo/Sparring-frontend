@@ -1,173 +1,147 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Modal,
   View,
   Text,
-  Modal,
+  StyleSheet,
   Pressable,
   TextInput,
-  StyleSheet,
   Platform,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-interface Props {
+type Props = {
   visible: boolean;
-  onClose?: () => void; // ✅ optional
-  onSubmit?: (systolic: number, diastolic: number, measuredAt: Date) => void; // ✅ optional
+  title: string;
   initialValue?: [number, number];
   initialMeasuredAt?: Date;
-  title?: string;
-}
+  onClose: () => void;
+  onSubmit: (systolic: number, diastolic: number, measuredAt: Date) => void | Promise<void>;
+};
 
-const formatTime = (d: Date) =>
-  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(
-    2,
-    "0"
-  )}`;
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const fmtTime = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 
 export default function PressureInput({
   visible,
-  onClose,
-  onSubmit,
+  title,
   initialValue,
   initialMeasuredAt,
-  title,
+  onClose,
+  onSubmit,
 }: Props) {
-  const [systolic, setSystolic] = useState<string>("0");
-  const [diastolic, setDiastolic] = useState<string>("0");
+  const [s, setS] = useState<string>("");
+  const [d, setD] = useState<string>("");
 
-  // 사용자가 선택하는 "측정 시간"
+  // ✅ 시간 변경의 핵심 상태
   const [measuredAt, setMeasuredAt] = useState<Date>(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  // ✅ 안전 닫기: props가 없어도 앱 안 죽게
-  const safeClose = () => {
-    setShowTimePicker(false);
-    if (typeof onClose === "function") onClose();
-    else console.warn("[PressureInput] onClose prop이 없습니다.");
-  };
-
-  // 모달 열릴 때 초기값 세팅
+  // ✅ 열릴 때 초기값 세팅
   useEffect(() => {
     if (!visible) return;
 
-    if (initialValue) {
-      setSystolic(String(initialValue[0]));
-      setDiastolic(String(initialValue[1]));
-    } else {
-      setSystolic("0");
-      setDiastolic("0");
-    }
-
+    setS(initialValue?.[0] != null ? String(initialValue[0]) : "");
+    setD(initialValue?.[1] != null ? String(initialValue[1]) : "");
     setMeasuredAt(initialMeasuredAt ?? new Date());
     setShowTimePicker(false);
-  }, [initialValue, initialMeasuredAt, visible]);
+  }, [visible, initialValue, initialMeasuredAt]);
 
-  const handleSubmit = () => {
-    const s = parseInt(systolic, 10);
-    const d = parseInt(diastolic, 10);
+  const canSave = useMemo(() => {
+    const sv = Number(s);
+    const dv = Number(d);
+    return Number.isFinite(sv) && Number.isFinite(dv) && sv > 0 && dv > 0;
+  }, [s, d]);
 
-    // ✅ onSubmit 없는 경우에도 안 죽게
-    if (typeof onSubmit !== "function") {
-      console.warn("[PressureInput] onSubmit prop이 없습니다.");
-      safeClose();
-      return;
-    }
-
-    onSubmit(
-      Number.isFinite(s) ? s : 0,
-      Number.isFinite(d) ? d : 0,
-      measuredAt
-    );
-
-    // 리셋
-    setSystolic("0");
-    setDiastolic("0");
-    setMeasuredAt(new Date());
-    setShowTimePicker(false);
-
-    // 저장 후 닫기
-    safeClose();
+  const handleSave = async () => {
+    if (!canSave) return;
+    const sv = Number(s);
+    const dv = Number(d);
+    await onSubmit(sv, dv, measuredAt);
   };
 
-  const timeLabel = useMemo(() => formatTime(measuredAt), [measuredAt]);
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={safeClose} // ✅ Android back 버튼 대응
-    >
-      <View style={styles.overlay}>
-        <View style={styles.modal}>
-          <Text style={styles.title}>{title || "혈압 입력"}</Text>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.backdrop}>
+        <View style={styles.sheet}>
+          <View style={styles.head}>
+            <Text style={styles.title}>{title}</Text>
+            <Pressable onPress={onClose} hitSlop={10}>
+              <Ionicons name="close" size={20} color="#111" />
+            </Pressable>
+          </View>
 
-          {/* 측정 시간 선택 */}
-          <Pressable
-            style={styles.timeRow}
-            onPress={() => setShowTimePicker((prev) => !prev)}
-          >
-            <Text style={styles.timeLeft}>측정 시간</Text>
-            <Text style={styles.timeRight}>{timeLabel}</Text>
-          </Pressable>
+          {/* ✅ 시간 선택 */}
+          <View style={styles.timeRow}>
+            <Text style={styles.label}>측정 시간</Text>
+            <Pressable
+              style={styles.timeBtn}
+              onPress={() => setShowTimePicker(true)}
+              hitSlop={8}
+            >
+              <Ionicons name="time-outline" size={16} color="#111" />
+              <Text style={styles.timeText}>{fmtTime(measuredAt)}</Text>
+            </Pressable>
+          </View>
 
           {showTimePicker && (
-            <View style={{ marginBottom: 6 }}>
-              <DateTimePicker
-                value={measuredAt}
-                mode="time"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                onChange={(_, selected) => {
-                  if (Platform.OS !== "ios") setShowTimePicker(false);
-                  if (selected) setMeasuredAt(selected);
-                }}
-              />
-
-              {Platform.OS === "ios" && (
-                <Pressable
-                  style={[styles.btn, { alignSelf: "flex-end", marginTop: 8 }]}
-                  onPress={() => setShowTimePicker(false)}
-                >
-                  <Text>시간 선택 완료</Text>
-                </Pressable>
-              )}
-            </View>
+            <DateTimePicker
+              value={measuredAt}
+              mode="time"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={(_, selected) => {
+                // Android는 취소 시 selected가 undefined
+                if (Platform.OS !== "ios") setShowTimePicker(false);
+                if (selected) setMeasuredAt(selected);
+              }}
+            />
           )}
 
+          {/* ✅ 입력 */}
           <View style={styles.inputRow}>
-            <Text>수축기:</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="number-pad"
-              value={systolic}
-              onChangeText={setSystolic}
-              placeholder="예: 120"
-            />
+            <View style={styles.inputCol}>
+              <Text style={styles.label}>수축기</Text>
+              <TextInput
+                value={s}
+                onChangeText={setS}
+                keyboardType="number-pad"
+                placeholder="예: 120"
+                style={styles.input}
+                maxLength={3}
+              />
+            </View>
+
+            <View style={styles.inputCol}>
+              <Text style={styles.label}>이완기</Text>
+              <TextInput
+                value={d}
+                onChangeText={setD}
+                keyboardType="number-pad"
+                placeholder="예: 80"
+                style={styles.input}
+                maxLength={3}
+              />
+            </View>
           </View>
 
-          <View style={styles.inputRow}>
-            <Text>이완기:</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="number-pad"
-              value={diastolic}
-              onChangeText={setDiastolic}
-              placeholder="예: 80"
-            />
-          </View>
-
-          <View style={styles.buttons}>
-            <Pressable style={styles.btn} onPress={safeClose}>
-              <Text>취소</Text>
+          <View style={styles.btnRow}>
+            <Pressable onPress={onClose} style={[styles.btn, styles.btnGhost]}>
+              <Text style={[styles.btnText, styles.btnGhostText]}>취소</Text>
             </Pressable>
+
             <Pressable
-              style={[styles.btn, styles.submitBtn]}
-              onPress={handleSubmit}
+              onPress={handleSave}
+              disabled={!canSave}
+              style={[styles.btn, !canSave && { opacity: 0.5 }]}
             >
-              <Text style={{ color: "#fff" }}>저장</Text>
+              <Text style={styles.btnText}>저장</Text>
             </Pressable>
           </View>
+
+          <Text style={styles.hint}>
+            날짜는 상단 캘린더에서 선택하고, 시간은 여기서 선택해 저장해요.
+          </Text>
         </View>
       </View>
     </Modal>
@@ -175,60 +149,68 @@ export default function PressureInput({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  backdrop: {
     flex: 1,
-    backgroundColor: "#00000077",
+    backgroundColor: "rgba(0,0,0,0.35)",
     justifyContent: "center",
-    alignItems: "center",
-  },
-  modal: {
-    width: "80%",
-    backgroundColor: "#fff",
-    borderRadius: 16,
     padding: 20,
   },
-  title: { fontWeight: "700", fontSize: 16, marginBottom: 12 },
+  sheet: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 16,
+  },
+  head: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  title: { fontSize: 16, fontWeight: "900", color: "#111" },
 
   timeRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  timeLeft: { fontSize: 13, color: "#333", fontWeight: "600" },
-  timeRight: { fontSize: 13, color: "#111", fontWeight: "700" },
-
-  inputRow: {
+  label: { fontSize: 12, fontWeight: "800", color: "#444" },
+  timeBtn: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    width: 90,
-    padding: 6,
-    textAlign: "center",
-  },
-  buttons: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: 18,
-  },
-  btn: {
+    gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginLeft: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#ccc",
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#F1F1F1",
   },
-  submitBtn: { backgroundColor: "#3C3C3C", borderColor: "transparent" },
+  timeText: { fontSize: 13, fontWeight: "800", color: "#111" },
+
+  inputRow: { flexDirection: "row", gap: 12, marginTop: 6 },
+  inputCol: { flex: 1 },
+  input: {
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#F6F6F6",
+    paddingHorizontal: 12,
+    marginTop: 6,
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#111",
+  },
+
+  btnRow: { flexDirection: "row", gap: 12, marginTop: 16 },
+  btn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: "#3C3C3C",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnText: { color: "#fff", fontWeight: "900" },
+  btnGhost: { backgroundColor: "#EDEDED" },
+  btnGhostText: { color: "#111" },
+
+  hint: { marginTop: 10, fontSize: 11, color: "#777", fontWeight: "700" },
 });

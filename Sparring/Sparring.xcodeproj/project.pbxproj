@@ -27,6 +27,7 @@
 		223BB1232F3742FD00829329 /* Sparring.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sparring.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		223BB1352F3742FE00829329 /* SparringTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SparringTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		223BB13F2F3742FE00829329 /* SparringUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SparringUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2257AE202F63040F00EF4833 /* Sparring.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Sparring.xcodeproj; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +76,7 @@
 		223BB11A2F3742FD00829329 = {
 			isa = PBXGroup;
 			children = (
+				2257AE202F63040F00EF4833 /* Sparring.xcodeproj */,
 				223BB1252F3742FD00829329 /* Sparring */,
 				223BB1382F3742FE00829329 /* SparringTests */,
 				223BB1422F3742FE00829329 /* SparringUITests */,
@@ -89,6 +91,11 @@
 				223BB1352F3742FE00829329 /* SparringTests.xctest */,
 				223BB13F2F3742FE00829329 /* SparringUITests.xctest */,
 			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2257AE342F63090200EF4833 /* Products */ = {
+			isa = PBXGroup;
 			name = Products;
 			sourceTree = "<group>";
 		};
@@ -198,6 +205,12 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 223BB1242F3742FD00829329 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 2257AE342F63090200EF4833 /* Products */;
+					ProjectRef = 2257AE202F63040F00EF4833 /* Sparring.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				223BB1222F3742FD00829329 /* Sparring */,
@@ -395,6 +408,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9V6D25H28Y;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -407,7 +421,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Kangaroo.Sparring;
+				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.kangaroo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -426,6 +440,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9V6D25H28Y;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -438,7 +453,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Kangaroo.Sparring;
+				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.kangaroo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -454,12 +469,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9V6D25H28Y;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Kangaroo.SparringTests;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.anonymous.kangaroo;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.anonymous.kangaroo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -475,12 +494,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9V6D25H28Y;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Kangaroo.SparringTests;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.anonymous.kangaroo;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.anonymous.kangaroo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -495,11 +518,13 @@
 		223BB1502F3742FE00829329 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Kangaroo.SparringUITests;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.anonymous.kangaroo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -514,11 +539,13 @@
 		223BB1512F3742FE00829329 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Kangaroo.SparringUITests;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.anonymous.kangaroo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;

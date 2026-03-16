@@ -16,29 +16,62 @@ const baseURL =
   process.env.EXPO_PUBLIC_API_BASE_URL ||
   "http://localhost:8080";
 
+console.log("[API] baseURL =", baseURL);
+console.log(
+  "[API] EXPO_PUBLIC_BACKEND_URL =",
+  process.env.EXPO_PUBLIC_BACKEND_URL
+);
+console.log(
+  "[API] EXPO_PUBLIC_API_BASE_URL =",
+  process.env.EXPO_PUBLIC_API_BASE_URL
+);
+
 const api: AxiosInstance = axios.create({
   baseURL,
   headers: { "Content-Type": "application/json" },
   timeout: 15000,
 });
 
-// accessToken 자동 첨부
-api.interceptors.request.use(async (config) => {
-  const token = await getAccessTokenFromStorage();
-  if (!token) return config;
+api.interceptors.request.use(
+  async (config) => {
+    const url = config.url ?? "";
 
-  if (config.headers instanceof AxiosHeaders) {
-    config.headers.set("Authorization", `Bearer ${token}`);
-  } else {
-    config.headers = {
-      ...(config.headers ?? {}),
-      Authorization: `Bearer ${token}`,
-    } as any;
-  }
-  return config;
-});
+    console.log("[API Request] baseURL =", config.baseURL);
+    console.log("[API Request] url =", url);
+    console.log("[API Request] method =", config.method);
+    console.log("[API Request] data =", config.data);
 
-// 401 -> refresh 시도(1회) -> 실패하면 토큰 제거
+    const isPublicAuthRequest =
+      url.includes("/api/auth/login") ||
+      url.includes("/api/auth/signup") ||
+      url.includes("/api/auth/sign-up") ||
+      url.includes("/api/auth/send-verification") ||
+      url.includes("/api/auth/verify-code") ||
+      url.includes("/api/auth/oauth2/") ||
+      url.includes("/api/auth/social/complete") ||
+      url.includes("/api/auth/refresh");
+
+    if (isPublicAuthRequest) {
+      return config;
+    }
+
+    const token = await getAccessTokenFromStorage();
+    if (!token) return config;
+
+    if (config.headers instanceof AxiosHeaders) {
+      config.headers.set("Authorization", `Bearer ${token}`);
+    } else {
+      config.headers = {
+        ...(config.headers ?? {}),
+        Authorization: `Bearer ${token}`,
+      } as any;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 let isRefreshing = false;
 let refreshQueue: Array<(token: string) => void> = [];
 
@@ -46,14 +79,12 @@ async function doRefresh() {
   const refreshToken = await getRefreshTokenFromStorage();
   if (!refreshToken) throw new Error("No refresh token");
 
-  // 명세: POST /api/auth/refresh + 헤더 X-Refresh-Token
   const res = await axios.post(
     `${baseURL}/api/auth/refresh`,
     {},
     { headers: { "X-Refresh-Token": refreshToken } }
   );
 
-  // 백엔드 응답 형태는 프로젝트마다 달라서 유연하게 처리
   const data = res.data?.data ?? res.data;
   const newAccess = data?.accessToken ?? data?.token;
   const newRefresh = data?.refreshToken;
@@ -65,12 +96,35 @@ async function doRefresh() {
 }
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    console.log("[API Response] status =", res.status);
+    console.log("[API Response] url =", res.config?.url);
+    console.log("[API Response] data =", res.data);
+    return res;
+  },
   async (error) => {
+    console.log("[API Error] message =", error?.message);
+    console.log("[API Error] code =", error?.code);
+    console.log("[API Error] status =", error?.response?.status);
+    console.log("[API Error] data =", error?.response?.data);
+    console.log("[API Error] url =", error?.config?.url);
+    console.log("[API Error] baseURL =", error?.config?.baseURL);
+
     const status = error?.response?.status;
     const original = error?.config as AxiosRequestConfig & { _retry?: boolean };
+    const url = original?.url ?? "";
 
-    if (status !== 401 || original?._retry) {
+    const isPublicAuthRequest =
+      url.includes("/api/auth/login") ||
+      url.includes("/api/auth/signup") ||
+      url.includes("/api/auth/sign-up") ||
+      url.includes("/api/auth/send-verification") ||
+      url.includes("/api/auth/verify-code") ||
+      url.includes("/api/auth/oauth2/") ||
+      url.includes("/api/auth/social/complete") ||
+      url.includes("/api/auth/refresh");
+
+    if (status !== 401 || original?._retry || isPublicAuthRequest) {
       return Promise.reject(error);
     }
 
@@ -82,7 +136,6 @@ api.interceptors.response.use(
           refreshQueue.push(resolve);
         });
 
-        // 새 토큰으로 재요청
         original.headers = {
           ...(original.headers ?? {}),
           Authorization: `Bearer ${newToken}`,

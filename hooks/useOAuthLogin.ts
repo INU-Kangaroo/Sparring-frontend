@@ -1,43 +1,67 @@
 import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
 import { useCallback, useMemo, useState } from "react";
+import { Platform } from "react-native";
 import {
   exchangeOAuthCode,
-  getAuthorizationEndpoint,
-  makeRedirectUri,
   saveTokensFromOAuth,
   type OAuthJwtResponse,
-  type OAuthProvider,
 } from "../app/api/oauth";
 
-export function useOauthLogin(provider: OAuthProvider) {
+WebBrowser.maybeCompleteAuthSession();
+
+const GOOGLE_CLIENT_ID =
+  Platform.OS === "ios"
+    ? process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS ?? ""
+    : process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+
+export function useOauthLogin() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const redirectUri = useMemo(() => makeRedirectUri(), []);
+  const redirectUri =
+    "com.googleusercontent.apps.37689583487-nqo5jr9nuemk4289gnvq3cutuuf4c7de:/oauthredirect";
+
   const discovery = useMemo(
     () => ({
-      authorizationEndpoint: getAuthorizationEndpoint(provider),
+      authorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+      tokenEndpoint: "https://oauth2.googleapis.com/token",
     }),
-    [provider]
+    []
   );
 
   const [request, , promptAsync] = AuthSession.useAuthRequest(
     {
-      // 필수 파라미터라 넣는 값(백엔드 authorizationEndpoint 기반이면 실질적 의미는 크지 않음)
-      clientId: provider,
+      clientId: GOOGLE_CLIENT_ID,
       redirectUri,
       responseType: AuthSession.ResponseType.Code,
-      usePKCE: false, // 백엔드 설정에 맞춰 (너희 기존 코드가 false였음)
+      usePKCE: true,
+      scopes: ["openid", "profile", "email"],
     },
     discovery
   );
 
   const login = useCallback(async (): Promise<OAuthJwtResponse> => {
     setIsLoading(true);
+
     try {
-      const result = await promptAsync({ useProxy: true });
+      if (!GOOGLE_CLIENT_ID) {
+        throw new Error("Google Client ID가 비어 있습니다.");
+      }
+
+      if (!request) {
+        throw new Error("OAuth 요청 객체가 아직 준비되지 않았습니다.");
+      }
+
+      console.log("[Google OAuth] clientId =", GOOGLE_CLIENT_ID);
+      console.log("[Google OAuth] redirectUri =", redirectUri);
+      console.log("[Google OAuth] codeVerifier =", request.codeVerifier);
+
+      const result = await promptAsync();
+
+      console.log("[Google OAuth] result =", JSON.stringify(result, null, 2));
 
       if (result.type !== "success") {
-        throw new Error("OAuth 로그인 취소/실패");
+        throw new Error(`OAuth 실패: ${result.type}`);
       }
 
       const code = result.params?.code;
@@ -45,22 +69,32 @@ export function useOauthLogin(provider: OAuthProvider) {
         throw new Error("authorization code를 받지 못했습니다.");
       }
 
+      const codeVerifier = request.codeVerifier;
+      if (!codeVerifier) {
+        throw new Error("PKCE codeVerifier가 없습니다.");
+      }
+
       const tokenPayload = await exchangeOAuthCode({
-        provider,
+        provider: "google",
         code,
         redirectUri,
+        codeVerifier,
       });
 
       await saveTokensFromOAuth(tokenPayload);
       return tokenPayload;
+    } catch (e: any) {
+      console.log("[Google OAuth] final error =", e?.message ?? e);
+      throw e;
     } finally {
       setIsLoading(false);
     }
-  }, [promptAsync, provider, redirectUri]);
+  }, [promptAsync, redirectUri, request]);
 
   return {
     login,
     disabled: !request || isLoading,
     isLoading,
+    redirectUri,
   };
 }

@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   star: { fontSize: 13, color: "#e53935" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 3, marginTop: 10 },
   chip: { paddingHorizontal: 13, height: 35, borderRadius: 18, backgroundColor: "#747474ff", justifyContent: "center" },
-  chipSelected: { backgroundColor: "#373636ff" },
+  chipSelected: { backgroundColor: "#1435b9f6" },
   chipText: { color: "#fff", fontSize: 14 },
   chipTextSelected: { fontWeight: "600" },
   input: { marginTop: 14, height: 56, borderRadius: 16, borderWidth: 1.5, borderColor: "#ddd", paddingHorizontal: 16, fontSize: 16, color: "#111" },

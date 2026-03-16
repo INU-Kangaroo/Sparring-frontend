@@ -1,52 +1,84 @@
-import * as AuthSession from "expo-auth-session";
 import { post } from "./index";
 import { setTokensToStorage } from "../utils/asyncStorage";
 
-export type OAuthProvider = "kakao" | "google";
+export type OAuthProvider = "google" | "kakao";
 
 export type OAuthJwtResponse = {
+  userId?: number;
+  email?: string;
+  username?: string;
   accessToken?: string;
   refreshToken?: string;
+  tokenType?: string;
   token?: string;
   [key: string]: any;
 };
 
-const BACKEND_URL =
-  process.env.EXPO_PUBLIC_BACKEND_URL ||
-  process.env.EXPO_PUBLIC_API_BASE_URL ||
-  "";
-
-export function getAuthorizationEndpoint(provider: OAuthProvider) {
-  if (!BACKEND_URL) throw new Error("BACKEND URL 환경변수가 필요합니다.");
-  return `${BACKEND_URL}/oauth2/authorization/${provider}`;
+function unwrapApi<T>(res: any): T {
+  return (res?.data?.data ?? res?.data ?? res) as T;
 }
 
-export function makeRedirectUri() {
-  return AuthSession.makeRedirectUri({ useProxy: true });
+function getOAuthEndpoint(provider: OAuthProvider, hasCodeVerifier?: boolean) {
+  if (provider === "google") {
+    return hasCodeVerifier
+      ? "/api/auth/oauth2/google/pkce"
+      : "/api/auth/oauth2/google/sdk";
+  }
+
+  return `/api/auth/oauth2/${provider}`;
 }
 
-// 명세: POST /api/auth/oauth2/{provider}
 export async function exchangeOAuthCode(args: {
   provider: OAuthProvider;
   code: string;
   redirectUri: string;
-}) {
-  const res = await post<OAuthJwtResponse>(`/api/auth/oauth2/${args.provider}`, {
-    code: args.code,
-    redirectUri: args.redirectUri,
-  });
-  return res.data?.data ?? res.data;
-}
+  codeVerifier?: string;
+}): Promise<OAuthJwtResponse> {
+  const { provider, code, redirectUri, codeVerifier } = args;
 
-// 명세: POST /api/auth/social/complete (필요하면 여기서 추가 정보 제출)
-export async function completeSocialSignup(payload: Record<string, any>) {
-  const res = await post<any>("/api/auth/social/complete", payload);
-  return res.data?.data ?? res.data;
+  const endpoint = getOAuthEndpoint(provider, !!codeVerifier);
+
+  const body =
+    provider === "google" && codeVerifier
+      ? {
+          authorizationCode: code,
+          redirectUri,
+          codeVerifier,
+        }
+      : {
+          code,
+          redirectUri,
+          ...(codeVerifier ? { codeVerifier } : {}),
+        };
+
+  console.log("[exchangeOAuthCode] endpoint =", endpoint);
+  console.log("[exchangeOAuthCode] body =", JSON.stringify(body, null, 2));
+
+  try {
+    const res = await post<OAuthJwtResponse>(endpoint, body);
+    console.log("[exchangeOAuthCode] response =", res?.data ?? res);
+    return unwrapApi<OAuthJwtResponse>(res);
+  } catch (e: any) {
+    console.log("[exchangeOAuthCode] error message =", e?.message);
+    console.log("[exchangeOAuthCode] error code =", e?.code);
+    console.log("[exchangeOAuthCode] error status =", e?.response?.status);
+    console.log("[exchangeOAuthCode] error data =", e?.response?.data);
+    throw e;
+  }
 }
 
 export async function saveTokensFromOAuth(payload: OAuthJwtResponse) {
   const accessToken = payload.accessToken ?? payload.token;
-  if (!accessToken) throw new Error("OAuth 응답에 accessToken/token이 없습니다.");
-  await setTokensToStorage(accessToken, payload.refreshToken);
-  return accessToken;
+  const refreshToken = payload.refreshToken;
+
+  if (!accessToken) {
+    throw new Error("OAuth 응답에 accessToken/token이 없습니다.");
+  }
+
+  if (!refreshToken) {
+    throw new Error("OAuth 응답에 refreshToken이 없습니다.");
+  }
+
+  await setTokensToStorage(accessToken, refreshToken);
+  return { accessToken, refreshToken };
 }

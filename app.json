@@ -14,15 +14,25 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.kangaroo"
+      "bundleIdentifier": "com.anonymous.kangaroo",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "43.202.179.177": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.kangaroo"
+      "package": "com.anonymous.kangaroo",
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",
@@ -31,12 +41,28 @@
     "plugins": [
       "expo-router",
       "@react-native-community/datetimepicker",
-      "expo-build-properties",
       "expo-font",
-      "expo-secure-store"
-    ],
-    "experiments": {
-      "typedRoutes": false
-    }
+      "expo-secure-store",
+      "expo-apple-authentication",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.1"
+          },
+          "android": {
+            "extraMavenRepos": [
+              "https://devrepo.kakao.com/nexus/content/groups/public/"
+            ]
+          }
+        }
+      ],
+      [
+        "@react-native-seoul/kakao-login",
+        {
+          "kakaoAppKey": "3b1abcca21ed2b816bec0cc7ad58a548"
+        }
+      ]
+    ]
   }
 }

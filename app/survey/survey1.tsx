@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
 import NextButton from "../../components/NextButton";
+import { useSurveyDraft } from "./surveyContext";
 
 type ChipProps = {
   label: string;
@@ -19,20 +20,38 @@ const Chip = ({ label, selected, onPress }: ChipProps) => (
 
 export default function Survey1Screen() {
   const router = useRouter();
+  const { setAnswer } = useSurveyDraft();
 
-  const [meals, setMeals] = useState<string | null>(null);
-  const [foodType, setFoodType] = useState<string | null>(null);
-  const [snackFreq, setSnackFreq] = useState<string | null>(null);
-  const [caffeine, setCaffeine] = useState<string | null>(null);
+  const [mealFrequency, setMealFrequency] = useState<string | null>(null);
+  const [foodPreference, setFoodPreference] = useState<string[]>([]);
+  const [sugarIntakeFreq, setSugarIntakeFreq] = useState<string | null>(null);
+  const [caffeineIntake, setCaffeineIntake] = useState<string | null>(null);
+
+  const toggleMulti = (value: string, current: string[], setter: (v: string[]) => void) => {
+    if (current.includes(value)) {
+      setter(current.filter((v) => v !== value));
+    } else {
+      setter([...current, value]);
+    }
+  };
 
   const canNext = useMemo(() => {
-    return !!(meals && foodType && snackFreq && caffeine);
-  }, [meals, foodType, snackFreq, caffeine]);
+    return !!(
+      mealFrequency &&
+      foodPreference.length > 0 &&
+      sugarIntakeFreq &&
+      caffeineIntake
+    );
+  }, [mealFrequency, foodPreference, sugarIntakeFreq, caffeineIntake]);
 
   const handleNext = () => {
     if (!canNext) return;
 
-    // TODO: 여기서 설문값 저장/전달 가능
+    setAnswer("MEAL_FREQUENCY", mealFrequency!);
+    setAnswer("FOOD_PREFERENCE", foodPreference);
+    setAnswer("SUGAR_INTAKE_FREQ", sugarIntakeFreq!);
+    setAnswer("CAFFEINE_INTAKE", caffeineIntake!);
+
     router.push("/survey/survey2");
   };
 
@@ -46,75 +65,86 @@ export default function Survey1Screen() {
 
         <Text style={styles.subtext}>당신의 식습관에 대해 알려주세요</Text>
 
-        {/* 1) 하루 평균 식사 횟수 */}
         <View style={styles.labelRow}>
           <Text style={styles.label}>하루 평균 식사 횟수</Text>
           <Text style={styles.star}> *</Text>
         </View>
-
         <View style={styles.chipRow}>
-          {["0회", "1~2회", "2~3회", "3~4회", "4~5회"].map((item) => (
+          {[
+            { code: "ZERO", label: "0회" },
+            { code: "ONE_TO_TWO", label: "1~2회" },
+            { code: "TWO_TO_THREE", label: "2~3회" },
+            { code: "THREE_TO_FOUR", label: "3~4회" },
+            { code: "FOUR_TO_FIVE", label: "4~5회" },
+          ].map((item) => (
             <Chip
-              key={item}
-              label={item}
-              selected={meals === item}
-              onPress={() => setMeals(item)}
+              key={item.code}
+              label={item.label}
+              selected={mealFrequency === item.code}
+              onPress={() => setMealFrequency(item.code)}
             />
           ))}
         </View>
 
-        {/* 2) 자주 먹는 음식 유형 */}
         <View style={styles.labelRow}>
           <Text style={styles.label}>자주 먹는 음식 유형</Text>
           <Text style={styles.star}> *</Text>
         </View>
-
         <View style={styles.chipRow}>
-          {["탄수화물 위주", "단백질 위주", "가공식품 위주", "채식"].map((item) => (
+          {[
+            { code: "CARB_HEAVY", label: "탄수화물 위주" },
+            { code: "PROTEIN_HEAVY", label: "단백질 위주" },
+            { code: "PROCESSED_FOOD_HEAVY", label: "가공식품 위주" },
+            { code: "VEGETARIAN", label: "채식" },
+          ].map((item) => (
             <Chip
-              key={item}
-              label={item}
-              selected={foodType === item}
-              onPress={() => setFoodType(item)}
+              key={item.code}
+              label={item.label}
+              selected={foodPreference.includes(item.code)}
+              onPress={() => toggleMulti(item.code, foodPreference, setFoodPreference)}
             />
           ))}
         </View>
 
-        {/* 3) 단 음식 섭취 빈도 */}
         <View style={styles.labelRow}>
           <Text style={styles.label}>단 음식 섭취 빈도</Text>
           <Text style={styles.star}> *</Text>
         </View>
-
         <View style={styles.chipRow}>
-          {["주 0회", "주 1~2회", "주 3~4회", "주 5~6회", "매일"].map((item) => (
+          {[
+            { code: "NONE", label: "주 0회" },
+            { code: "ONE_TO_TWO_PER_WEEK", label: "주 1~2회" },
+            { code: "THREE_TO_FOUR_PER_WEEK", label: "주 3~4회" },
+            { code: "FIVE_TO_SIX_PER_WEEK", label: "주 5~6회" },
+            { code: "DAILY", label: "매일" },
+          ].map((item) => (
             <Chip
-              key={item}
-              label={item}
-              selected={snackFreq === item}
-              onPress={() => setSnackFreq(item)}
+              key={item.code}
+              label={item.label}
+              selected={sugarIntakeFreq === item.code}
+              onPress={() => setSugarIntakeFreq(item.code)}
             />
           ))}
         </View>
 
-        {/* 4) 카페인 섭취 */}
         <View style={styles.labelRow}>
           <Text style={styles.label}>카페인 섭취</Text>
           <Text style={styles.star}> *</Text>
         </View>
-
         <View style={styles.chipRow}>
-          {["예", "아니오"].map((item) => (
+          {[
+            { code: "true", label: "예" },
+            { code: "false", label: "아니오" },
+          ].map((item) => (
             <Chip
-              key={item}
-              label={item}
-              selected={caffeine === item}
-              onPress={() => setCaffeine(item)}
+              key={item.code}
+              label={item.label}
+              selected={caffeineIntake === item.code}
+              onPress={() => setCaffeineIntake(item.code)}
             />
           ))}
         </View>
 
-        {/* Next */}
         <View style={{ marginTop: 40 }}>
           <NextButton title="다음" onPress={handleNext} disabled={!canNext} />
         </View>
@@ -126,66 +156,16 @@ export default function Survey1Screen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingTop: 60,
-    paddingHorizontal: 30,
-    paddingBottom: 40,
-    backgroundColor: "#fff",
-  },
-  heading: {
-    marginTop: 30,
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#111",
-  },
-  heading2: {
-    marginTop: 5,
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#111",
-  },
-  subtext: {
-    marginTop: 40,
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#111",
-    marginBottom: 20,
-  },
-  labelRow: {
-    flexDirection: "row",
-    marginTop: 26,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#111",
-  },
-  star: {
-    fontSize: 13,
-    color: "#e53935",
-  },
-
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 12,
-  },
-  chip: {
-    paddingHorizontal: 13,
-    height: 35,
-    borderRadius: 18,
-    backgroundColor: "#747474ff",
-    justifyContent: "center",
-  },
-  chipSelected: {
-    backgroundColor: "#373636ff",
-  },
-  chipText: {
-    color: "#fff",
-    fontSize: 14,
-  },
-  chipTextSelected: {
-    fontWeight: "600",
-  },
+  container: { paddingTop: 60, paddingHorizontal: 30, paddingBottom: 40, backgroundColor: "#fff" },
+  heading: { marginTop: 30, fontSize: 20, fontWeight: "600", color: "#111" },
+  heading2: { marginTop: 5, fontSize: 20, fontWeight: "600", color: "#111" },
+  subtext: { marginTop: 40, fontSize: 16, fontWeight: "500", color: "#111", marginBottom: 20 },
+  labelRow: { flexDirection: "row", marginTop: 26 },
+  label: { fontSize: 14, fontWeight: "500", color: "#111" },
+  star: { fontSize: 13, color: "#e53935" },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
+  chip: { paddingHorizontal: 13, height: 35, borderRadius: 18, backgroundColor: "#747474ff", justifyContent: "center" },
+  chipSelected: { backgroundColor: "#1435b9f6" },
+  chipText: { color: "#fff", fontSize: 14 },
+  chipTextSelected: { fontWeight: "600" },
 });

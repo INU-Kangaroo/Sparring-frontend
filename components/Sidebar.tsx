@@ -17,13 +17,13 @@ type MenuItem = {
 
 type SidebarMenuProps = {
   exposeOpen?: (open: () => void) => void;
-  width?: number; // ✅ 원하면 너비 조절 가능 (기본 130)
+  width?: number;
   items?: MenuItem[];
 };
 
 export default function SidebarMenu({
   exposeOpen,
-  width = 130, // ✅ 너가 원래 쓰던 width 기본값
+  width = 130, 
   items,
 }: SidebarMenuProps) {
   const router = useRouter();
@@ -31,10 +31,10 @@ export default function SidebarMenu({
   const menuItems: MenuItem[] = useMemo(
     () =>
       items ?? [
-        { label: "루틴 쓰기", path: "/routine/write" },
+        { label: "루틴 쓰기", path: "/main/main"},
         { label: "기록하기", path: "/main/main" },
         { label: "추천", path: "/recommend/recommendation" },
-        { label: "보고서", path: "/mypage/report" },
+        { label: "보고서", path: "/main/main" },
         { label: "AI 챗봇", path: "/AI/chatAI" },
         { label: "마이페이지", path: "/mypage/mypage" },
       ],
@@ -43,16 +43,11 @@ export default function SidebarMenu({
 
   const [menuOpen, setMenuOpen] = useState(false);
 
-  /**
-   * ✅ 오른쪽에서 등장:
-   * - 처음엔 화면 밖(= width)로 밀어두고
-   * - open 시 0으로
-   */
   const slideAnim = useRef(new Animated.Value(width)).current;
 
   const openMenu = () => {
     setMenuOpen(true);
-    slideAnim.setValue(width); // ✅ 매번 확실히 초기 위치로
+    slideAnim.setValue(width);
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 250,
@@ -122,10 +117,8 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
 
-  // ✅ 너가 준 스타일 그대로 사용 (핵심: height가 있어야 gradient flex:1이 먹음)
   sideMenu: {
     height: "38%",
-    // width는 props로 주입
     marginTop: 60,
     borderTopLeftRadius: 30,
     borderBottomLeftRadius: 30,

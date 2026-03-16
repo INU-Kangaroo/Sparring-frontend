@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
 import NextButton from "../../components/NextButton";
+import { useSurveyDraft } from "./surveyContext";
+import { submitSurvey } from "../api/survey";
 
 type ChipProps = {
   label: string;
@@ -19,22 +21,48 @@ const Chip = ({ label, selected, onPress }: ChipProps) => (
 
 export default function Survey3Screen() {
   const router = useRouter();
+  const { setAnswer, resetDraft, toAnswersArray } = useSurveyDraft();
 
-  const [sleepHours, setSleepHours] = useState<string>("");          // 평균 수면 시간 (입력)
-  const [sleepQuality, setSleepQuality] = useState<string | null>(null); // 수면의 질
-  const [smoking, setSmoking] = useState<string | null>(null);       // 흡연 여부
-  const [drinking, setDrinking] = useState<string | null>(null);     // 음주 빈도
-  const [stress, setStress] = useState<string | null>(null);         // 스트레스 수준
+  const [sleepHours, setSleepHours] = useState("");
+  const [sleepQuality, setSleepQuality] = useState<string | null>(null);
+  const [smokingStatus, setSmokingStatus] = useState<string | null>(null);
+  const [drinkingFrequency, setDrinkingFrequency] = useState<string | null>(null);
+  const [stressLevel, setStressLevel] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const canNext = useMemo(() => {
-    return !!(sleepHours.trim() && sleepQuality && smoking && drinking && stress);
-  }, [sleepHours, sleepQuality, smoking, drinking, stress]);
+    return !!(
+      sleepHours.trim() &&
+      sleepQuality &&
+      smokingStatus &&
+      drinkingFrequency &&
+      stressLevel
+    );
+  }, [sleepHours, sleepQuality, smokingStatus, drinkingFrequency, stressLevel]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!canNext) return;
 
-    // TODO: 저장 (zustand/컨텍스트/서버/params 등)
-    router.replace("/main/main"); // 필요하면 다음 경로로 변경
+    setAnswer("SLEEP_HOURS", Number(sleepHours));
+    setAnswer("SLEEP_QUALITY", sleepQuality!);
+    setAnswer("SMOKING_STATUS", smokingStatus!);
+    setAnswer("DRINKING_FREQUENCY", drinkingFrequency!);
+    setAnswer("STRESS_LEVEL", stressLevel!);
+
+    try {
+      setLoading(true);
+
+      await submitSurvey({
+        answers: toAnswersArray(),
+      });
+
+      resetDraft();
+      router.replace("/main/main");
+    } catch (e: any) {
+      Alert.alert("설문 제출 실패", e?.message ?? "잠시 후 다시 시도해주세요.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,7 +77,6 @@ export default function Survey3Screen() {
 
         <Text style={styles.subtext}>당신의 생활 습관에 대해 알려주세요</Text>
 
-        {/* 평균 수면 시간 */}
         <View style={styles.labelRow}>
           <Text style={styles.label}>평균 수면 시간</Text>
           <Text style={styles.star}> *</Text>
@@ -62,52 +89,87 @@ export default function Survey3Screen() {
           onChangeText={setSleepHours}
         />
 
-        {/* 수면의 질 */}
         <View style={styles.labelRow}>
           <Text style={styles.label}>수면의 질</Text>
           <Text style={styles.star}> *</Text>
         </View>
         <View style={styles.chipRow}>
-          {["좋음", "보통", "나쁨"].map((item) => (
-            <Chip key={item} label={item} selected={sleepQuality === item} onPress={() => setSleepQuality(item)} />
+          {[
+            { code: "GOOD", label: "좋음" },
+            { code: "NORMAL", label: "보통" },
+            { code: "BAD", label: "나쁨" },
+          ].map((item) => (
+            <Chip
+              key={item.code}
+              label={item.label}
+              selected={sleepQuality === item.code}
+              onPress={() => setSleepQuality(item.code)}
+            />
           ))}
         </View>
 
-        {/* 흡연 여부 */}
         <View style={styles.labelRow}>
           <Text style={styles.label}>흡연 여부</Text>
           <Text style={styles.star}> *</Text>
         </View>
         <View style={styles.chipRow}>
-          {["예", "아니오"].map((item) => (
-            <Chip key={item} label={item} selected={smoking === item} onPress={() => setSmoking(item)} />
+          {[
+            { code: "true", label: "예" },
+            { code: "false", label: "아니오" },
+          ].map((item) => (
+            <Chip
+              key={item.code}
+              label={item.label}
+              selected={smokingStatus === item.code}
+              onPress={() => setSmokingStatus(item.code)}
+            />
           ))}
         </View>
 
-        {/* 음주 빈도 */}
         <View style={styles.labelRow}>
           <Text style={styles.label}>음주 빈도</Text>
           <Text style={styles.star}> *</Text>
         </View>
         <View style={styles.chipRow}>
-          {["없음", "주 1~2회", "주 3회 이상"].map((item) => (
-            <Chip key={item} label={item} selected={drinking === item} onPress={() => setDrinking(item)} />
+          {[
+            { code: "NONE", label: "없음" },
+            { code: "ONE_TO_TWO_PER_WEEK", label: "주 1~2회" },
+            { code: "THREE_OR_MORE_PER_WEEK", label: "주 3회 이상" },
+          ].map((item) => (
+            <Chip
+              key={item.code}
+              label={item.label}
+              selected={drinkingFrequency === item.code}
+              onPress={() => setDrinkingFrequency(item.code)}
+            />
           ))}
         </View>
 
-        {/* 스트레스 수준 */}
         <View style={styles.labelRow}>
           <Text style={styles.label}>스트레스 수준</Text>
           <Text style={styles.star}> *</Text>
         </View>
         <View style={styles.chipRow}>
-          {["낮음", "중간", "높음"].map((item) => (
-            <Chip key={item} label={item} selected={stress === item} onPress={() => setStress(item)} />
+          {[
+            { code: "LOW", label: "낮음" },
+            { code: "MEDIUM", label: "중간" },
+            { code: "HIGH", label: "높음" },
+          ].map((item) => (
+            <Chip
+              key={item.code}
+              label={item.label}
+              selected={stressLevel === item.code}
+              onPress={() => setStressLevel(item.code)}
+            />
           ))}
         </View>
 
         <View style={{ marginTop: 40 }}>
-          <NextButton title="다음" onPress={handleNext} disabled={!canNext} />
+          <NextButton
+            title={loading ? "제출 중..." : "완료"}
+            onPress={handleNext}
+            disabled={!canNext || loading}
+          />
         </View>
 
         <View style={{ height: 30 }} />
@@ -117,80 +179,18 @@ export default function Survey3Screen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingTop: 60,
-    paddingHorizontal: 30,
-    paddingBottom: 40,
-    backgroundColor: "#fff",
-  },
-  heading: {
-    marginTop: 30,
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#111",
-  },
-  heading2: {
-    marginTop: 5,
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#111",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#EAEAEA",
-    marginTop: 16,
-  },
-  subtext: {
-    marginTop: 22,
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#111",
-    marginBottom: 10,
-  },
-  labelRow: {
-    flexDirection: "row",
-    marginTop: 26,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#111",
-  },
-  star: {
-    fontSize: 13,
-    color: "#e53935",
-  },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 12,
-  },
-  chip: {
-    paddingHorizontal: 14,
-    height: 34,
-    borderRadius: 18,
-    backgroundColor: "#747474",
-    justifyContent: "center",
-  },
-  chipSelected: {
-    backgroundColor: "#3C3C3C",
-  },
-  chipText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  chipTextSelected: {
-    fontWeight: "700",
-  },
-  input: {
-    marginTop: 12,
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: "#F3F3F3",
-    paddingHorizontal: 16,
-    fontSize: 14,
-    color: "#111",
-  },
+  container: { paddingTop: 60, paddingHorizontal: 30, paddingBottom: 40, backgroundColor: "#fff" },
+  heading: { marginTop: 30, fontSize: 20, fontWeight: "600", color: "#111" },
+  heading2: { marginTop: 5, fontSize: 14, fontWeight: "500", color: "#111" },
+  divider: { height: 1, backgroundColor: "#EAEAEA", marginTop: 16 },
+  subtext: { marginTop: 22, fontSize: 16, fontWeight: "500", color: "#111", marginBottom: 10 },
+  labelRow: { flexDirection: "row", marginTop: 26 },
+  label: { fontSize: 14, fontWeight: "500", color: "#111" },
+  star: { fontSize: 13, color: "#e53935" },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
+  chip: { paddingHorizontal: 14, height: 34, borderRadius: 18, backgroundColor: "#747474", justifyContent: "center" },
+  chipSelected: { backgroundColor: "#1435b9f6" },
+  chipText: { color: "#fff", fontSize: 13, fontWeight: "500" },
+  chipTextSelected: { fontWeight: "700" },
+  input: { marginTop: 12, height: 50, borderRadius: 14, backgroundColor: "#F3F3F3", paddingHorizontal: 16, fontSize: 14, color: "#111" },
 });

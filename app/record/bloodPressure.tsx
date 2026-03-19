@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LineChart } from "react-native-chart-kit";
+import { LinearGradient } from "expo-linear-gradient";
 
 import HomeFab from "../../components/HomeButton";
 import RecordBox from "../../components/RecordBox";
@@ -247,13 +248,20 @@ export default function BloodPressureScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         {/* Date row */}
         <View style={styles.dateRow}>
-          <Pressable
+        <Pressable
+          style={styles.datePillWrap}
+          onPress={() => setShowDatePicker((prev) => !prev)}
+        >
+          <LinearGradient
+            colors={["#0D99FF", "#1D4BFF"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
             style={styles.datePill}
-            onPress={() => setShowDatePicker((prev) => !prev)}
           >
             <Ionicons name="calendar" size={14} color="#fff" />
             <Text style={styles.dateText}>{selectedYmd}</Text>
-          </Pressable>
+          </LinearGradient>
+        </Pressable>
 
           {showDatePicker && (
             <View style={styles.datePickerInline}>
@@ -325,7 +333,10 @@ export default function BloodPressureScreen() {
 
         <View style={styles.btnRow}>
           <Pressable
-            style={styles.darkBtn}
+            style={({ pressed }) => [
+              styles.darkBtnWrap,
+              pressed && styles.pressedBtn,
+            ]}
             onPress={() => {
               setModalTitle("혈압 측정 방법");
               setModalContent(
@@ -334,11 +345,21 @@ export default function BloodPressureScreen() {
               setModalVisible(true);
             }}
           >
-            <Text style={styles.darkBtnText}>혈압 측정 방법</Text>
+            <LinearGradient
+              colors={["#0D99FF", "#1D4BFF"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.darkBtn}
+            >
+              <Text style={styles.darkBtnText}>혈압 측정 방법</Text>
+            </LinearGradient>
           </Pressable>
 
           <Pressable
-            style={styles.darkBtn}
+           style={({ pressed }) => [
+              styles.darkBtnWrap,
+              pressed && styles.pressedBtn,
+            ]}
             onPress={() => {
               setModalTitle("혈압 정상 수치");
               setModalContent(
@@ -347,7 +368,14 @@ export default function BloodPressureScreen() {
               setModalVisible(true);
             }}
           >
-            <Text style={styles.darkBtnText}>혈압 정상 수치</Text>
+            <LinearGradient
+              colors={["#0D99FF", "#1D4BFF"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.darkBtn}
+            >
+              <Text style={styles.darkBtnText}>혈압 정상 수치</Text>
+            </LinearGradient>
           </Pressable>
         </View>
 
@@ -489,7 +517,6 @@ export default function BloodPressureScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F5F5F5" },
 
@@ -510,23 +537,36 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     zIndex: 10,
   },
+
+  datePillWrap: {
+    alignSelf: "flex-start",
+    borderRadius: 18,
+
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
   datePill: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
     gap: 8,
     paddingHorizontal: 14,
     height: 34,
     borderRadius: 18,
-    backgroundColor: "#091441",
   },
+
   dateText: { color: "#fff", fontWeight: "800", fontSize: 12 },
+
   datePickerInline: {
     marginLeft: 8,
     justifyContent: "center",
   },
 
   row: { flexDirection: "row", marginBottom: 12 },
+
   sectionTitle: {
     fontSize: 12,
     fontWeight: "800",
@@ -535,16 +575,35 @@ const styles = StyleSheet.create({
   },
 
   btnRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
-  darkBtn: {
+
+  darkBtnWrap: {
     flex: 1,
+    borderRadius: 12,
+    overflow: "hidden",
+
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+
+  darkBtn: {
     height: 38,
     borderRadius: 12,
-    backgroundColor: "#091441",
     alignItems: "center",
     justifyContent: "center",
   },
-  darkBtnText: { color: "#fff", fontWeight: "800", fontSize: 12 },
 
+  darkBtnText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 12,
+  },
+
+  pressedBtn: {
+    opacity: 0.82,
+  },
   summaryCard: {
     backgroundColor: "#fff",
     borderRadius: 14,
@@ -553,12 +612,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#1435b9f6",
   },
+
   summaryHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 6,
     paddingHorizontal: 6,
   },
+
   summaryHead: {
     flex: 1,
     textAlign: "center",
@@ -566,6 +627,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#333",
   },
+
   summaryRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -575,12 +637,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F7FF",
     marginBottom: 6,
   },
+
   summaryLabel: {
     marginLeft: 11,
     fontSize: 11,
     fontWeight: "900",
     color: "#333",
   },
+
   summaryCell: {
     flex: 1,
     textAlign: "center",
@@ -588,6 +652,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#333",
   },
+
   summaryHint: {
     marginTop: 4,
     fontSize: 10,
@@ -601,12 +666,14 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
   },
+
   chartHead: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
     marginBottom: 10,
   },
+
   cardTitle: { fontSize: 13, fontWeight: "900", color: "#111" },
   smallText: { fontSize: 11, fontWeight: "700", color: "#777" },
 
@@ -622,6 +689,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
   savingText: {
     marginTop: 10,
     color: "#fff",

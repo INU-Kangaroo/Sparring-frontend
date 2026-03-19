@@ -37,25 +37,25 @@ export default function Survey2Screen() {
   };
 
   const canNext = useMemo(() => {
-    return !!(
-      exerciseFrequency &&
-      exercisePlace.length > 0 &&
-      exerciseDuration &&
-      avgSteps.trim()
-    );
-  }, [exerciseFrequency, exercisePlace, exerciseDuration, avgSteps]);
+      return !!(exerciseFrequency && exercisePlace.length > 0 && avgSteps.trim());
+    }, [exerciseFrequency, exercisePlace, avgSteps]);
 
-  const handleNext = () => {
-    if (!canNext) return;
+    const handleNext = () => {
+      if (!canNext) return;
 
-    setAnswer("EXERCISE_FREQUENCY", exerciseFrequency!);
-    setAnswer("EXERCISE_PLACE", exercisePlace);
-    setAnswer("EXERCISE_TYPE", exerciseType.trim());
-    setAnswer("EXERCISE_DURATION", exerciseDuration!);
-    setAnswer("AVG_STEPS", Number(avgSteps));
+      const parsedSteps = Number(avgSteps);
 
-    router.push("/survey/survey3");
-  };
+      if (Number.isNaN(parsedSteps) || parsedSteps < 0) {
+        Alert.alert("입력 확인", "평균 걸음수를 올바르게 입력해주세요.");
+        return;
+      }
+
+      setAnswer("EXERCISE_FREQUENCY", exerciseFrequency!);
+      setAnswer("EXERCISE_PLACE", exercisePlace);
+      setAnswer("AVG_STEPS", parsedSteps);
+
+      router.push("/survey/survey3");
+    };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -177,5 +177,14 @@ const styles = StyleSheet.create({
   chipSelected: { backgroundColor: "#1435b9f6" },
   chipText: { color: "#fff", fontSize: 13, fontWeight: "500" },
   chipTextSelected: { fontWeight: "700" },
-  input: { marginTop: 12, height: 50, borderRadius: 14, backgroundColor: "#F3F3F3", paddingHorizontal: 16, fontSize: 14, color: "#111" },
+  input: {
+    marginTop: 10,
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#ddd",
+    paddingHorizontal: 16,
+    fontSize: 14,
+    color: "#111"
+  } 
 });

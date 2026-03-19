@@ -31,7 +31,6 @@ export default function SidebarMenu({
   const menuItems: MenuItem[] = useMemo(
     () =>
       items ?? [
-        { label: "루틴 쓰기", path: "/main/main"},
         { label: "기록하기", path: "/main/main" },
         { label: "추천", path: "/recommend/recommendation" },
         { label: "보고서", path: "/main/main" },
@@ -78,7 +77,7 @@ export default function SidebarMenu({
       <Animated.View
         style={[
           styles.sideMenu,
-          { width }, // ✅ 너비 반영
+          { width }, 
           { transform: [{ translateX: slideAnim }] },
         ]}
       >
@@ -118,7 +117,7 @@ const styles = StyleSheet.create({
   },
 
   sideMenu: {
-    height: "38%",
+    height: "30%",
     marginTop: 60,
     borderTopLeftRadius: 30,
     borderBottomLeftRadius: 30,

@@ -5,11 +5,11 @@ import { useRouter } from "expo-router";
 import BackButton from "../../components/BackButton";
 import InputField from "../../components/InputField";
 import NextButton from "../../components/NextButton";
-import { useSignupDraft } from "./signupContext";
+import { useSurveyDraft } from "../survey/surveyContext";
 
 export default function Stats() {
   const router = useRouter();
-  const { setDraft } = useSignupDraft();
+  const { setAnswer } = useSurveyDraft();
 
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
@@ -23,8 +23,10 @@ export default function Stats() {
       return;
     }
 
-    setDraft({ height: h, weight: w });
-    router.push("/sign-up/survey");
+    setAnswer("HEIGHT", h);
+    setAnswer("WEIGHT", w);
+
+    router.push("/survey/survey");
   };
 
   return (
@@ -70,11 +72,45 @@ export default function Stats() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 60, paddingHorizontal: 30, backgroundColor: "#fff" },
-  heading: { marginTop: 30, fontSize: 20, fontWeight: "600", color: "#111" },
-  heading2: { marginTop: 5, fontSize: 20, alignSelf: "flex-start", fontWeight: "600", color: "#1e1d1dff" },
-  subtext: { marginTop: 70, alignSelf: "flex-start", fontSize: 16, fontWeight: "500", color: "#1e1d1dff", marginBottom: -10 },
-  labelRow: { flexDirection: "row", alignItems: "center", marginTop: 30 },
-  label: { fontSize: 14, fontWeight: "500", color: "#1e1d1dff" },
-  star: { fontSize: 13, color: "#e53935" },
+  container: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 30,
+    backgroundColor: "#fff",
+  },
+  heading: {
+    marginTop: 30,
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#111",
+  },
+  heading2: {
+    marginTop: 5,
+    fontSize: 20,
+    alignSelf: "flex-start",
+    fontWeight: "600",
+    color: "#1e1d1dff",
+  },
+  subtext: {
+    marginTop: 70,
+    alignSelf: "flex-start",
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#1e1d1dff",
+    marginBottom: -10,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 30,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#1e1d1dff",
+  },
+  star: {
+    fontSize: 13,
+    color: "#e53935",
+  },
 });

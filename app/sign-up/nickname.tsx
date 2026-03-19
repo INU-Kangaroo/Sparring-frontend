@@ -18,7 +18,6 @@ export default function Nickname() {
       return;
     }
 
-    // ✅ 명세 키: username
     setDraft({ username: nickname });
     router.push("/sign-up/gender");
   };

@@ -151,22 +151,31 @@ export default function PressureInput({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: "rgba(9,20,65,0.22)",
     justifyContent: "center",
     padding: 20,
   },
+
   sheet: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 16,
+    borderWidth: 1,
+    borderColor: "#E6EEFF",
   },
+
   head: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 14,
   },
-  title: { fontSize: 16, fontWeight: "900", color: "#111" },
+
+  title: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#141415",
+  },
 
   timeRow: {
     flexDirection: "row",
@@ -174,7 +183,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  label: { fontSize: 12, fontWeight: "800", color: "#444" },
+
+  label: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#3552B5",
+  },
+
   timeBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -182,16 +197,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "#F1F1F1",
+    backgroundColor: "#EEF4FF",
+    borderWidth: 1,
+    borderColor: "#D6E4FF",
   },
-  timeText: { fontSize: 13, fontWeight: "800", color: "#111" },
 
-  inputRow: { flexDirection: "row", gap: 12, marginTop: 6 },
-  inputCol: { flex: 1 },
+  timeText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#1435B9",
+  },
+
+  inputRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 6,
+  },
+
+  inputCol: {
+    flex: 1,
+  },
+
   input: {
     height: 44,
     borderRadius: 12,
-    backgroundColor: "#F6F6F6",
+    backgroundColor: "#F7FAFF",
+    borderWidth: 1,
+    borderColor: "#DCE8FF",
     paddingHorizontal: 12,
     marginTop: 6,
     fontSize: 14,
@@ -199,18 +231,40 @@ const styles = StyleSheet.create({
     color: "#111",
   },
 
-  btnRow: { flexDirection: "row", gap: 12, marginTop: 16 },
+  btnRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 16,
+  },
+
   btn: {
     flex: 1,
     height: 46,
     borderRadius: 14,
-    backgroundColor: "#3C3C3C",
+    backgroundColor: "#1745BA",
     alignItems: "center",
     justifyContent: "center",
   },
-  btnText: { color: "#fff", fontWeight: "900" },
-  btnGhost: { backgroundColor: "#EDEDED" },
-  btnGhostText: { color: "#111" },
 
-  hint: { marginTop: 10, fontSize: 11, color: "#777", fontWeight: "700" },
+  btnText: {
+    color: "#fff",
+    fontWeight: "900",
+  },
+
+  btnGhost: {
+    backgroundColor: "#EAF1FF",
+    borderWidth: 1,
+    borderColor: "#D5E3FF",
+  },
+
+  btnGhostText: {
+    color: "#2E5BDB",
+  },
+
+  hint: {
+    marginTop: 10,
+    fontSize: 11,
+    color: "#5F6F9F",
+    fontWeight: "700",
+  },
 });

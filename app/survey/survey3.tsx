@@ -1,5 +1,13 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
@@ -25,7 +33,7 @@ export default function Survey3Screen() {
 
   const [sleepHours, setSleepHours] = useState("");
   const [sleepQuality, setSleepQuality] = useState<string | null>(null);
-  const [smokingStatus, setSmokingStatus] = useState<string | null>(null);
+  //const [smokingStatus, setSmokingStatus] = useState<string | null>(null);
   const [drinkingFrequency, setDrinkingFrequency] = useState<string | null>(null);
   const [stressLevel, setStressLevel] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,32 +42,65 @@ export default function Survey3Screen() {
     return !!(
       sleepHours.trim() &&
       sleepQuality &&
-      smokingStatus &&
+      /*smokingStatus && */
       drinkingFrequency &&
       stressLevel
     );
-  }, [sleepHours, sleepQuality, smokingStatus, drinkingFrequency, stressLevel]);
+  }, [sleepHours, sleepQuality, /* smokingStatus, */ drinkingFrequency, stressLevel]);
 
   const handleNext = async () => {
     if (!canNext) return;
 
-    setAnswer("SLEEP_HOURS", Number(sleepHours));
-    setAnswer("SLEEP_QUALITY", sleepQuality!);
-    setAnswer("SMOKING_STATUS", smokingStatus!);
-    setAnswer("DRINKING_FREQUENCY", drinkingFrequency!);
-    setAnswer("STRESS_LEVEL", stressLevel!);
+    const parsedSleepHours = Number(sleepHours);
+
+    if (Number.isNaN(parsedSleepHours) || parsedSleepHours <= 0) {
+      Alert.alert("입력 확인", "평균 수면 시간을 올바르게 입력해주세요.");
+      return;
+    }
 
     try {
       setLoading(true);
 
+      const existingAnswers = toAnswersArray();
+
+      const finalAnswers = [
+        ...existingAnswers.filter(
+          (item) =>
+            ![
+              "SLEEP_HOURS",
+              "SLEEP_QUALITY",
+              /* "SMOKING_STATUS", */
+              "DRINKING_FREQUENCY",
+              "STRESS_LEVEL",
+            ].includes(item.questionKey)
+        ),
+        { questionKey: "SLEEP_HOURS", value: parsedSleepHours },
+        { questionKey: "SLEEP_QUALITY", value: sleepQuality! },
+        /* { questionKey: "SMOKING_STATUS", value: smokingStatus! }, */
+        { questionKey: "DRINKING_FREQUENCY", value: drinkingFrequency! },
+        { questionKey: "STRESS_LEVEL", value: stressLevel! },
+      ];
+
+      console.log("최종 설문 payload =", JSON.stringify({ answers: finalAnswers }, null, 2));
+
       await submitSurvey({
-        answers: toAnswersArray(),
+        answers: finalAnswers,
       });
+
+      setAnswer("SLEEP_HOURS", parsedSleepHours);
+      setAnswer("SLEEP_QUALITY", sleepQuality!);
+      /* setAnswer("SMOKING_STATUS", smokingStatus!); */
+      setAnswer("DRINKING_FREQUENCY", drinkingFrequency!);
+      setAnswer("STRESS_LEVEL", stressLevel!);
 
       resetDraft();
       router.replace("/main/main");
     } catch (e: any) {
-      Alert.alert("설문 제출 실패", e?.message ?? "잠시 후 다시 시도해주세요.");
+      console.log("설문 제출 에러:", e?.response?.data ?? e);
+      Alert.alert(
+        "설문 제출 실패",
+        e?.response?.data?.message ?? e?.message ?? "잠시 후 다시 시도해주세요."
+      );
     } finally {
       setLoading(false);
     }
@@ -70,10 +111,8 @@ export default function Survey3Screen() {
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <BackButton onPress={() => router.back()} />
 
-        <Text style={styles.heading}>나의 건강 시그널 확인하고 싶다면?</Text>
-        <Text style={styles.heading2}>회원가입을 축하드립니다!</Text>
-
-        <View style={styles.divider} />
+        <Text style={styles.heading}>건강 상태를 더 정확하게 알려드릴게요</Text>
+        <Text style={styles.heading2}>첫 이용 전 설문을 진행해주세요</Text>
 
         <Text style={styles.subtext}>당신의 생활 습관에 대해 알려주세요</Text>
 
@@ -108,7 +147,7 @@ export default function Survey3Screen() {
           ))}
         </View>
 
-        <View style={styles.labelRow}>
+        {/* <View style={styles.labelRow}>
           <Text style={styles.label}>흡연 여부</Text>
           <Text style={styles.star}> *</Text>
         </View>
@@ -124,7 +163,7 @@ export default function Survey3Screen() {
               onPress={() => setSmokingStatus(item.code)}
             />
           ))}
-        </View>
+        </View> */}
 
         <View style={styles.labelRow}>
           <Text style={styles.label}>음주 빈도</Text>
@@ -164,7 +203,7 @@ export default function Survey3Screen() {
           ))}
         </View>
 
-        <View style={{ marginTop: 40 }}>
+        <View style={{ marginTop: 100 }}>
           <NextButton
             title={loading ? "제출 중..." : "완료"}
             onPress={handleNext}
@@ -192,5 +231,14 @@ const styles = StyleSheet.create({
   chipSelected: { backgroundColor: "#1435b9f6" },
   chipText: { color: "#fff", fontSize: 13, fontWeight: "500" },
   chipTextSelected: { fontWeight: "700" },
-  input: { marginTop: 12, height: 50, borderRadius: 14, backgroundColor: "#F3F3F3", paddingHorizontal: 16, fontSize: 14, color: "#111" },
+  input: {
+    marginTop: 10,
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#ddd",
+    paddingHorizontal: 16,
+    fontSize: 14,
+    color: "#111"
+  } 
 });

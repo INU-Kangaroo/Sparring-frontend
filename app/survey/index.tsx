@@ -6,7 +6,7 @@ import { router } from "expo-router";
 export default function SurveyIntroScreen() {
   const onStart = () => {
     // TODO: 나중에 설문 1번 화면 만들면 그쪽으로 이동
-    router.push("/survey/survey1");
+    router.push("/survey/stats");
   };
 
   return (

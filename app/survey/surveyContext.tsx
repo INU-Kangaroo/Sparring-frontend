@@ -16,9 +16,11 @@ export function SurveyProvider({ children }: { children: React.ReactNode }) {
   const [draft, setDraft] = useState<SurveyDraft>({});
 
   const setAnswer = (questionKey: string, value: SurveyAnswerValue) => {
+    const normalizedKey = questionKey.trim();
+
     setDraft((prev) => ({
       ...prev,
-      [questionKey]: value,
+      [normalizedKey]: value,
     }));
   };
 
@@ -26,7 +28,7 @@ export function SurveyProvider({ children }: { children: React.ReactNode }) {
 
   const toAnswersArray = () =>
     Object.entries(draft).map(([questionKey, value]) => ({
-      questionKey,
+      questionKey: questionKey.trim(),
       value,
     }));
 

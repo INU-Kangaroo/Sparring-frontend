@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LineChart } from "react-native-chart-kit";
 import { Ionicons } from "@expo/vector-icons";
-
+import { LinearGradient } from "expo-linear-gradient";
 import SidebarMenu from "../../components/Sidebar";
 import {
   getTodayInsight,
@@ -228,17 +228,36 @@ export default function MainScreen() {
             <Text style={styles.cardTitle}>📌 변화 차트</Text>
 
             <View style={styles.tabRow}>
-              {["week", "month", "all"].map((p) => (
-                <Pressable
-                  key={p}
-                  onPress={() => setPeriod(p as Period)}
-                  style={[styles.tab, period === p && styles.tabSel]}
-                >
-                  <Text style={[styles.tabText, period === p && styles.tabTextSel]}>
-                    {p === "week" ? "주간" : p === "month" ? "월간" : "전체"}
-                  </Text>
-                </Pressable>
-              ))}
+              {["week", "month", "all"].map((p) => {
+                const selected = period === p;
+
+                return (
+                  <Pressable
+                    key={p}
+                    onPress={() => setPeriod(p as Period)}
+                    style={styles.tabWrap}
+                  >
+                    {selected ? (
+                      <LinearGradient
+                        colors={["#0D99FF", "#1D4BFF"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.tab}
+                      >
+                        <Text style={[styles.tabText, styles.tabTextSel]}>
+                          {p === "week" ? "주간" : p === "month" ? "월간" : "전체"}
+                        </Text>
+                      </LinearGradient>
+                    ) : (
+                      <View style={[styles.tab, styles.tabUnselected]}>
+                        <Text style={styles.tabText}>
+                          {p === "week" ? "주간" : p === "month" ? "월간" : "전체"}
+                        </Text>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
@@ -270,21 +289,35 @@ export default function MainScreen() {
           )}
         </View>
 
-        <View style={styles.quickRow}>
-          <Pressable
-            style={styles.quickBtn}
-            onPress={() => router.push("/record/bloodPressure")}
-          >
-            <Text style={styles.quickBtnText}>혈압 기록하기</Text>
-          </Pressable>
+<View style={styles.quickRow}>
+  <Pressable
+    style={styles.quickBtnWrap}
+    onPress={() => router.push("/record/bloodPressure")}
+  >
+    <LinearGradient
+      colors={["#0D99FF", "#1D4BFF"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.quickBtn}
+    >
+      <Text style={styles.quickBtnText}>혈압 기록하기</Text>
+    </LinearGradient>
+  </Pressable>
 
-          <Pressable
-            style={styles.quickBtn}
-            onPress={() => router.push("/record/bloodSugar")}
-          >
-            <Text style={styles.quickBtnText}>혈당 기록하기</Text>
-          </Pressable>
-        </View>
+    <Pressable
+      style={styles.quickBtnWrap}
+      onPress={() => router.push("/record/bloodSugar")}
+    >
+      <LinearGradient
+        colors={["#0D99FF", "#1D4BFF"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.quickBtn}
+      >
+        <Text style={styles.quickBtnText}>혈당 기록하기</Text>
+      </LinearGradient>
+    </Pressable>
+  </View>
 
         <View style={styles.statsCard}>
           <Text style={styles.statsTitle}>📊 빠른 통계</Text>
@@ -352,24 +385,30 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
+  tabWrap: {
+    borderRadius: 14,
+  },
+
   tab: {
     paddingHorizontal: 12,
     height: 30,
     borderRadius: 14,
-    backgroundColor: "#eee",
     justifyContent: "center",
+    alignItems: "center",
   },
 
-  tabSel: {
-    backgroundColor: "#091441",
+  tabUnselected: {
+    backgroundColor: "#E9EEF8",
   },
 
   tabText: {
     fontSize: 12,
+    color: "#2B2B2B",
   },
 
   tabTextSel: {
     color: "#fff",
+    fontWeight: "700",
   },
 
   chart: {
@@ -383,11 +422,20 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 
-  quickBtn: {
+  quickBtnWrap: {
     flex: 1,
+    borderRadius: 14,
+
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+
+  quickBtn: {
     height: 48,
     borderRadius: 14,
-    backgroundColor: "#091441",
     justifyContent: "center",
     alignItems: "center",
   },

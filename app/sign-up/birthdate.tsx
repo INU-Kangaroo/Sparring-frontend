@@ -1,28 +1,72 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, TextInput } from "react-native";
+import { View, Text, StyleSheet, TextInput, Alert } from "react-native";
 import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
 import NextButton from "../../components/NextButton";
 import { useSignupDraft } from "./signupContext";
+import { signupApi } from "../api/signup";
 
 export default function Birthdate() {
   const router = useRouter();
-  const { setDraft } = useSignupDraft();
+  const { draft, setDraft, resetDraft } = useSignupDraft();
 
   const [year, setYear] = useState("");
   const [month, setMonth] = useState("");
   const [day, setDay] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const nextPage = () => {
-    if (!year || !month || !day) return;
+  const nextPage = async () => {
+    if (!year || !month || !day) {
+      Alert.alert("입력 필요", "생년월일을 모두 입력해주세요.");
+      return;
+    }
 
     const y = year.padStart(4, "0");
     const m = month.padStart(2, "0");
     const d = day.padStart(2, "0");
+    const birthDate = `${y}-${m}-${d}`;
 
-    setDraft({ birthDate: `${y}-${m}-${d}` });
-    router.push("/sign-up/stats");
+    const payload = {
+      email: draft.email ?? "",
+      password: draft.password ?? "",
+      username: draft.username ?? "",
+      gender: draft.gender as "MALE" | "FEMALE",
+      birthDate,
+    };
+
+    if (
+      !payload.email ||
+      !payload.password ||
+      !payload.username ||
+      !payload.gender ||
+      !payload.birthDate
+    ) {
+      Alert.alert("오류", "회원가입 정보가 누락되었어요. 처음부터 다시 진행해주세요.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      setDraft({ birthDate });
+
+      const result = await signupApi(payload);
+      console.log("signup result =", result);
+
+      Alert.alert("회원가입 완료", "로그인을 진행해주세요.");
+      resetDraft();
+      router.replace("/login/login");
+    } catch (e: any) {
+      console.log("signup error =", e?.response?.data ?? e);
+
+      Alert.alert(
+        "회원가입 실패",
+        e?.response?.data?.message ?? "회원가입 중 문제가 발생했어요."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -75,7 +119,7 @@ export default function Birthdate() {
         </View>
 
         <View style={{ marginTop: "auto", width: "100%", marginBottom: 20 }}>
-          <NextButton title="다음" onPress={nextPage} />
+          <NextButton title={loading ? "가입 중..." : "다음"} onPress={nextPage} />
         </View>
       </View>
     </View>
@@ -92,5 +136,14 @@ const styles = StyleSheet.create({
   subtext2: { fontSize: 12, color: "#1e1d1dff" },
   star: { fontSize: 12, color: "#fa1212ff" },
   dateRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 20 },
-  input: { width: "30%", height: 56, borderRadius: 16, borderWidth: 1.5, borderColor: "#ddd", textAlign: "center", fontSize: 16, color: "#111" },
+  input: {
+    width: "30%",
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#ddd",
+    textAlign: "center",
+    fontSize: 16,
+    color: "#111",
+  },
 });

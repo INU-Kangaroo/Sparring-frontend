@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { SignupRequest } from "../api/signup";
 
 type SignupDraft = Partial<SignupRequest> & {
@@ -13,7 +19,7 @@ type Ctx = {
 
 const SignupContext = createContext<Ctx | null>(null);
 
-export function SignupProvider({ children }: { children: React.ReactNode }) {
+export function SignupProvider({ children }: { children: ReactNode }) {
   const [draft, setDraftState] = useState<SignupDraft>({});
 
   const setDraft = (patch: Partial<SignupDraft>) => {
@@ -24,7 +30,11 @@ export function SignupProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(() => ({ draft, setDraft, resetDraft }), [draft]);
 
-  return <SignupContext.Provider value={value}>{children}</SignupContext.Provider>;
+  return (
+    <SignupContext.Provider value={value}>
+      {children}
+    </SignupContext.Provider>
+  );
 }
 
 export function useSignupDraft() {

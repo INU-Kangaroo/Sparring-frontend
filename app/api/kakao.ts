@@ -1,7 +1,7 @@
 import { post } from "./index";
 import { saveTokensFromOAuth, type OAuthJwtResponse } from "./oauth";
 
-type KakaoSdkLoginRequest = {
+export type KakaoSdkLoginRequest = {
   accessToken: string;
 };
 

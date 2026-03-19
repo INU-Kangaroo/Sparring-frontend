@@ -6,7 +6,8 @@ import { Ionicons } from "@expo/vector-icons";
 import BackButton from "../../components/BackButton";
 import InputField from "../../components/InputField";
 import NextButton from "../../components/NextButton";
-import { loginApi } from "../api/login"; 
+import { loginApi } from "../api/login";
+import { getSurveyCompleted } from "../api/survey";
 
 export default function Login() {
   const router = useRouter();
@@ -27,8 +28,20 @@ export default function Login() {
 
       await loginApi({ email: trimmed, password });
 
-      // 토큰 저장은 loginApi 내부에서 끝남
-      router.replace("/main/main");
+      // 로그인 성공 후 설문 완료 여부 확인
+      const surveyCompletedRes = await getSurveyCompleted();
+
+      const completed =
+        surveyCompletedRes === true ||
+        surveyCompletedRes?.completed === true ||
+        surveyCompletedRes?.isCompleted === true ||
+        surveyCompletedRes?.data === true;
+
+      if (completed) {
+        router.replace("/main/main");
+      } else {
+        router.replace("/survey");
+      }
     } catch (e: any) {
       Alert.alert("로그인 실패", e?.message ?? "이메일/비밀번호를 확인해주세요.");
     } finally {
@@ -47,7 +60,6 @@ export default function Login() {
 
       <Text style={styles.subtext}>이메일과 비밀번호를 입력해주세요</Text>
 
-      {/* 이메일 */}
       <View style={styles.labelRow}>
         <Text style={styles.label}>이메일</Text>
         <Text style={styles.star}> *</Text>
@@ -67,7 +79,6 @@ export default function Login() {
         </View>
       )}
 
-      {/* 비밀번호 */}
       <View style={styles.labelRow}>
         <Text style={styles.label}>비밀번호</Text>
         <Text style={styles.star}> *</Text>
@@ -88,18 +99,39 @@ export default function Login() {
       )}
 
       <View style={{ marginTop: "auto", width: "100%" }}>
-        <NextButton title={loading ? "로그인 중..." : "로그인"} onPress={handleLogin} />
+        <NextButton
+          title={loading ? "로그인 중..." : "로그인"}
+          onPress={handleLogin}
+          disabled={loading || !isValidEmail || !isValidPassword}
+        />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 60, paddingHorizontal: 30, backgroundColor: "#fff" },
+  container: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 30,
+    backgroundColor: "#fff",
+  },
   header: { width: "100%", paddingHorizontal: 1 },
   heading: { marginTop: 30, fontSize: 20, fontWeight: "600", color: "#111" },
-  heading2: { marginTop: 5, fontSize: 20, alignSelf: "flex-start", fontWeight: "600", color: "#1e1d1dff" },
-  subtext: { marginTop: 70, alignSelf: "flex-start", fontSize: 16, fontWeight: "500", color: "#1e1d1dff" },
+  heading2: {
+    marginTop: 5,
+    fontSize: 20,
+    alignSelf: "flex-start",
+    fontWeight: "600",
+    color: "#1e1d1dff",
+  },
+  subtext: {
+    marginTop: 70,
+    alignSelf: "flex-start",
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#1e1d1dff",
+  },
   label: { fontSize: 12, color: "#1e1d1dff" },
   labelRow: { flexDirection: "row", marginTop: 30 },
   star: { fontSize: 12, color: "#e53935" },

@@ -145,7 +145,7 @@ export default function Survey1Screen() {
           ))}
         </View>
 
-        <View style={{ marginTop: 40 }}>
+        <View style={{ marginTop: 80 }}>
           <NextButton title="다음" onPress={handleNext} disabled={!canNext} />
         </View>
 

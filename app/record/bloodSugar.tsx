@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, Fragment } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,14 @@ import {
   Dimensions,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LineChart } from "react-native-chart-kit";
+import { LinearGradient } from "expo-linear-gradient";
 
 import HomeFab from "../../components/HomeButton";
 import InfoModal from "../../components/InfoModal";
@@ -21,6 +23,7 @@ import BloodInputModal from "../../components/BloodInput";
 import BackButton from "@/components/BackButton";
 import RecordBox from "../../components/RecordBox";
 import { createBloodSugarLog, getBloodSugarDaily } from "../api/bloodSugar";
+import HorizonLine from "../../components/HorizonLine";
 
 // -------- date utils --------
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -39,14 +42,21 @@ type BloodRecordUI = {
 };
 
 function normalizeDaily(raw: any): BloodRecordUI[] {
-  const arr = Array.isArray(raw) ? raw : raw?.logs ?? raw?.data ?? raw?.items ?? [];
+  const arr = Array.isArray(raw)
+    ? raw
+    : raw?.logs ?? raw?.data ?? raw?.items ?? [];
   if (!Array.isArray(arr)) return [];
 
   return arr
     .map((it: any) => {
-      const glucose = Number(it?.glucoseLevel ?? it?.value ?? it?.bloodSugar ?? it?.glucose);
-      const measuredAtStr = it?.measuredAt ?? it?.measured_at ?? it?.timestamp ?? it?.createdAt;
-      const label = String(it?.measurementLabel ?? it?.label ?? it?.title ?? "");
+      const glucose = Number(
+        it?.glucoseLevel ?? it?.value ?? it?.bloodSugar ?? it?.glucose
+      );
+      const measuredAtStr =
+        it?.measuredAt ?? it?.measured_at ?? it?.timestamp ?? it?.createdAt;
+      const label = String(
+        it?.measurementLabel ?? it?.label ?? it?.title ?? ""
+      );
 
       if (!Number.isFinite(glucose)) return null;
       if (!measuredAtStr) return null;
@@ -88,7 +98,11 @@ export default function BloodSugarScreen() {
       );
       setRecords(list);
     } catch (e: any) {
-      console.log("bloodSugar fetchDaily error", e?.response?.status, e?.response?.data ?? e);
+      console.log(
+        "bloodSugar fetchDaily error",
+        e?.response?.status,
+        e?.response?.data ?? e
+      );
       Alert.alert("불러오기 실패", e?.message ?? "혈당 기록을 불러오지 못했어요.");
       setRecords([]);
     } finally {
@@ -129,10 +143,49 @@ export default function BloodSugarScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
-        <Pressable style={styles.datePill} onPress={() => setShowDatePicker(true)}>
-          <Ionicons name="calendar" size={14} color="#fff" />
-          <Text style={styles.dateText}>{selectedYmd}</Text>
-        </Pressable>
+        <View style={styles.dateRow}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.datePillWrap,
+              pressed && styles.pressedBtn,
+            ]}
+            onPress={() => setShowDatePicker((prev) => !prev)}
+          >
+            <LinearGradient
+              colors={["#0D99FF", "#1D4BFF"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.datePill}
+            >
+              <Ionicons name="calendar" size={14} color="#fff" />
+              <Text style={styles.dateText}>{selectedYmd}</Text>
+            </LinearGradient>
+          </Pressable>
+
+          {showDatePicker && (
+            <View style={styles.datePickerInline}>
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display={Platform.OS === "ios" ? "compact" : "default"}
+                onChange={(event, selected) => {
+                  if ((event as any)?.type === "dismissed") {
+                    setShowDatePicker(false);
+                    return;
+                  }
+
+                  if (selected) {
+                    setDate(selected);
+                  }
+
+                  if (Platform.OS !== "ios") {
+                    setShowDatePicker(false);
+                  }
+                }}
+              />
+            </View>
+          )}
+        </View>
 
         <Text style={styles.sectionTitle}>혈당 기록</Text>
 
@@ -144,56 +197,95 @@ export default function BloodSugarScreen() {
 
         <View style={{ marginTop: 6 }}>
           {!loading && records.length === 0 ? (
-            <Text style={styles.emptyText}>아직 기록이 없어요. 아래 ＋ 버튼으로 추가해줘!</Text>
+            <Text style={styles.emptyText}>
+              아직 기록이 없어요. 아래 ＋ 버튼으로 추가해줘!
+            </Text>
           ) : (
             records.map((r, idx) => (
-              <RecordBox
-                key={`${r.measuredAt.toISOString()}-${idx}`}
-                title={displayTitle(r)}
-                time={formatTime(r.measuredAt)}
-                value={`${r.glucoseLevel} mg/dL`}
-                fullWidth
-                valueIcon="water"
-              />
+              <Fragment key={`${r.measuredAt.toISOString()}-${idx}`}>
+                <RecordBox
+                  title={displayTitle(r)}
+                  time={formatTime(r.measuredAt)}
+                  value={`${r.glucoseLevel} mg/dL`}
+                  fullWidth
+                  valueIcon="water"
+                />
+                {idx !== records.length - 1 && (
+                  <View style={styles.recordDivider} />
+                )}
+              </Fragment>
             ))
           )}
         </View>
 
         <Pressable
-          style={[styles.addBar, saving && { opacity: 0.7 }]}
+          style={({ pressed }) => [
+            styles.addBarWrap,
+            saving && { opacity: 0.7 },
+            pressed && styles.pressedBtn,
+          ]}
           onPress={() => setInputVisible(true)}
           disabled={saving}
         >
-          <Text style={styles.addPlus}>＋</Text>
+          <LinearGradient
+            colors={["#0D99FF", "#1D4BFF"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.addBar}
+          >
+            <Text style={styles.addPlus}>＋</Text>
+          </LinearGradient>
         </Pressable>
 
         <View style={styles.btnRow}>
           <Pressable
-            style={styles.darkBtn}
+            style={({ pressed }) => [
+              styles.darkBtnWrap,
+              pressed && styles.pressedBtn,
+            ]}
             onPress={() => {
               setModalTitle("혈당 측정 방법");
-              setModalContent(  
-                  "1. 손을 깨끗이 씻고 말립니다.\n" + "\n" +
-                  "2. 테스트 스트립을 측정기에 삽입합니다.\n" + "\n" +
-                  "3. 채혈기로 손가락 끝을 살짝 찔러 혈액을 채취합니다.\n" + "\n" +
-                  "4. 혈액을 테스트 스트립에 묻힙니다.\n" + "\n" +
+              setModalContent(
+                "1. 손을 깨끗이 씻고 말립니다.\n\n" +
+                  "2. 테스트 스트립을 측정기에 삽입합니다.\n\n" +
+                  "3. 채혈기로 손가락 끝을 살짝 찔러 혈액을 채취합니다.\n\n" +
+                  "4. 혈액을 테스트 스트립에 묻힙니다.\n\n" +
                   "5. 결과를 기록합니다."
               );
               setModalVisible(true);
             }}
           >
-            <Text style={styles.darkBtnText}>혈당 측정 방법</Text>
+            <LinearGradient
+              colors={["#0D99FF", "#1D4BFF"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.darkBtn}
+            >
+              <Text style={styles.darkBtnText}>혈당 측정 방법</Text>
+            </LinearGradient>
           </Pressable>
 
           <Pressable
-            style={styles.darkBtn}
+            style={({ pressed }) => [
+              styles.darkBtnWrap,
+              pressed && styles.pressedBtn,
+            ]}
             onPress={() => {
               setModalTitle("혈당 정상 수치");
-              setModalContent("✔ 공복 혈당: 70-99 mg/dL\n" + "\n" + "✔ 식후 2시간 혈당: 140 mg/dL 미만");
+              setModalContent(
+                "✔ 공복 혈당: 70-99 mg/dL\n\n✔ 식후 2시간 혈당: 140 mg/dL 미만"
+              );
               setModalVisible(true);
             }}
           >
-            <Text style={styles.darkBtnText}>혈당 정상 수치</Text>
+            <LinearGradient
+              colors={["#0D99FF", "#1D4BFF"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.darkBtn}
+            >
+              <Text style={styles.darkBtnText}>혈당 정상 수치</Text>
+            </LinearGradient>
           </Pressable>
         </View>
 
@@ -234,22 +326,6 @@ export default function BloodSugarScreen() {
         </View>
       </ScrollView>
 
-      {showDatePicker && (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display="default"
-          onChange={(event, selected) => {
-            if ((event as any)?.type === "dismissed") {
-              setShowDatePicker(false);
-              return;
-            }
-            setShowDatePicker(false);
-            if (selected) setDate(selected);
-          }}
-        />
-      )}
-
       <HomeFab onPress={() => router.push("/main/main")} />
 
       <InfoModal
@@ -280,17 +356,32 @@ export default function BloodSugarScreen() {
             console.log("bloodSugar save res", res);
 
             const merged = new Date(date);
-            merged.setHours(measuredAt.getHours(), measuredAt.getMinutes(), 0, 0);
+            merged.setHours(
+              measuredAt.getHours(),
+              measuredAt.getMinutes(),
+              0,
+              0
+            );
 
             setRecords((prev) =>
-              [...prev, { glucoseLevel: Number(value), measuredAt: merged, measurementLabel }]
-                .sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime())
+              [
+                ...prev,
+                {
+                  glucoseLevel: Number(value),
+                  measuredAt: merged,
+                  measurementLabel,
+                },
+              ].sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime())
             );
 
             setInputVisible(false);
             await fetchDaily();
           } catch (e: any) {
-            console.log("bloodSugar save error", e?.response?.status, e?.response?.data ?? e);
+            console.log(
+              "bloodSugar save error",
+              e?.response?.status,
+              e?.response?.data ?? e
+            );
             Alert.alert("저장 실패", e?.message ?? "혈당 기록 저장에 실패했어요.");
           } finally {
             setSaving(false);
@@ -315,6 +406,23 @@ const styles = StyleSheet.create({
 
   container: { padding: 18, paddingBottom: 120 },
 
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+    zIndex: 10,
+  },
+
+  datePillWrap: {
+    alignSelf: "flex-start",
+    borderRadius: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
   datePill: {
     flexDirection: "row",
     alignItems: "center",
@@ -323,48 +431,94 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 34,
     borderRadius: 18,
-    backgroundColor: "#091441",
-    marginBottom: 14,
   },
+
   dateText: { color: "#fff", fontWeight: "800", fontSize: 12 },
 
-  sectionTitle: { fontSize: 12, fontWeight: "800", color: "#222", marginBottom: 6 },
+  datePickerInline: {
+    marginLeft: 8,
+    justifyContent: "center",
+  },
+
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#222",
+    marginBottom: 6,
+  },
 
   emptyText: { color: "#777", fontSize: 12, marginTop: 8, fontWeight: "700" },
 
+  recordDivider: {
+    height: 1,
+    backgroundColor: "#E5E5E5",
+    marginVertical: 10,
+    marginHorizontal: 4,
+  },
+
+  addBarWrap: {
+    marginTop: 30,
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+
   addBar: {
-    marginTop: 8,
     height: 44,
     borderRadius: 12,
-    backgroundColor: "#091441",
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 10,
   },
+
   addPlus: { color: "#fff", fontSize: 26, fontWeight: "900" },
 
   btnRow: { flexDirection: "row", gap: 10, marginTop: 10, marginBottom: 12 },
+
+  darkBtnWrap: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+
   darkBtn: {
     flex: 1,
     height: 38,
     borderRadius: 12,
-    backgroundColor: "#091441",
     alignItems: "center",
     justifyContent: "center",
   },
+
   darkBtnText: { color: "#fff", fontWeight: "800", fontSize: 12 },
 
+  pressedBtn: {
+    opacity: 0.82,
+  },
+
   chartCard: {
+    marginTop: 30,
     backgroundColor: "#fff",
     borderRadius: 14,
     padding: 14,
     marginBottom: 12,
   },
+
   chartHead: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
     marginBottom: 10,
   },
+
   cardTitle: { fontSize: 13, fontWeight: "900", color: "#111" },
   smallText: { fontSize: 11, fontWeight: "700", color: "#777" },
 

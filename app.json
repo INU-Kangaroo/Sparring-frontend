@@ -8,7 +8,8 @@
     "scheme": "kangaroo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": { "image": "./assets/images/splash-icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -32,7 +33,9 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.kangaroo",
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "bundler": "metro",
@@ -63,6 +66,9 @@
           "kakaoAppKey": "d9de37c241c38fd01edd123959ea5b0c"
         }
       ]
-    ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

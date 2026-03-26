@@ -28,7 +28,7 @@ export default function RecommendationScreen() {
     () => [
       { key: "diet", title: "식단" },
       { key: "workout", title: "운동" },
-      { key: "supp", title: "영양성분" },
+      { key: "supp", title: "영양제" },
     ],
     []
   );
@@ -63,7 +63,7 @@ export default function RecommendationScreen() {
   const goFilter = () => {
     if (activeKey === "diet") router.push("/recommend/foodfilter");
     else if (activeKey === "workout") router.push("/recommend/healthfilter");
-    else router.push("/recommend/pillfilter");
+    else router.push("/recommend/pilldetail");
   };
 
   const goDetailByKey = (key: CardKey) => {

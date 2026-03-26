@@ -11,10 +11,20 @@ import {
   setTokensToStorage,
 } from "../utils/asyncStorage";
 
-const baseURL =
+import { Platform } from "react-native";
+
+const defaultBaseURL =
   process.env.EXPO_PUBLIC_BACKEND_URL ||
   process.env.EXPO_PUBLIC_API_BASE_URL ||
   "http://localhost:8080";
+
+const baseURL = ((): string => {
+  if (Platform.OS === "android" && defaultBaseURL.includes("localhost")) {
+    // Android emulator localhost -> host machine
+    return defaultBaseURL.replace("localhost", "10.0.2.2");
+  }
+  return defaultBaseURL;
+})();
 
 console.log("[API] baseURL =", baseURL);
 console.log(

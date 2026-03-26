@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Highlight } from "../api/insights";
 
 type DayData = {
   day: string;
@@ -15,6 +16,7 @@ type WeeklySummaryProps = {
   normalCount: number;
   normalTotal: number;
   dayData: DayData[];
+  highlights: Highlight[];
 };
 
 export default function WeeklySummary({
@@ -24,9 +26,14 @@ export default function WeeklySummary({
   normalCount,
   normalTotal,
   dayData,
+  highlights,
 }: WeeklySummaryProps) {
-  const measurePct = Math.round((totalMeasured / totalPossible) * 100);
-  const normalPct = Math.round((normalCount / normalTotal) * 100);
+  const measurePct =
+    totalPossible > 0
+      ? Math.min(100, Math.round((totalMeasured / totalPossible) * 100))
+      : 0;
+  const normalPct =
+    normalTotal > 0 ? Math.round((normalCount / normalTotal) * 100) : 0;
 
   return (
     <View style={styles.sectionWrap}>
@@ -76,7 +83,6 @@ export default function WeeklySummary({
 
         <View style={styles.cardDivider} />
 
-        {/* 요일별 */}
         <View style={styles.dayRow}>
           {dayData.map((d) => (
             <View key={d.day} style={styles.dayCol}>
@@ -86,6 +92,25 @@ export default function WeeklySummary({
             </View>
           ))}
         </View>
+
+        {highlights.length > 0 && (
+          <>
+            <View style={styles.cardDivider} />
+            <View style={styles.highlightsWrap}>
+              {highlights.map((item, index) => (
+                <View
+                  key={`${item.type}-${item.message}-${index}`}
+                  style={styles.highlightRow}
+                >
+                  <Text style={styles.highlightIcon}>
+                    {item.type === "GOOD" ? "✅" : "⚠️"}
+                  </Text>
+                  <Text style={styles.highlightText}>{item.message}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
       </View>
     </View>
   );
@@ -161,4 +186,22 @@ const styles = StyleSheet.create({
   dayLabel: { fontSize: 12, fontWeight: "600", color: "#999" },
   dayEmoji: { fontSize: 20 },
   dayCount: { fontSize: 11, fontWeight: "600", color: "#555" },
+
+  highlightsWrap: { gap: 12 },
+  highlightRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  highlightIcon: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  highlightText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#444",
+    lineHeight: 22,
+  },
 });

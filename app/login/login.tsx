@@ -8,6 +8,7 @@ import InputField from "../../components/InputField";
 import NextButton from "../../components/NextButton";
 import { loginApi } from "../api/login";
 import { getSurveyCompleted } from "../api/survey";
+import { saveSignupProfile } from "../utils/profileStorage";
 
 export default function Login() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function Login() {
       setLoading(true);
 
       await loginApi({ email: trimmed, password });
+      await saveSignupProfile({ email: trimmed });
 
       // 로그인 성공 후 설문 완료 여부 확인
       const surveyCompletedRes = await getSurveyCompleted();

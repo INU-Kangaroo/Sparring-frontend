@@ -280,7 +280,7 @@ export default function MainScreen() {
               color: () => "#000",
               labelColor: () => "#000",
             }}
-            bezier
+            bezier={false}
             style={styles.chart}
           />
 

@@ -1,3 +1,4 @@
+import "react-native-gesture-handler";
 import "expo-router/entry";
 
 // Web에서 requestAnimationFrame 정의

@@ -14,6 +14,7 @@ import BackButton from "../../components/BackButton";
 import NextButton from "../../components/NextButton";
 import { useSurveyDraft } from "./surveyContext";
 import { submitSurvey } from "../api/survey";
+import { saveSurveyAnswers } from "../utils/profileStorage";
 
 type ChipProps = {
   label: string;
@@ -86,6 +87,8 @@ export default function Survey3Screen() {
       await submitSurvey({
         answers: finalAnswers,
       });
+
+      await saveSurveyAnswers(finalAnswers);
 
       setAnswer("SLEEP_HOURS", parsedSleepHours);
       setAnswer("SLEEP_QUALITY", sleepQuality!);

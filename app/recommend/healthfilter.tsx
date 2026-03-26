@@ -1,11 +1,41 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
+import { fetchExerciseRecommendation, ExerciseRequest } from "../api/recommendation";
 
 type Option = { id: string; label: string };
 
 const PRETENDARD = "Pretendard";
 const PRETENDARD_MEDIUM = "Pretendard-Medium";
+
+const DURATION_MAP: Record<string, ExerciseRequest["duration"]> = {
+  under30: "SHORT",
+  "30to60": "MEDIUM",
+  over60: "LONG",
+};
+const INTENSITY_MAP: Record<string, ExerciseRequest["intensity"]> = {
+  low: "LOW",
+  mid: "MEDIUM", // API docs/타입과 일치
+  high: "HIGH",
+};
+const LOCATION_MAP: Record<string, ExerciseRequest["location"]> = {
+  indoor: "INDOOR",
+  outdoor: "OUTDOOR",
+  gym: "GYM",
+};
+
+function getApiErrorMessage(error: unknown) {
+  const status = (error as any)?.response?.status;
+  const responseData = (error as any)?.response?.data;
+  const message = (error as any)?.message;
+
+  if (status) {
+    const detail = responseData?.message ?? responseData?.errors ?? JSON.stringify(responseData ?? {});
+    return `운동 추천 호출 실패 (${status})\n${detail}`;
+  }
+
+  return `운동 추천 호출 실패\n${String(message ?? error)}`;
+}
 
 function Chip({
   label,
@@ -56,26 +86,46 @@ export default function HealthFilter() {
     []
   );
 
-  // ✅ 각 질문당 하나만 선택
-  const [selectedTime, setSelectedTime] = useState<string>("30to60"); // 이미지처럼 기본값 주고 싶으면 유지
-  const [selectedIntensity, setSelectedIntensity] = useState<string>(""); // 기본값 없음
-  const [selectedPlace, setSelectedPlace] = useState<string>(""); // 기본값 없음
+  const [selectedTime, setSelectedTime] = useState<string>("30to60");
+  const [selectedIntensity, setSelectedIntensity] = useState<string>("mid");
+  const [selectedPlace, setSelectedPlace] = useState<string>("indoor");
+  const [loading, setLoading] = useState(false);
 
   const canSave = selectedTime !== "" && selectedIntensity !== "" && selectedPlace !== "";
 
-  const onSave = () => {
-    if (!canSave) return;
-    router.push("/recommend/recommendation");
+  const onSave = async () => {
+    if (!canSave || loading) return;
+    setLoading(true);
+    try {
+      const result = await fetchExerciseRecommendation({
+        duration: DURATION_MAP[selectedTime],
+        intensity: INTENSITY_MAP[selectedIntensity],
+        location: LOCATION_MAP[selectedPlace],
+      });
+      router.push({
+        pathname: "/recommend/healthdetail",
+        params: {
+          data: JSON.stringify(result),
+          duration: DURATION_MAP[selectedTime],
+          intensity: INTENSITY_MAP[selectedIntensity],
+          location: LOCATION_MAP[selectedPlace],
+        },
+      });
+    } catch (e) {
+      console.error("exercise recommendation error", e);
+      alert(getApiErrorMessage(e));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>필터 선택하기</Text>
-      <Text style={styles.subtitle}>필터 선택하기</Text>
+      <Text style={styles.title}>운동 추천 필터</Text>
+      <Text style={styles.subtitle}>원하는 조건을 선택하고 추천을 받아보세요</Text>
 
       <View style={{ height: 78 }} />
 
-      {/* 1) 운동 시간대 */}
       <Text style={styles.question}>원하는 운동 시간대를 골라주세요.</Text>
       <View style={styles.row}>
         {timeOptions.map((o) => (
@@ -88,7 +138,6 @@ export default function HealthFilter() {
         ))}
       </View>
 
-      {/* 2) 운동 강도 */}
       <Text style={[styles.question, { marginTop: 22 }]}>원하는 운동 강도를 골라주세요.</Text>
       <View style={styles.row}>
         {intensityOptions.map((o) => (
@@ -101,7 +150,6 @@ export default function HealthFilter() {
         ))}
       </View>
 
-      {/* 3) 운동 장소 */}
       <Text style={[styles.question, { marginTop: 22 }]}>원하는 운동 장소를 골라주세요.</Text>
       <View style={styles.row}>
         {placeOptions.map((o) => (
@@ -114,13 +162,16 @@ export default function HealthFilter() {
         ))}
       </View>
 
-      {/* 저장 버튼 (비활성/활성) */}
       <Pressable
         onPress={onSave}
-        disabled={!canSave}
+        disabled={!canSave || loading}
         style={[styles.saveBtn, !canSave ? styles.saveBtnDisabled : styles.saveBtnEnabled]}
       >
-        <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>저장</Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>추천 받기</Text>
+        )}
       </Pressable>
     </View>
   );
@@ -133,7 +184,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingTop: 60,
   },
-
   title: {
     fontSize: 25,
     color: "#000000",
@@ -146,21 +196,17 @@ const styles = StyleSheet.create({
     color: "#000000",
     fontFamily: PRETENDARD_MEDIUM,
   },
-
   question: {
     fontSize: 16,
     color: "#000000",
     fontFamily: PRETENDARD_MEDIUM,
   },
-
   row: {
     marginTop: 16,
     flexDirection: "row",
     gap: 14,
     justifyContent: "flex-start",
   },
-
-  // 칩: (foodfilter와 동일 톤)
   chip: {
     width: 90,
     height: 44,
@@ -176,15 +222,12 @@ const styles = StyleSheet.create({
   chipActive: {
     backgroundColor: "#0D99FF",
   },
-
   chipText: {
     fontSize: 15,
     fontFamily: PRETENDARD_MEDIUM,
   },
   chipTextInactive: { color: "#000000" },
   chipTextActive: { color: "#FFFFFF" },
-
-  // 저장 버튼: W129 H44 radius20
   saveBtn: {
     position: "absolute",
     bottom: 34,

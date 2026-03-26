@@ -4,16 +4,19 @@ import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
 import NextButton from "../../components/NextButton";
+import { useSignupDraft } from "./signupContext";
 
-
-export default function EmailLogin() {
+export default function GenderScreen() {
   const [gender, setGender] = useState<"male" | "female" | null>(null);
   const router = useRouter();
+  const { setDraft } = useSignupDraft();
 
   const nextPage = () => {
-    if (!gender) return; // 선택 안 하면 못 넘어가게
+    if (!gender) return;
+
+    setDraft({ gender: gender === "male" ? "MALE" : "FEMALE" });
     router.push("/sign-up/birthdate");
-  }; 
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -37,12 +40,7 @@ export default function EmailLogin() {
             onPress={() => setGender("male")}
             style={[styles.card, gender === "male" && styles.selectedCard]}
           >
-            <Text
-              style={[
-                styles.cardText,
-                gender === "male" && styles.selectedText,
-              ]}
-            >
+            <Text style={[styles.cardText, gender === "male" && styles.selectedText]}>
               남성
             </Text>
           </Pressable>
@@ -51,12 +49,7 @@ export default function EmailLogin() {
             onPress={() => setGender("female")}
             style={[styles.card, gender === "female" && styles.selectedCard]}
           >
-            <Text
-              style={[
-                styles.cardText,
-                gender === "female" && styles.selectedText,
-              ]}
-            >
+            <Text style={[styles.cardText, gender === "female" && styles.selectedText]}>
               여성
             </Text>
           </Pressable>
@@ -68,75 +61,19 @@ export default function EmailLogin() {
       </View>
     </View>
   );
-} 
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 30,
-    backgroundColor: "#fff",
-  },
-  header: {
-    width: "100%",
-    paddingHorizontal: 1,
-  },
-  heading: {
-    marginTop: 30,
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1e1d1dff",
-  },
-  heading2: {
-    marginTop: 5,
-    fontSize: 20,
-    alignSelf: "flex-start",
-    fontWeight: "600",
-    color: "#1e1d1dff",
-  },
-  subtext: {
-    marginTop: 70,
-    alignSelf: "flex-start",
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#1e1d1dff",
-  },
-  subtext2: {
-    alignSelf: "flex-start",
-    fontSize: 12,
-    color: "#1e1d1dff",
-    marginVertical: 10,
-  },
-    star: {
-    alignSelf: "flex-start",
-    fontSize: 12,
-    color: "#fa1212ff",
-    marginVertical: 10,
-  },
-  genderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-  },
-  card: {
-    width: "48%",
-    height: 140,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "#ddd",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  selectedCard: {
-    borderColor: "#111",
-    backgroundColor: "#f5f5f5",
-  },
-  cardText: {
-    fontSize: 16,
-    color: "#999",
-    fontWeight: "500",
-  },
-  selectedText: {
-    color: "#111",
-    fontWeight: "600",
-  },
+  container: { flex: 1, paddingTop: 60, paddingHorizontal: 30, backgroundColor: "#fff" },
+  header: { width: "100%", paddingHorizontal: 1 },
+  heading: { marginTop: 30, fontSize: 20, fontWeight: "600", color: "#1e1d1dff" },
+  heading2: { marginTop: 5, fontSize: 20, alignSelf: "flex-start", fontWeight: "600", color: "#1e1d1dff" },
+  subtext: { marginTop: 70, alignSelf: "flex-start", fontSize: 16, fontWeight: "500", color: "#1e1d1dff" },
+  subtext2: { alignSelf: "flex-start", fontSize: 12, color: "#1e1d1dff", marginVertical: 10 },
+  star: { alignSelf: "flex-start", fontSize: 12, color: "#fa1212ff", marginVertical: 10 },
+  genderRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 20 },
+  card: { width: "48%", height: 140, borderRadius: 20, borderWidth: 1.5, borderColor: "#ddd", justifyContent: "center", alignItems: "center" },
+  selectedCard: { borderColor: "#111", backgroundColor: "#f5f5f5" },
+  cardText: { fontSize: 16, color: "#999", fontWeight: "500" },
+  selectedText: { color: "#111", fontWeight: "600" },
 });

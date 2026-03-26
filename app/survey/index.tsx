@@ -6,7 +6,7 @@ import { router } from "expo-router";
 export default function SurveyIntroScreen() {
   const onStart = () => {
     // TODO: 나중에 설문 1번 화면 만들면 그쪽으로 이동
-    router.push("/survey/survey1");
+    router.push("/survey/stats");
   };
 
   return (
@@ -60,6 +60,6 @@ const styles = StyleSheet.create({
   startText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#C4C4C4", // 이미지처럼 비활성 느낌의 회색
+    color: "#113ed2", // 이미지처럼 비활성 느낌의 회색
   },
 });

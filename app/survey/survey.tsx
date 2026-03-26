@@ -1,9 +1,19 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
 import NextButton from "../../components/NextButton";
+import { useSurveyDraft } from "./surveyContext";
+
 type ChipProps = {
   label: string;
   selected: boolean;
@@ -11,18 +21,44 @@ type ChipProps = {
 };
 
 const Chip = ({ label, selected, onPress }: ChipProps) => (
-  <Pressable
-    onPress={onPress}
-    style={[styles.chip, selected && styles.chipSelected]}
-  >
-    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-      {label}
-    </Text>
+  <Pressable onPress={onPress} style={[styles.chip, selected && styles.chipSelected]}>
+    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
   </Pressable>
 );
 
+const mapBloodSugar = (v: string) => {
+  switch (v) {
+    case "정상":
+      return "NORMAL";
+    case "경계성":
+      return "BORDERLINE";
+    case "제1형":
+      return "TYPE1";
+    case "제2형":
+      return "TYPE2";
+    default:
+      return "UNKNOWN";
+  }
+};
+
+const mapBloodPressure = (v: string) => {
+  switch (v) {
+    case "정상":
+      return "NORMAL";
+    case "경계성":
+      return "BORDERLINE";
+    case "1차고혈압":
+      return "STAGE1";
+    case "2차고혈압":
+      return "STAGE2";
+    default:
+      return "UNKNOWN";
+  }
+};
+
 export default function Survey() {
   const router = useRouter();
+  const { setAnswer } = useSurveyDraft();
 
   const [bloodSugar, setBloodSugar] = useState<string | null>(null);
   const [bloodPressure, setBloodPressure] = useState<string | null>(null);
@@ -35,14 +71,23 @@ export default function Survey() {
     if (
       !bloodSugar ||
       !bloodPressure ||
-      !medication ||
-      !allergy ||
-      !goal ||
+      !medication.trim() ||
+      !allergy.trim() ||
+      !goal.trim() ||
       familyHistory === null
-    )
+    ) {
+      Alert.alert("입력 누락", "필수 항목을 모두 입력해주세요.");
       return;
+    }
 
-    router.push("/survey/survey1"); // 다음 단계
+    setAnswer("BLOOD_SUGAR_STATUS", mapBloodSugar(bloodSugar));
+    setAnswer("BLOOD_PRESSURE_STATUS", mapBloodPressure(bloodPressure));
+    setAnswer("MEDICATIONS", medication.trim());
+    setAnswer("ALLERGIES", allergy.trim());
+    setAnswer("HEALTH_GOAL", goal.trim());
+    setAnswer("HAS_FAMILY_HYPERTENSION", familyHistory === "예");
+
+    router.push("/survey/survey1");
   };
 
   return (
@@ -50,8 +95,8 @@ export default function Survey() {
       <ScrollView contentContainerStyle={styles.container}>
         <BackButton onPress={() => router.back()} />
 
-        <Text style={styles.heading}>나의 건강 시그널 확인하고 싶다면?</Text>
-        <Text style={styles.heading2}>3초만에 회원가입!</Text>
+        <Text style={styles.heading}>건강 상태를 더 정확하게 알려드릴게요</Text>
+        <Text style={styles.heading2}>첫 이용 전 설문을 진행해주세요</Text>
 
         <Text style={styles.subtext}>당신의 건강 상태에 대해 알려주세요</Text>
 
@@ -143,6 +188,7 @@ export default function Survey() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     paddingTop: 60,
@@ -171,8 +217,7 @@ const styles = StyleSheet.create({
   },
   labelRow: {
     flexDirection: "row",
-
-    marginTop: 20,
+    marginTop: 26,
   },
   label: {
     fontSize: 14,
@@ -186,34 +231,34 @@ const styles = StyleSheet.create({
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 3,
-    marginTop: 10,
+    gap: 5,
+    marginTop: 8,
   },
   chip: {
-    paddingHorizontal: 13,
-    height: 35,
+    paddingHorizontal: 14,
+    height: 34,
     borderRadius: 18,
-    backgroundColor: "#747474ff",
+    backgroundColor: "#747474",
     justifyContent: "center",
   },
   chipSelected: {
-    backgroundColor: "#373636ff",
+    backgroundColor: "#1435b9f6",
   },
   chipText: {
     color: "#fff",
     fontSize: 14,
   },
   chipTextSelected: {
-    fontWeight: "600",
+    fontWeight: "700",
   },
   input: {
-    marginTop: 14,
-    height: 56,
-    borderRadius: 16,
+    marginTop: 10,
+    height: 50,
+    borderRadius: 14,
     borderWidth: 1.5,
     borderColor: "#ddd",
     paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: 14,
     color: "#111",
   },
 });

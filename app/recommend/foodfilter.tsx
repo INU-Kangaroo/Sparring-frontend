@@ -1,0 +1,283 @@
+import React, { useMemo, useState } from "react";
+import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
+import { router } from "expo-router";
+
+type Option = { id: string; label: string };
+
+const PRETENDARD = "Pretendard";
+const PRETENDARD_MEDIUM = "Pretendard-Medium";
+
+export default function FoodFilter() {
+  const noneOption: Option = { id: "none", label: "없음" };
+
+  const options = useMemo<Option[]>(
+    () => [
+      { id: "cucumber", label: "오이" },
+      { id: "egg", label: "계란" },
+      { id: "peach", label: "복숭아" },
+      { id: "watermelon", label: "수박" },
+      { id: "dairy", label: "유제품" },
+      { id: "nuts", label: "견과류" },
+      { id: "meat", label: "육류" },
+      { id: "fish", label: "생선" },
+      { id: "bean", label: "콩" },
+      { id: "flour", label: "밀가루" },
+      { id: "crustacean", label: "갑각류" },
+      { id: "etc", label: "기타" },
+    ],
+    []
+  );
+
+  const mealTimes: Option[] = [
+    { id: "morning", label: "아침" },
+    { id: "lunch", label: "점심" },
+    { id: "dinner", label: "저녁" },
+    { id: "snack", label: "간식" },
+  ];
+
+  // 음식 카테고리 멀티 선택
+  const [selected, setSelected] = useState<Set<string>>(new Set(["dairy"]));
+  // 시간대 단일 선택
+  const [selectedMeal, setSelectedMeal] = useState<string>("morning");
+
+  const isNoneSelected = selected.has("none");
+
+  const onPressNone = () => {
+    setSelected((prev) => {
+      if (prev.has("none")) return new Set();
+      return new Set(["none"]);
+    });
+  };
+
+  const onPressChip = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete("none");
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const onSave = () => {
+    // TODO: selected, selectedMeal 저장/전달
+    router.push("/recommend/recommendation");
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>필터 선택하기</Text>
+      <Text style={styles.subtitle}>필터 선택하기</Text>
+
+      <View style={{ height: 40 }} />
+
+      {/* ── 시간대 선택 ── */}
+      <Text style={styles.desc}>추천받고 싶은 시간대를 선택해주세요.</Text>
+      <View style={styles.mealRow}>
+        {mealTimes.map((m) => (
+          <Pressable
+            key={m.id}
+            onPress={() => setSelectedMeal(m.id)}
+            style={[
+              styles.mealChip,
+              selectedMeal === m.id ? styles.mealChipActive : styles.mealChipInactive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.mealChipText,
+                selectedMeal === m.id
+                  ? styles.mealChipTextActive
+                  : styles.mealChipTextInactive,
+              ]}
+            >
+              {m.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.divider} />
+
+      {/* ── 음식 카테고리 선택 ── */}
+      <Text style={styles.desc}>선호하는 음식 카테고리를 골라주세요.</Text>
+
+      {/* 없음 단독 줄 */}
+      <View style={styles.noneRow}>
+        <Chip
+          label={noneOption.label}
+          active={isNoneSelected}
+          onPress={onPressNone}
+        />
+      </View>
+
+      {/* 3열 그리드 */}
+      <FlatList
+        data={options}
+        keyExtractor={(item) => item.id}
+        numColumns={3}
+        scrollEnabled={false}
+        contentContainerStyle={styles.grid}
+        columnWrapperStyle={styles.gridRow}
+        renderItem={({ item }) => (
+          <Chip
+            label={item.label}
+            active={selected.has(item.id)}
+            onPress={() => onPressChip(item.id)}
+          />
+        )}
+      />
+
+      {/* 저장 버튼 */}
+      <Pressable style={styles.saveBtn} onPress={onSave}>
+        <Text style={styles.saveText}>저장</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function Chip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
+    >
+      <Text
+        style={[
+          styles.chipText,
+          active ? styles.chipTextActive : styles.chipTextInactive,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+    paddingHorizontal: 22,
+    paddingTop: 60,
+  },
+
+  title: {
+    fontSize: 25,
+    color: "#000000",
+    fontFamily: PRETENDARD,
+    fontWeight: "800",
+  },
+  subtitle: {
+    marginTop: 10,
+    fontSize: 18,
+    color: "#000000",
+    fontFamily: PRETENDARD_MEDIUM,
+  },
+  desc: {
+    fontSize: 16,
+    color: "#000000",
+    fontFamily: PRETENDARD_MEDIUM,
+  },
+
+  // 시간대
+  mealRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  mealChip: {
+    flex: 1,
+    height: 44,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mealChipActive: {
+    backgroundColor: "#0D99FF",
+  },
+  mealChipInactive: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#EFEFEF",
+  },
+  mealChipText: {
+    fontSize: 15,
+    fontFamily: PRETENDARD_MEDIUM,
+  },
+  mealChipTextActive: { color: "#FFFFFF" },
+  mealChipTextInactive: { color: "#000000" },
+
+  divider: {
+    height: 1,
+    backgroundColor: "#F0F0F0",
+    marginVertical: 20,
+  },
+
+  // 없음
+  noneRow: {
+    marginTop: 16,
+    alignItems: "flex-start",
+  },
+
+  // 그리드
+  grid: {
+    marginTop: 14,
+    paddingBottom: 100,
+  },
+  gridRow: {
+    justifyContent: "flex-start",
+    gap: 14,
+    marginBottom: 14,
+  },
+
+  // 카테고리 칩
+  chip: {
+    width: 90,
+    height: 44,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chipInactive: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#EFEFEF",
+  },
+  chipActive: {
+    backgroundColor: "#0D99FF",
+  },
+  chipText: {
+    fontSize: 15,
+    fontFamily: PRETENDARD_MEDIUM,
+  },
+  chipTextInactive: { color: "#000000" },
+  chipTextActive: { color: "#FFFFFF" },
+
+  // 저장 버튼
+  saveBtn: {
+    position: "absolute",
+    bottom: 34,
+    alignSelf: "center",
+    width: 129,
+    height: 44,
+    borderRadius: 20,
+    backgroundColor: "#3D3D3D",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveText: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    fontFamily: PRETENDARD_MEDIUM,
+  },
+});

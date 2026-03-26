@@ -1,24 +1,46 @@
 import { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
 import InputField from "../../components/InputField";
 import NextButton from "../../components/NextButton";
+import { sendVerificationCode } from "../api/auth";
+import { useSignupDraft } from "./signupContext";
 
 export default function EmailLogin() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { setDraft } = useSignupDraft();
 
-  const handleSend = () => {
-    if (!email) return;
+  const nextPage = async () => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      Alert.alert("이메일을 입력해주세요");
+      return;
+    }
 
-    router.push("/login/verify");
+    try {
+      setLoading(true);
+      const res: any = await sendVerificationCode(trimmed);
+
+      const verificationId =
+        res?.verificationId ??
+        res?.data?.verificationId ??
+        res?.result?.verificationId ??
+        res?.verification_id ??
+        "";
+
+      setDraft({ email: trimmed, verificationId });
+
+      router.push("/sign-up/verify");
+    } catch {
+      Alert.alert("인증코드 전송 실패", "이메일을 다시 확인해주세요.");
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const nextPage = () => {
-    router.push("/sign-up/verify");
-  }
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -32,67 +54,31 @@ export default function EmailLogin() {
 
         <Text style={styles.subtext}>이메일을 입력해주세요.</Text>
         <View style={{ flexDirection: "row", alignSelf: "flex-start" }}>
-        <Text style={styles.subtext2}>이메일</Text>
-        <Text style={styles.star}> *</Text>
-      </View>
-
+          <Text style={styles.subtext2}>이메일</Text>
+          <Text style={styles.star}> *</Text>
+        </View>
 
         <InputField
           value={email}
           onChangeText={setEmail}
           placeholder="inu@inu.ac.kr"
+          keyboardType="email-address"
         />
       </View>
 
-
       <View style={{ marginBottom: 20, width: "100%" }}>
-        <NextButton title="다음" onPress={nextPage} />
+        <NextButton title={loading ? "전송 중..." : "다음"} onPress={nextPage} />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 30,
-    backgroundColor: "#fff",
-  },
-  header: {
-    width: "100%",
-    paddingHorizontal: 1,
-  },
-  heading: {
-    marginTop: 30,
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1e1d1dff",
-  },
-  heading2: {
-    marginTop: 5,
-    fontSize: 20,
-    alignSelf: "flex-start",
-    fontWeight: "600",
-    color: "#1e1d1dff",
-  },
-  subtext: {
-    marginTop: 70,
-    alignSelf: "flex-start",
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#1e1d1dff",
-  },
-  subtext2: {
-    alignSelf: "flex-start",
-    fontSize: 12,
-    color: "#1e1d1dff",
-    marginVertical: 10,
-  },
-    star: {
-    alignSelf: "flex-start",
-    fontSize: 12,
-    color: "#fa1212ff",
-    marginVertical: 10,
-  },
+  container: { flex: 1, paddingTop: 60, paddingHorizontal: 30, backgroundColor: "#fff" },
+  header: { width: "100%", paddingHorizontal: 1 },
+  heading: { marginTop: 30, fontSize: 20, fontWeight: "600", color: "#1e1d1dff" },
+  heading2: { marginTop: 5, fontSize: 20, alignSelf: "flex-start", fontWeight: "600", color: "#1e1d1dff" },
+  subtext: { marginTop: 70, alignSelf: "flex-start", fontSize: 16, fontWeight: "500", color: "#1e1d1dff" },
+  subtext2: { alignSelf: "flex-start", fontSize: 12, color: "#1e1d1dff", marginVertical: 10 },
+  star: { alignSelf: "flex-start", fontSize: 12, color: "#fa1212ff", marginVertical: 10 },
 });

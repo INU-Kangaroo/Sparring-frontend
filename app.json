@@ -63,6 +63,9 @@
           "kakaoAppKey": "d9de37c241c38fd01edd123959ea5b0c"
         }
       ]
-    ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

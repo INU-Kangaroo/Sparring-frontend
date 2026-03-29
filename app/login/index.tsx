@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import * as AppleAuthentication from "expo-apple-authentication";
 
 import { useOauthLogin } from "../../hooks/useOAuthLogin";
 import { useKakaoLogin } from "../../hooks/useKakaoLogin";
@@ -86,7 +85,7 @@ export default function LoginScreen() {
             </Text>
           </Pressable>
 
-         <Pressable
+          <Pressable
             style={[styles.socialBtn, isGoogleDisabled ? styles.disabledBtn : null]}
             onPress={onKakaoLogin}
             disabled={isGoogleDisabled}
@@ -109,6 +108,7 @@ export default function LoginScreen() {
             <Image
               source={require("../../assets/images/login.png")}
               style={styles.leftIcon}
+              resizeMode="contain"
             />
             <Text style={styles.btnText}>
               {isAnyLoading ? "로그인 중..." : "로그인"}

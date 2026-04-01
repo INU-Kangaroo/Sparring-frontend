@@ -31,11 +31,11 @@ export default function SidebarMenu({
   const menuItems: MenuItem[] = useMemo(
     () =>
       items ?? [
-        { label: "기록하기", path: "/main/main" },
+        /*{ label: "기록하기", path: "/main/main" },*/
         { label: "추천", path: "/recommend/recommendation" },
-        { label: "보고서", path: "/main/main" },
+        { label: "보고서", path: "/mypage/report" },
         { label: "AI 챗봇", path: "/AI/chatAI" },
-        { label: "마이페이지", path: "/mypage/mypage" },
+        { label: "마이페이지", path: "/my/mypage" },
       ],
     [items]
   );

@@ -14,8 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.kangaroo",
-      "usesAppleSignIn": true,
+      "bundleIdentifier": "com.sparring.kangaroo",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSExceptionDomains": {
@@ -31,7 +30,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.kangaroo",
+      "package": "com.sparring.kangaroo",
       "usesCleartextTraffic": true
     },
     "web": {
@@ -43,7 +42,6 @@
       "@react-native-community/datetimepicker",
       "expo-font",
       "expo-secure-store",
-      "expo-apple-authentication",
       [
         "expo-build-properties",
         {

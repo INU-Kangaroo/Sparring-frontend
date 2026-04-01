@@ -35,12 +35,20 @@ export default function EmailLogin() {
       setDraft({ email: trimmed, verificationId });
 
       router.push("/sign-up/verify");
-    } catch {
-      Alert.alert("인증코드 전송 실패", "이메일을 다시 확인해주세요.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    } catch (error: any) {
+    console.log("인증코드 전송 에러 전체:", error);
+    console.log("에러 response:", error?.response);
+    console.log("에러 response data:", error?.response?.data);
+    console.log("에러 message:", error?.message);
+
+    Alert.alert(
+      "인증코드 전송 실패",
+      error?.response?.data?.message ?? error?.message ?? "이메일을 다시 확인해주세요."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>

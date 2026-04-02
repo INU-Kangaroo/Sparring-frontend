@@ -3,7 +3,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useCallback, useMemo, useState } from "react";
 import { Platform } from "react-native";
 import {
-  exchangeOAuthCode,
+  exchangeGoogleOAuthCode,
   saveTokensFromOAuth,
   type OAuthJwtResponse,
 } from "../app/api/oauth";
@@ -35,7 +35,14 @@ export function useOauthLogin() {
       redirectUri,
       responseType: AuthSession.ResponseType.Code,
       usePKCE: true,
-      scopes: ["openid", "profile", "email"],
+      scopes: [
+        "openid",
+        "profile",
+        "email",
+        "https://www.googleapis.com/auth/user.birthday.read",
+        "https://www.googleapis.com/auth/user.gender.read",
+      ],
+
     },
     discovery
   );
@@ -74,8 +81,7 @@ export function useOauthLogin() {
         throw new Error("PKCE codeVerifier가 없습니다.");
       }
 
-      const tokenPayload = await exchangeOAuthCode({
-        provider: "google",
+      const tokenPayload = await exchangeGoogleOAuthCode({
         code,
         redirectUri,
         codeVerifier,

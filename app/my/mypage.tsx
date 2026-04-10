@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
+  Alert,
   View,
   Text,
   StyleSheet,
@@ -10,24 +11,243 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "@react-navigation/native";
+import { getMyDashboard, getMyProfile } from "../api/users";
+import {
+  getSignupProfile,
+  getSurveyAnswersFromStorage,
+  type StoredSurveyAnswerItem,
+} from "../utils/profileStorage";
+
+type BasicInfo = {
+  name: string;
+  birth: string;
+  gender: string;
+  email: string;
+  height: string;
+  weight: string;
+};
+type RecordInfo = {
+  totalMeasurements: number;
+  streakDays: number;
+  avgGlucose: number;
+  recentAvgGlucose: number;
+};
+
+const FALLBACK_TEXT = "미입력";
+
+const GENDER_LABEL: Record<string, string> = {
+  MALE: "남성",
+  FEMALE: "여성",
+};
+
+const surveyValueMap: Record<string, Record<string, string>> = {
+  BLOOD_SUGAR_STATUS: {
+    NORMAL: "정상",
+    BORDERLINE: "경계성",
+    TYPE1: "제1형",
+    TYPE2: "제2형",
+    UNKNOWN: "모름",
+  },
+  BLOOD_PRESSURE_STATUS: {
+    NORMAL: "정상",
+    BORDERLINE: "경계성",
+    STAGE1: "1차고혈압",
+    STAGE2: "2차고혈압",
+    UNKNOWN: "모름",
+  },
+  MEAL_FREQUENCY: {
+    ZERO: "0회",
+    ONE_TO_TWO: "1~2회",
+    TWO_TO_THREE: "2~3회",
+    THREE_TO_FOUR: "3~4회",
+    FOUR_TO_FIVE: "4~5회",
+  },
+  FOOD_PREFERENCE: {
+    CARB_HEAVY: "탄수화물 위주",
+    PROTEIN_HEAVY: "단백질 위주",
+    PROCESSED_FOOD_HEAVY: "가공식품 위주",
+    VEGETARIAN: "채식",
+  },
+  SUGAR_INTAKE_FREQ: {
+    NONE: "주 0회",
+    ONE_TO_TWO_PER_WEEK: "주 1~2회",
+    THREE_TO_FOUR_PER_WEEK: "주 3~4회",
+    FIVE_TO_SIX_PER_WEEK: "주 5~6회",
+    DAILY: "매일",
+  },
+  CAFFEINE_INTAKE: {
+    true: "예",
+    false: "아니오",
+  },
+  EXERCISE_FREQUENCY: {
+    ZERO: "0회",
+    ONE_TO_TWO: "1~2회",
+    TWO_TO_THREE: "2~3회",
+    THREE_TO_FOUR: "3~4회",
+    FOUR_TO_FIVE: "4~5회",
+    DAILY: "매일",
+  },
+  EXERCISE_PLACE: {
+    GYM_FACILITY: "운동시설 위주",
+    HOME: "집",
+    OUTDOOR: "야외",
+    WORK_SCHOOL: "직장/학교",
+  },
+  SLEEP_QUALITY: {
+    GOOD: "좋음",
+    NORMAL: "보통",
+    BAD: "나쁨",
+  },
+  DRINKING_FREQUENCY: {
+    NONE: "없음",
+    ONE_TO_TWO_PER_WEEK: "주 1~2회",
+    THREE_OR_MORE_PER_WEEK: "주 3회 이상",
+  },
+  STRESS_LEVEL: {
+    LOW: "낮음",
+    MEDIUM: "중간",
+    HIGH: "높음",
+  },
+};
+
+function formatBirthDate(value?: string) {
+  if (!value) return FALLBACK_TEXT;
+  return value.replace(/-/g, ".");
+}
+
+function formatSurveyValue(item: StoredSurveyAnswerItem) {
+  const { questionKey, value } = item;
+
+  if (Array.isArray(value)) {
+    const labels = value.map((entry) => surveyValueMap[questionKey]?.[entry] ?? entry);
+    return labels.join(", ");
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "예" : "아니오";
+  }
+
+  if (typeof value === "number") {
+    if (questionKey === "HEIGHT") return `${value} cm`;
+    if (questionKey === "WEIGHT") return `${value} kg`;
+    if (questionKey === "AVG_STEPS") return `${value} 보`;
+    if (questionKey === "SLEEP_HOURS") return `${value} 시간`;
+    return String(value);
+  }
+
+  return surveyValueMap[questionKey]?.[value] ?? value;
+}
 
 export default function MyPage() {
   const goProfile = () => router.push("/my/profile");
   const goHome = () => router.replace("/main/main");
 
-  const userName = "유저 이름";
-  const totalMeasurements = 234;
-  const streakDays = 14;
-  const avgGlucose = 125;
-  const recentAvgGlucose = 120;
+  const [basicInfo, setBasicInfo] = useState<BasicInfo>({
+    name: FALLBACK_TEXT,
+    birth: FALLBACK_TEXT,
+    gender: FALLBACK_TEXT,
+    email: FALLBACK_TEXT,
+    height: FALLBACK_TEXT,
+    weight: FALLBACK_TEXT,
+  });
+  const [recordInfo, setRecordInfo] = useState<RecordInfo>({
+    totalMeasurements: 0,
+    streakDays: 0,
+    avgGlucose: 0,
+    recentAvgGlucose: 0,
+  });
 
-  const basicInfo = {
-    name: "유저 이름",
-    birth: "0000.00.00",
-    gender: "미설정",
-    height: "000 cm",
-    weight: "00 kg",
-  };
+  const loadProfile = useCallback(async () => {
+    try {
+      const [dashboard, profile, signupProfile, surveyAnswers] = await Promise.all([
+        getMyDashboard().catch(() => null),
+        getMyProfile().catch(() => null),
+        getSignupProfile(),
+        getSurveyAnswersFromStorage(),
+      ]);
+
+      const surveyMap = new Map(surveyAnswers.map((item) => [item.questionKey, item]));
+      const dashboardBasic = dashboard?.basicInfo;
+      const name =
+        profile?.username?.trim() ||
+        dashboard?.profile?.username?.trim() ||
+        dashboardBasic?.name?.trim() ||
+        signupProfile.username?.trim() ||
+        FALLBACK_TEXT;
+      const email =
+        profile?.email?.trim() ||
+        dashboardBasic?.email?.trim() ||
+        signupProfile.email?.trim() ||
+        FALLBACK_TEXT;
+      const birthDate =
+        profile?.birthDate ||
+        dashboardBasic?.birthDate ||
+        signupProfile.birthDate;
+      const gender =
+        profile?.gender ||
+        dashboardBasic?.gender ||
+        signupProfile.gender;
+      const heightValue =
+        profile?.height ??
+        dashboardBasic?.height ??
+        signupProfile.height;
+      const weightValue =
+        profile?.weight ??
+        dashboardBasic?.weight ??
+        signupProfile.weight;
+
+      setBasicInfo({
+        name,
+        birth: formatBirthDate(birthDate),
+        gender: GENDER_LABEL[gender ?? ""] ?? FALLBACK_TEXT,
+        email,
+        height:
+          typeof heightValue === "number"
+            ? formatSurveyValue({ questionKey: "HEIGHT", value: heightValue })
+            : surveyMap.has("HEIGHT")
+              ? formatSurveyValue(surveyMap.get("HEIGHT")!)
+              : FALLBACK_TEXT,
+        weight:
+          typeof weightValue === "number"
+            ? formatSurveyValue({ questionKey: "WEIGHT", value: weightValue })
+            : surveyMap.has("WEIGHT")
+              ? formatSurveyValue(surveyMap.get("WEIGHT")!)
+              : FALLBACK_TEXT,
+      });
+
+      setRecordInfo({
+        totalMeasurements: dashboard?.record?.totalMeasurementCount ?? 0,
+        streakDays: dashboard?.record?.consecutiveMeasurementDays ?? 0,
+        avgGlucose: dashboard?.record?.averageBloodSugarMgDl ?? 0,
+        recentAvgGlucose: dashboard?.record?.last7DaysAverageBloodSugarMgDl ?? 0,
+      });
+    } catch (e: any) {
+      Alert.alert(
+        "마이페이지 조회 실패",
+        e?.response?.data?.message ?? e?.message ?? "잠시 후 다시 시도해주세요."
+      );
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [loadProfile])
+  );
+
+  const userName = basicInfo.name === FALLBACK_TEXT ? "유저 이름" : basicInfo.name;
+  const basicInfoRows = useMemo(
+    () => [
+      { label: "이름", value: basicInfo.name },
+      { label: "이메일", value: basicInfo.email },
+      { label: "생년월일", value: basicInfo.birth },
+      { label: "성별", value: basicInfo.gender },
+      { label: "키", value: basicInfo.height },
+      { label: "몸무게", value: basicInfo.weight },
+    ],
+    [basicInfo]
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -60,7 +280,7 @@ export default function MyPage() {
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>총 측정 횟수</Text>
                 <Text style={styles.statValue}>
-                  <Text style={styles.statAccent}>{totalMeasurements}</Text>
+                  <Text style={styles.statAccent}>{recordInfo.totalMeasurements}</Text>
                   <Text style={styles.statUnit}>회</Text>
                 </Text>
               </View>
@@ -68,7 +288,7 @@ export default function MyPage() {
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>연속 측정</Text>
                 <Text style={styles.statValue}>
-                  <Text style={styles.statAccent}>{streakDays}</Text>
+                  <Text style={styles.statAccent}>{recordInfo.streakDays}</Text>
                   <Text style={styles.statUnit}>일</Text>
                 </Text>
               </View>
@@ -78,11 +298,11 @@ export default function MyPage() {
 
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>평균 혈당</Text>
-              <Text style={styles.infoValueAccent}>{avgGlucose} mg/dL</Text>
+              <Text style={styles.infoValueAccent}>{recordInfo.avgGlucose} mg/dL</Text>
             </View>
             <View style={[styles.infoRow, { marginTop: 10 }]}>
               <Text style={styles.infoLabel}>최근 7일 평균</Text>
-              <Text style={styles.infoValueAccent}>{recentAvgGlucose} mg/dL</Text>
+              <Text style={styles.infoValueAccent}>{recordInfo.recentAvgGlucose} mg/dL</Text>
             </View>
           </View>
 
@@ -93,19 +313,13 @@ export default function MyPage() {
           </View>
 
           <View style={styles.card}>
-            {Object.entries({
-              이름: basicInfo.name,
-              생년월일: basicInfo.birth,
-              성별: basicInfo.gender,
-              키: basicInfo.height,
-              몸무게: basicInfo.weight,
-            }).map(([label, value], i, arr) => (
+            {basicInfoRows.map(({ label, value }, i) => (
               <View key={label}>
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>{label}</Text>
                   <Text style={styles.infoValue}>{value}</Text>
                 </View>
-                {i < arr.length - 1 && <View style={styles.statDividerH} />}
+                {i < basicInfoRows.length - 1 && <View style={styles.statDividerH} />}
               </View>
             ))}
           </View>

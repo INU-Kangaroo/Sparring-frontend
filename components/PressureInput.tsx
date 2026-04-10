@@ -8,8 +8,8 @@ import {
   TextInput,
   Platform,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { LinearGradient } from "expo-linear-gradient";
 
 type Props = {
   visible: boolean;
@@ -17,11 +17,12 @@ type Props = {
   initialValue?: [number, number];
   initialMeasuredAt?: Date;
   onClose: () => void;
-  onSubmit: (systolic: number, diastolic: number, measuredAt: Date) => void | Promise<void>;
+  onSubmit: (
+    systolic: number,
+    diastolic: number,
+    measuredAt: Date
+  ) => void | Promise<void>;
 };
-
-const pad2 = (n: number) => String(n).padStart(2, "0");
-const fmtTime = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 
 export default function PressureInput({
   visible,
@@ -31,21 +32,18 @@ export default function PressureInput({
   onClose,
   onSubmit,
 }: Props) {
-  const [s, setS] = useState<string>("");
-  const [d, setD] = useState<string>("");
+  const [s, setS] = useState("");
+  const [d, setD] = useState("");
 
-  // ✅ 시간 변경의 핵심 상태
-  const [measuredAt, setMeasuredAt] = useState<Date>(new Date());
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [time, setTime] = useState(new Date());
+  const [showPicker, setShowPicker] = useState(false);
 
-  // ✅ 열릴 때 초기값 세팅
   useEffect(() => {
     if (!visible) return;
 
     setS(initialValue?.[0] != null ? String(initialValue[0]) : "");
     setD(initialValue?.[1] != null ? String(initialValue[1]) : "");
-    setMeasuredAt(initialMeasuredAt ?? new Date());
-    setShowTimePicker(false);
+    setTime(initialMeasuredAt ?? new Date());
   }, [visible, initialValue, initialMeasuredAt]);
 
   const canSave = useMemo(() => {
@@ -56,92 +54,81 @@ export default function PressureInput({
 
   const handleSave = async () => {
     if (!canSave) return;
-    const sv = Number(s);
-    const dv = Number(d);
-    await onSubmit(sv, dv, measuredAt);
+    await onSubmit(Number(s), Number(d), time);
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={styles.sheet}>
-          <View style={styles.head}>
-            <Text style={styles.title}>{title}</Text>
-            <Pressable onPress={onClose} hitSlop={10}>
-              <Ionicons name="close" size={20} color="#111" />
-            </Pressable>
-          </View>
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={styles.overlay}>
+        <View style={styles.container}>
+          
+          <Text style={styles.title}>{title}</Text>
 
-          {/* ✅ 시간 선택 */}
-          <View style={styles.timeRow}>
-            <Text style={styles.label}>측정 시간</Text>
-            <Pressable
-              style={styles.timeBtn}
-              onPress={() => setShowTimePicker(true)}
-              hitSlop={8}
-            >
-              <Ionicons name="time-outline" size={16} color="#111" />
-              <Text style={styles.timeText}>{fmtTime(measuredAt)}</Text>
-            </Pressable>
-          </View>
+          {/* 수축기 */}
+          <Text style={styles.label}>수축기 (mmHg)</Text>
+          <TextInput
+            value={s}
+            onChangeText={setS}
+            keyboardType="numeric"
+            placeholder="예: 120"
+            style={styles.input}
+          />
 
-          {showTimePicker && (
+          {/* 이완기 */}
+          <Text style={styles.label}>이완기 (mmHg)</Text>
+          <TextInput
+            value={d}
+            onChangeText={setD}
+            keyboardType="numeric"
+            placeholder="예: 80"
+            style={styles.input}
+          />
+
+          {/* 시간 */}
+          <Text style={styles.label}>측정 시간</Text>
+          <Pressable
+            style={styles.timeBox}
+            onPress={() => setShowPicker(true)}
+          >
+            <Text style={styles.timeText}>
+              {time.toLocaleTimeString()}
+            </Text>
+          </Pressable>
+
+          {showPicker && (
             <DateTimePicker
-              value={measuredAt}
+              value={time}
               mode="time"
               display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={(_, selected) => {
-                // Android는 취소 시 selected가 undefined
-                if (Platform.OS !== "ios") setShowTimePicker(false);
-                if (selected) setMeasuredAt(selected);
+              onChange={(e, selected) => {
+                if (selected) setTime(selected);
+                setShowPicker(false);
               }}
             />
           )}
 
-          {/* ✅ 입력 */}
-          <View style={styles.inputRow}>
-            <View style={styles.inputCol}>
-              <Text style={styles.label}>수축기</Text>
-              <TextInput
-                value={s}
-                onChangeText={setS}
-                keyboardType="number-pad"
-                placeholder="예: 120"
-                style={styles.input}
-                maxLength={3}
-              />
-            </View>
-
-            <View style={styles.inputCol}>
-              <Text style={styles.label}>이완기</Text>
-              <TextInput
-                value={d}
-                onChangeText={setD}
-                keyboardType="number-pad"
-                placeholder="예: 80"
-                style={styles.input}
-                maxLength={3}
-              />
-            </View>
-          </View>
-
-          <View style={styles.btnRow}>
-            <Pressable onPress={onClose} style={[styles.btn, styles.btnGhost]}>
-              <Text style={[styles.btnText, styles.btnGhostText]}>취소</Text>
-            </Pressable>
-
-            <Pressable
-              onPress={handleSave}
-              disabled={!canSave}
-              style={[styles.btn, !canSave && { opacity: 0.5 }]}
+          {/* 저장 버튼 */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.submitWrap,
+              pressed && styles.pressed,
+              !canSave && { opacity: 0.5 },
+            ]}
+            onPress={handleSave}
+            disabled={!canSave}
+          >
+            <LinearGradient
+              colors={["#0D0D0D", "#262626"]}
+              style={styles.submitBtn}
             >
-              <Text style={styles.btnText}>저장</Text>
-            </Pressable>
-          </View>
+              <Text style={styles.submitText}>저장</Text>
+            </LinearGradient>
+          </Pressable>
 
-          <Text style={styles.hint}>
-            날짜는 상단 캘린더에서 선택하고, 시간은 여기서 선택해 저장해요.
-          </Text>
+          {/* 닫기 */}
+          <Pressable onPress={onClose}>
+            <Text style={styles.cancel}>닫기</Text>
+          </Pressable>
         </View>
       </View>
     </Modal>
@@ -149,122 +136,82 @@ export default function PressureInput({
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
+  overlay: {
     flex: 1,
-    backgroundColor: "rgba(9,20,65,0.22)",
-    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "flex-end",
+  },
+
+  container: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 20,
-  },
-
-  sheet: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E6EEFF",
-  },
-
-  head: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 14,
   },
 
   title: {
     fontSize: 16,
     fontWeight: "900",
-    color: "#141415",
-  },
-
-  timeRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
   },
 
   label: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#3552B5",
-  },
-
-  timeBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "#EEF4FF",
-    borderWidth: 1,
-    borderColor: "#D6E4FF",
-  },
-
-  timeText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#1435B9",
-  },
-
-  inputRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 6,
-  },
-
-  inputCol: {
-    flex: 1,
+    marginTop: 12,
+    marginBottom: 6,
+    color: "#555",
   },
 
   input: {
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#F7FAFF",
-    borderWidth: 1,
-    borderColor: "#DCE8FF",
+    height: 42,
+    borderRadius: 10,
+    backgroundColor: "#F5F5F5",
     paddingHorizontal: 12,
-    marginTop: 6,
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#111",
+    fontWeight: "700",
   },
 
-  btnRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 16,
-  },
-
-  btn: {
-    flex: 1,
-    height: 46,
-    borderRadius: 14,
-    backgroundColor: "#1745BA",
-    alignItems: "center",
+  timeBox: {
+    height: 42,
+    borderRadius: 10,
+    backgroundColor: "#F5F5F5",
     justifyContent: "center",
+    paddingHorizontal: 12,
   },
 
-  btnText: {
+  timeText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#333",
+  },
+
+  submitWrap: {
+    marginTop: 22,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+
+  submitBtn: {
+    height: 46,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 12,
+  },
+
+  submitText: {
     color: "#fff",
     fontWeight: "900",
+    fontSize: 14,
   },
 
-  btnGhost: {
-    backgroundColor: "#EAF1FF",
-    borderWidth: 1,
-    borderColor: "#D5E3FF",
-  },
-
-  btnGhostText: {
-    color: "#2E5BDB",
-  },
-
-  hint: {
-    marginTop: 10,
-    fontSize: 11,
-    color: "#5F6F9F",
+  cancel: {
+    textAlign: "center",
+    marginTop: 12,
+    color: "#999",
     fontWeight: "700",
+  },
+
+  pressed: {
+    opacity: 0.85,
   },
 });

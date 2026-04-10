@@ -9,7 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Alert,
 } from "react-native";
+import { createFoodLog, searchFoods } from "../api/foods";
+import { createExerciseLog } from "../api/exercises";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -36,6 +39,29 @@ const MEAL_TYPES: MealType[] = ["아침", "점심", "저녁", "간식"];
 const INTENSITIES: Intensity[] = ["가벼움", "보통", "격렬"];
 
 const generateId = () => Math.random().toString(36).slice(2);
+
+const MEAL_TIME_MAP: Record<MealType, string> = {
+  아침: "BREAKFAST",
+  점심: "LUNCH",
+  저녁: "DINNER",
+  간식: "SNACK",
+};
+
+const INTENSITY_MAP: Record<Intensity, "LOW" | "MEDIUM" | "HIGH"> = {
+  가벼움: "LOW",
+  보통: "MEDIUM",
+  격렬: "HIGH",
+};
+
+function toIsoDateTime(date: Date, time: string) {
+  const [hour = "00", minute = "00"] = time.split(":").map((s) => s.padStart(2, "0"));
+  const d = new Date(date);
+  d.setHours(Number(hour));
+  d.setMinutes(Number(minute));
+  d.setSeconds(0);
+  d.setMilliseconds(0);
+  return d.toISOString();
+}
 
 export default function InputScreen() {
   const [tab, setTab] = useState<"food" | "workout">("food");
@@ -75,9 +101,71 @@ export default function InputScreen() {
   const removeWorkout = (id: string) =>
     setWorkouts((prev) => prev.filter((w) => w.id !== id));
 
-  const handleSave = () => {
-    // TODO: 저장 로직 연결
-    router.push("/recommend/recommendation");
+  const handleSave = async () => {
+    const today = new Date();
+
+    try {
+      if (tab === "food") {
+        if (foods.length === 0) throw new Error("식단이 없습니다.");
+
+        for (const food of foods) {
+          if (!food.name.trim() || !food.time.trim() || !food.meal) continue;
+
+          const keyword = food.name.trim();
+          const searchResults = await searchFoods(keyword, 0, 1);
+          if (!Array.isArray(searchResults) || searchResults.length === 0) {
+            console.warn("food not found for name", keyword);
+            continue;
+          }
+
+          const foodId = searchResults[0].id;
+          const mealTime = MEAL_TIME_MAP[food.meal];
+          const loggedAt = toIsoDateTime(today, food.time);
+
+          await createFoodLog({
+            foodId,
+            mealTime,
+            loggedAt,
+            eatenAmountGram: 100,
+          });
+        }
+      } else if (tab === "workout") {
+        if (workouts.length === 0) throw new Error("운동이 없습니다.");
+
+        for (const workout of workouts) {
+          if (
+            !workout.name.trim() ||
+            !workout.time.trim() ||
+            !workout.duration.trim() ||
+            !workout.intensity
+          ) {
+            continue;
+          }
+
+          const loggedAt = toIsoDateTime(today, workout.time);
+          const durationMinutes = Number(workout.duration);
+          if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+            throw new Error("운동 시간(분)을 올바르게 입력하세요.");
+          }
+
+          await createExerciseLog({
+            exerciseName: workout.name.trim(),
+            durationMinutes,
+            intensity: INTENSITY_MAP[workout.intensity],
+            loggedAt,
+          });
+        }
+      }
+
+      Alert.alert("저장 완료", "기록이 성공적으로 저장되었습니다.");
+      router.push("/recommend/recommendation");
+    } catch (error) {
+      console.error("save record error", error);
+      Alert.alert(
+        "저장 실패",
+        error instanceof Error ? error.message : "기록 저장 중 오류가 발생했습니다."
+      );
+    }
   };
 
   return (

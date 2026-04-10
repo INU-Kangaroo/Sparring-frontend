@@ -15,8 +15,8 @@ const GOOGLE_CLIENT_ID =
     ? process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS ?? ""
     : process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 
-export function useOauthLogin() {
-  const [isLoading, setIsLoading] = useState(false);
+  export function useOauthLogin() {
+    const [isLoading, setIsLoading] = useState(false);
 
   const redirectUri =
     "com.googleusercontent.apps.37689583487-nqo5jr9nuemk4289gnvq3cutuuf4c7de:/oauthredirect";
@@ -42,7 +42,6 @@ export function useOauthLogin() {
         "https://www.googleapis.com/auth/user.birthday.read",
         "https://www.googleapis.com/auth/user.gender.read",
       ],
-
     },
     discovery
   );

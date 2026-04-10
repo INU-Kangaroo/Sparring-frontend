@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import BackButton from "../../components/BackButton";
 import NextButton from "../../components/NextButton";
 import { useSurveyDraft } from "./surveyContext";
+import SignupProgress from "@/components/SignupProgress";
 
 type ChipProps = {
   label: string;
@@ -93,12 +94,13 @@ export default function Survey() {
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <BackButton onPress={() => router.back()} />
+          <View style={styles.header}>
+            <BackButton onPress={() => router.back()} />
+            <SignupProgress step={1} />
+        </View>
 
-        <Text style={styles.heading}>건강 상태를 더 정확하게 알려드릴게요</Text>
-        <Text style={styles.heading2}>첫 이용 전 설문을 진행해주세요</Text>
-
-        <Text style={styles.subtext}>당신의 건강 상태에 대해 알려주세요</Text>
+        <Text style={styles.heading}>나의 건강 시그널 확인하고 싶다면?</Text>
+        <Text style={styles.heading2}>건강 상태 알려주세요</Text>
 
         <View style={styles.labelRow}>
           <Text style={styles.label}>혈당 상태</Text>
@@ -196,6 +198,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     backgroundColor: "#fff",
   },
+  header: { flexDirection: "row", alignItems: "center", width: "100%", paddingHorizontal: 1 },
   heading: {
     marginTop: 30,
     fontSize: 20,
@@ -238,11 +241,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 34,
     borderRadius: 18,
-    backgroundColor: "#747474",
+    backgroundColor: "#8C8C8C",
     justifyContent: "center",
   },
   chipSelected: {
-    backgroundColor: "#1435b9f6",
+    backgroundColor: "#262626",
   },
   chipText: {
     color: "#fff",

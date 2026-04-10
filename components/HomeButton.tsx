@@ -13,7 +13,7 @@ export default function HomeFab({ onPress }: HomeFabProps) {
   return (
     <Pressable style={styles.fabWrap} onPress={onPress}>
       <LinearGradient
-        colors={["#1D4BFF", "#1D4BFF"]}
+        colors={["#D99197", "#D99197"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.fab}

@@ -1,24 +1,29 @@
-// app/my/profile.tsx
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
+  StyleSheet,
+  Text,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  Modal,
+  View,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
+import { getMyProfile, updateMyProfile } from "../api/users";
+import {
+  saveSignupProfile,
+  updateStoredSurveyAnswer,
+} from "../utils/profileStorage";
+
 type ProfileForm = {
   name: string;
   birth: string;
-  phone: string;
   email: string;
   height: string;
   weight: string;
@@ -29,47 +34,108 @@ type FieldKey = keyof ProfileForm;
 const FIELD_LABELS: Record<FieldKey, string> = {
   name: "이름",
   birth: "생년월일",
-  phone: "휴대폰 번호",
   email: "이메일 주소",
   height: "키",
   weight: "몸무게",
 };
 
+const EDITABLE_FIELDS: FieldKey[] = ["name", "birth", "height", "weight"];
+
 type ConfirmModalType = "logout" | "withdraw" | null;
 
+const EMPTY_FORM: ProfileForm = {
+  name: "",
+  birth: "",
+  email: "",
+  height: "",
+  weight: "",
+};
+
+function formatDateForDisplay(value?: string) {
+  if (!value) return "";
+  return value.replace(/-/g, ".");
+}
+
+function formatDateForApi(value: string) {
+  return value.trim().replace(/\./g, "-");
+}
+
+function formatNumberForInput(value?: number) {
+  if (typeof value !== "number" || Number.isNaN(value)) return "";
+  return Number.isInteger(value) ? String(value) : String(value);
+}
+
+function parseOptionalNumber(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  const parsed = Number(trimmed);
+  if (Number.isNaN(parsed)) return null;
+  return parsed;
+}
+
 export default function ProfileScreen() {
-  // 처음엔 전부 비어있게 => 화면에는 "+ 추가"로 뜸
-  const [form, setForm] = useState<ProfileForm>({
-    name: "",
-    birth: "",
-    phone: "",
-    email: "",
-    height: "",
-    weight: "",
-  });
-
-  //지금 수정 중인 "한 항목"만 input으로 만들기 위한 상태
+  const [form, setForm] = useState<ProfileForm>(EMPTY_FORM);
+  const [initialForm, setInitialForm] = useState<ProfileForm>(EMPTY_FORM);
   const [activeField, setActiveField] = useState<FieldKey | null>(null);
-
-  // 확인 모달 상태
   const [modalType, setModalType] = useState<ConfirmModalType>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // 입력 포커스용 ref
   const inputRefs = useRef<Record<FieldKey, TextInput | null>>({
     name: null,
     birth: null,
-    phone: null,
     email: null,
     height: null,
     weight: null,
   });
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadProfile = async () => {
+      try {
+        const profile = await getMyProfile();
+        if (!mounted) return;
+
+        const nextForm = {
+          name: profile.username?.trim() ?? "",
+          birth: formatDateForDisplay(profile.birthDate),
+          email: profile.email?.trim() ?? "",
+          height: formatNumberForInput(profile.height),
+          weight: formatNumberForInput(profile.weight),
+        };
+
+        setForm(nextForm);
+        setInitialForm(nextForm);
+      } catch (e: any) {
+        Alert.alert(
+          "프로필 조회 실패",
+          e?.response?.data?.message ?? e?.message ?? "잠시 후 다시 시도해주세요."
+        );
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const displayUserName = useMemo(
-    () => form.name?.trim() || "유저 이름",
+    () => form.name.trim() || "유저 이름",
     [form.name]
+  );
+  const hasChanges = useMemo(
+    () => JSON.stringify(form) !== JSON.stringify(initialForm),
+    [form, initialForm]
   );
 
   const focusField = (key: FieldKey) => {
+    if (!EDITABLE_FIELDS.includes(key)) return;
     setActiveField(key);
     requestAnimationFrame(() => inputRefs.current[key]?.focus());
   };
@@ -78,10 +144,8 @@ export default function ProfileScreen() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  // 헤더 우측 체크(또는 연필) 누르면 현재 입력만 종료
   const closeEditing = () => setActiveField(null);
 
-  // 로그아웃 / 회원탈퇴
   const handleLogout = () => {
     setModalType("logout");
   };
@@ -99,11 +163,83 @@ export default function ProfileScreen() {
     setModalType(null);
   };
 
+  const handleSave = async () => {
+    if (!hasChanges || saving) return;
+
+    const parsedHeight = parseOptionalNumber(form.height);
+    const parsedWeight = parseOptionalNumber(form.weight);
+
+    if (parsedHeight === null || parsedWeight === null) {
+      Alert.alert("입력 확인", "키와 몸무게는 숫자로 입력해주세요.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const payload = {
+        username: form.name.trim() || undefined,
+        birthDate: form.birth.trim() ? formatDateForApi(form.birth) : undefined,
+        height: parsedHeight,
+        weight: parsedWeight,
+      };
+
+      const updated = await updateMyProfile(payload);
+
+      const nextForm = {
+        name: updated.username?.trim() ?? form.name.trim(),
+        birth: formatDateForDisplay(updated.birthDate ?? payload.birthDate),
+        email: updated.email?.trim() ?? form.email.trim(),
+        height:
+          formatNumberForInput(updated.height) ||
+          formatNumberForInput(parsedHeight ?? undefined),
+        weight:
+          formatNumberForInput(updated.weight) ||
+          formatNumberForInput(parsedWeight ?? undefined),
+      };
+
+      setForm(nextForm);
+      setInitialForm(nextForm);
+      setActiveField(null);
+
+      await saveSignupProfile({
+        email: nextForm.email || form.email.trim() || undefined,
+        username: nextForm.name || form.name.trim() || undefined,
+        birthDate:
+          updated.birthDate ??
+          payload.birthDate ??
+          (form.birth.trim() ? formatDateForApi(form.birth) : undefined),
+        gender: updated.gender,
+        height: updated.height ?? parsedHeight ?? undefined,
+        weight: updated.weight ?? parsedWeight ?? undefined,
+        profileImageUrl: updated.profileImageUrl,
+      });
+
+      if (typeof (updated.height ?? parsedHeight) === "number") {
+        await updateStoredSurveyAnswer("HEIGHT", updated.height ?? parsedHeight!);
+      }
+      if (typeof (updated.weight ?? parsedWeight) === "number") {
+        await updateStoredSurveyAnswer("WEIGHT", updated.weight ?? parsedWeight!);
+      }
+
+      Alert.alert("저장 완료", "변경한 내 정보가 저장되었어요.");
+    } catch (e: any) {
+      Alert.alert(
+        "저장 실패",
+        e?.response?.data?.message ?? e?.message ?? "잠시 후 다시 시도해주세요."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const renderRow = (key: FieldKey) => {
     const value = form[key]?.trim();
     const isEmpty = !value;
-
     const shouldShowInput = activeField === key;
+    const isEditable = EDITABLE_FIELDS.includes(key);
+    const keyboardType =
+      key === "email" ? "email-address" : key === "height" || key === "weight" ? "decimal-pad" : "default";
 
     return (
       <View key={key} style={styles.row}>
@@ -120,12 +256,14 @@ export default function ProfileScreen() {
               placeholder="+ 추가"
               placeholderTextColor="#B5B5B5"
               style={styles.input}
+              autoCapitalize="none"
+              keyboardType={keyboardType}
               returnKeyType="done"
               blurOnSubmit
-              onSubmitEditing={() => setActiveField(null)} // 엔터 누르면 이 항목만 종료
+              onSubmitEditing={closeEditing}
             />
           ) : (
-            <Pressable onPress={() => focusField(key)} hitSlop={10}>
+            <Pressable onPress={() => focusField(key)} hitSlop={10} disabled={!isEditable}>
               <Text style={[styles.valueText, isEmpty && styles.addText]}>
                 {isEmpty ? "+ 추가" : value}
               </Text>
@@ -133,14 +271,17 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* 우측 아이콘: 누르면 해당 항목만 편집 시작 */}
-        <Pressable
-          onPress={() => focusField(key)}
-          hitSlop={10}
-          style={styles.rowIconBtn}
-        >
-          <Ionicons name="create-outline" size={18} color="#B7B7B7" />
-        </Pressable>
+        {isEditable ? (
+          <Pressable
+            onPress={() => focusField(key)}
+            hitSlop={10}
+            style={styles.rowIconBtn}
+          >
+            <Ionicons name="create-outline" size={18} color="#B7B7B7" />
+          </Pressable>
+        ) : (
+          <View style={styles.rowIconBtn} />
+        )}
       </View>
     );
   };
@@ -157,7 +298,6 @@ export default function ProfileScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* 헤더 */}
           <View style={styles.header}>
             <Pressable onPress={() => router.back()} hitSlop={10}>
               <Ionicons name="chevron-back" size={22} color="#111" />
@@ -165,17 +305,15 @@ export default function ProfileScreen() {
 
             <Text style={styles.headerTitle}>프로필 설정</Text>
 
-            <Pressable onPress={closeEditing} hitSlop={10}>
-              {/* 입력 중이면 체크, 아니면 연필 */}
+            <Pressable onPress={activeField ? closeEditing : handleSave} hitSlop={10}>
               <Ionicons
-                name={activeField ? "checkmark" : "create-outline"}
+                name={activeField ? "checkmark" : "save-outline"}
                 size={20}
                 color="#111"
               />
             </Pressable>
           </View>
 
-          {/* 상단 프로필 */}
           <View style={styles.profileTop}>
             <View style={styles.avatar} />
 
@@ -192,17 +330,29 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* 기본 정보 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>기본 정보</Text>
-
-            <View style={styles.list}>
-              {(
-                ["name", "birth", "phone", "email", "height", "weight"] as FieldKey[]
-              ).map(renderRow)}
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitle}>기본 정보</Text>
+              <Pressable
+                onPress={handleSave}
+                disabled={!hasChanges || saving || loading}
+                style={[
+                  styles.saveButton,
+                  (!hasChanges || saving || loading) && styles.saveButtonDisabled,
+                ]}
+              >
+                <Text style={styles.saveButtonText}>
+                  {saving ? "저장 중..." : "저장"}
+                </Text>
+              </Pressable>
             </View>
 
-            {/* 로그아웃 | 회원탈퇴 */}
+            <View style={styles.list}>
+              {(["name", "birth", "email", "height", "weight"] as FieldKey[]).map(
+                renderRow
+              )}
+            </View>
+
             <View style={styles.footerActions}>
               <Pressable onPress={handleLogout} hitSlop={10}>
                 <Text style={styles.footerButton}>로그아웃</Text>
@@ -215,10 +365,13 @@ export default function ProfileScreen() {
               </Pressable>
             </View>
           </View>
+
+          {loading ? (
+            <Text style={styles.helperText}>프로필 정보를 불러오는 중입니다.</Text>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* 로그아웃 확인 모달 */}
       <Modal
         visible={modalType === "logout"}
         transparent
@@ -249,7 +402,6 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      {/* 회원탈퇴 확인 모달 */}
       <Modal
         visible={modalType === "withdraw"}
         transparent
@@ -273,7 +425,11 @@ export default function ProfileScreen() {
 
               <Pressable
                 onPress={confirmAction}
-                style={[styles.modalBtn, styles.modalBtnConfirm, styles.modalBtnWithdraw]}
+                style={[
+                  styles.modalBtn,
+                  styles.modalBtnConfirm,
+                  styles.modalBtnWithdraw,
+                ]}
               >
                 <Text style={styles.modalBtnTextConfirm}>확인했습니다</Text>
               </Pressable>
@@ -287,10 +443,8 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F5F5F5" },
-
   container: { flex: 1 },
   content: { paddingHorizontal: 18, paddingBottom: 30 },
-
   header: {
     height: 54,
     flexDirection: "row",
@@ -303,7 +457,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#111",
   },
-
   profileTop: {
     alignItems: "center",
     marginTop: 18,
@@ -325,31 +478,47 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#111",
   },
-
   section: {
     marginTop: 28,
   },
-
+  sectionTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+    paddingLeft: 8,
+    paddingRight: 4,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#111",
-    marginBottom: 14,
-    paddingLeft: 8,
   },
-
+  saveButton: {
+    backgroundColor: "#3F7BFF",
+    paddingHorizontal: 14,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: "center",
+  },
+  saveButtonDisabled: {
+    backgroundColor: "#B9C8F7",
+  },
+  saveButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
   list: {
     backgroundColor: "#F5F5F5",
     borderRadius: 14,
   },
-
   row: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 2,
   },
-
   label: {
     width: 90,
     fontSize: 15,
@@ -357,24 +526,20 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     paddingLeft: 8,
   },
-
   valueArea: {
     flex: 1,
     alignItems: "center",
   },
-
   valueText: {
     fontSize: 15,
     color: "#333",
     fontWeight: "500",
     textAlign: "left",
   },
-
   addText: {
     color: "#2F6BFF",
     fontWeight: "600",
   },
-
   input: {
     width: "100%",
     textAlign: "left",
@@ -386,39 +551,39 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: "#FFFFFF",
   },
-
   rowIconBtn: {
     width: 32,
     alignItems: "flex-end",
   },
-
   footerActions: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     marginTop: 28,
   },
-
   footerButton: {
     fontSize: 15,
     color: "#9A9A9A",
     fontWeight: "500",
   },
-
   footerDivider: {
     marginHorizontal: 10,
     fontSize: 15,
     color: "#C7C7C7",
   },
-
-  // 모달 스타일
+  helperText: {
+    marginTop: 18,
+    textAlign: "center",
+    fontSize: 13,
+    color: "#8A8A8A",
+    fontWeight: "500",
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
-
   modalContent: {
     width: 300,
     backgroundColor: "#FFFFFF",
@@ -426,7 +591,6 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: "center",
   },
-
   modalTitle: {
     fontSize: 17,
     fontWeight: "700",
@@ -434,7 +598,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 12,
   },
-
   modalMessage: {
     fontSize: 14,
     fontWeight: "500",
@@ -443,13 +606,11 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 24,
   },
-
   modalButtons: {
     flexDirection: "row",
     gap: 10,
     width: "100%",
   },
-
   modalBtn: {
     flex: 1,
     height: 44,
@@ -457,25 +618,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   modalBtnCancel: {
     backgroundColor: "#E6E6E6",
   },
-
   modalBtnConfirm: {
     backgroundColor: "#3F7BFF",
   },
-
   modalBtnWithdraw: {
     backgroundColor: "#FF4444",
   },
-
   modalBtnTextCancel: {
     fontSize: 15,
     fontWeight: "600",
     color: "#666",
   },
-
   modalBtnTextConfirm: {
     fontSize: 15,
     fontWeight: "600",

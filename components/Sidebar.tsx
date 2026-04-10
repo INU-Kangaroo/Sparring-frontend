@@ -31,9 +31,9 @@ export default function SidebarMenu({
   const menuItems: MenuItem[] = useMemo(
     () =>
       items ?? [
-        /*{ label: "기록하기", path: "/main/main" },*/
+        { label: "기록하기", path: "/main/main" },
         { label: "추천", path: "/recommend/recommendation" },
-        { label: "보고서", path: "/mypage/report" },
+        { label: "보고서", path: "/report" },
         { label: "AI 챗봇", path: "/AI/chatAI" },
         { label: "마이페이지", path: "/my/mypage" },
       ],
@@ -82,7 +82,7 @@ export default function SidebarMenu({
         ]}
       >
         <LinearGradient
-          colors={["#a9d7f4ff", "#3f8ff1ff", "#1541f5ff"]}
+          colors={["#F2F2F2", "#8C8C8C", "#0D0D0D"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradient}
@@ -118,7 +118,6 @@ const styles = StyleSheet.create({
 
   sideMenu: {
     height: "30%",
-    marginTop: 60,
     borderTopLeftRadius: 30,
     borderBottomLeftRadius: 30,
     overflow: "hidden",

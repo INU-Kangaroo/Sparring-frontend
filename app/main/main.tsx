@@ -6,18 +6,18 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LineChart } from "react-native-chart-kit";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import SidebarMenu from "../../components/Sidebar";
+import SidebarMenu from "@/components/Sidebar";
+
 import {
-  getTodayInsight,
-  getQuickStats,
-  getHomeChart,
-  type Period,
+  getHome,
+  convertChartData,
+  type HomeResponse,
 } from "../api/home";
 
 const SCREEN_W = Dimensions.get("window").width;
@@ -25,450 +25,297 @@ const SCREEN_W = Dimensions.get("window").width;
 export default function MainScreen() {
   const router = useRouter();
 
-  const [openSidebar, setOpenSidebar] = useState<(() => void) | null>(null);
-  const [period, setPeriod] = useState<Period>("week");
-
-  const [insight, setInsight] = useState({
-    title: "오늘의 한마디",
-    body: "불러오는 중...",
-  });
-
-  const [quick, setQuick] = useState({
-    today: "오늘: -",
-    week: "이번 주: -",
-    avg: "혈당 평균: -",
-  });
+  const [home, setHome] = useState<HomeResponse | null>(null);
 
   const [chart, setChart] = useState({
-    labels: ["월", "화", "수", "목", "금", "토", "일"],
-    glucose: [0, 0, 0, 0, 0, 0, 0],
-    systolic: [0, 0, 0, 0, 0, 0, 0],
-    diastolic: [0, 0, 0, 0, 0, 0, 0],
-    emojis: ["—", "—", "—", "—", "—", "—", "—"],
+    labels: [],
+    glucose: [],
   });
 
-  const [loadingA, setLoadingA] = useState(false);
-  const [loadingB, setLoadingB] = useState(false);
-  const [loadingC, setLoadingC] = useState(false);
+  const [openSidebar, setOpenSidebar] = useState<(() => void) | null>(null);
 
   const handleExposeOpen = useCallback((openFn: () => void) => {
     setOpenSidebar(() => openFn);
   }, []);
 
+
+  const chartWidth = useMemo(() => SCREEN_W - 60, []);
+
+  /* ---------------- API ---------------- */
+
   useEffect(() => {
-    let alive = true;
-
     (async () => {
-      setLoadingA(true);
-      try {
-        const data = await getTodayInsight();
+      const data = await getHome();
 
-        if (!alive) return;
+      setHome(data);
 
-        setInsight({
-          title: "오늘의 한마디",
-          body: data?.message ?? "오늘의 인사이트를 불러왔어요.",
-        });
-      } catch (e) {
-        if (__DEV__ && alive) {
-          setInsight({
-            title: "오늘의 한마디",
-            body: "공복 혈당이 안정적이에요! 잘하고 있어요 👏 (DEV 더미)",
-          });
-        }
-      } finally {
-        if (alive) setLoadingA(false);
-      }
+      const converted = convertChartData(data.bloodSugarChart);
+      setChart(converted);
     })();
-
-    return () => {
-      alive = false;
-    };
   }, []);
 
-  useEffect(() => {
-    let alive = true;
+  if (!home) return null;
 
-    (async () => {
-      setLoadingC(true);
-      try {
-        const data = await getQuickStats();
-
-        if (data?.todayText || data?.weekText || data?.avgText) {
-          if (!alive) return;
-
-          setQuick({
-            today: data.todayText ?? "오늘: -",
-            week: data.weekText ?? "이번 주: -",
-            avg: data.avgText ?? "혈당 평균: -",
-          });
-
-          return;
-        }
-
-        const todayText =
-          data?.todayGlucoseCount != null || data?.todayBpCount != null
-            ? `오늘: 혈당 ${data.todayGlucoseCount ?? 0}회 | 혈압 ${data.todayBpCount ?? 0}회`
-            : "오늘: -";
-
-        const weekText =
-          data?.weekGlucoseCount != null || data?.weekBpCount != null
-            ? `이번 주: 혈당 ${data.weekGlucoseCount ?? 0}회 | 혈압 ${data.weekBpCount ?? 0}회`
-            : "이번 주: -";
-
-        const avgText =
-          data?.weekGlucoseAvg != null
-            ? `혈당 평균: ${Math.round(data.weekGlucoseAvg)} mg/dL`
-            : "혈당 평균: -";
-
-        if (!alive) return;
-
-        setQuick({
-          today: todayText,
-          week: weekText,
-          avg: avgText,
-        });
-      } catch (e) {
-        if (__DEV__ && alive) {
-          setQuick({
-            today: "오늘: 혈당 2회 | 혈압 1회 (DEV)",
-            week: "이번 주: 혈당 12회 | 혈압 6회 (DEV)",
-            avg: "혈당 평균: 118 mg/dL (DEV)",
-          });
-        }
-      } finally {
-        if (alive) setLoadingC(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      setLoadingB(true);
-      try {
-        const data = await getHomeChart(period);
-
-        const labels =
-          data?.labels ??
-          (period === "week"
-            ? ["월", "화", "수", "목", "금", "토", "일"]
-            : period === "month"
-            ? ["1주", "2주", "3주", "4주", "5주"]
-            : ["전체"]);
-
-        const glucose = Array.isArray(data?.glucose)
-          ? data.glucose
-          : labels.map(() => 0);
-
-        const systolic = Array.isArray(data?.systolic)
-          ? data.systolic
-          : labels.map(() => 0);
-
-        const diastolic = Array.isArray(data?.diastolic)
-          ? data.diastolic
-          : labels.map(() => 0);
-
-        if (!alive) return;
-
-        setChart({
-          labels,
-          glucose,
-          systolic,
-          diastolic,
-          emojis: Array.isArray(data?.emojis)
-            ? data.emojis
-            : labels.map(() => "—"),
-        });
-      } catch (e) {
-        if (__DEV__ && alive) {
-          setChart({
-            labels: ["월", "화", "수", "목", "금", "토", "일"],
-            glucose: [112, 118, 121, 109, 115, 111, 114],
-            systolic: [122, 126, 120, 129, 124, 121, 123],
-            diastolic: [79, 82, 78, 85, 80, 79, 81],
-            emojis: ["🙂", "🙂", "😅", "🙂", "🙂", "—", "🙂"],
-          });
-        }
-      } finally {
-        if (alive) setLoadingB(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, [period]);
-
-  const chartWidth = useMemo(() => Math.min(343, SCREEN_W - 80), []);
+  /* ---------------- UI ---------------- */
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => openSidebar?.()}>
-          <Ionicons name="menu" size={24} color="#091441"  />
-        </Pressable>
-      </View>
-
-      <SidebarMenu exposeOpen={handleExposeOpen} />
-
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.todayCard}>
-          <Text style={styles.todayTitle}>💡 {insight.title}</Text>
-          <Text style={styles.todayBody}>{insight.body}</Text>
+      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+        
+        <SidebarMenu exposeOpen={handleExposeOpen} />
+        <View style={styles.header}>
+          <Pressable onPress={() => openSidebar?.()}>
+            <Ionicons name="menu" size={24} color="#091441" />
+          </Pressable>
         </View>
-
-        <View style={styles.card}>
-          <View style={styles.cardHead}>
-            <Text style={styles.cardTitle}>📌 변화 차트</Text>
-
-            <View style={styles.tabRow}>
-              {["week", "month", "all"].map((p) => {
-                const selected = period === p;
-
-                return (
-                  <Pressable
-                    key={p}
-                    onPress={() => setPeriod(p as Period)}
-                    style={styles.tabWrap}
-                  >
-                    {selected ? (
-                      <LinearGradient
-                        colors={["#0D99FF", "#1D4BFF"]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.tab}
-                      >
-                        <Text style={[styles.tabText, styles.tabTextSel]}>
-                          {p === "week" ? "주간" : p === "month" ? "월간" : "전체"}
-                        </Text>
-                      </LinearGradient>
-                    ) : (
-                      <View style={[styles.tab, styles.tabUnselected]}>
-                        <Text style={styles.tabText}>
-                          {p === "week" ? "주간" : p === "month" ? "월간" : "전체"}
-                        </Text>
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
+        <ScrollView contentContainerStyle={styles.container}>
+        
+        <SidebarMenu exposeOpen={handleExposeOpen} />
+        {/* 프로필 카드 */}
+        <View style={styles.profileCard}>
+          <View style={styles.row}>
+            <View>
+              <Text style={styles.name}>
+                {home.profileCard.name}님
+              </Text>
+              <Text style={styles.date}>
+                {home.profileCard.displayDate}
+              </Text>
             </View>
+
+            {home.profileCard.profileImageUrl ? (
+              <Image
+                source={{ uri: home.profileCard.profileImageUrl }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatar} />
+            )}
           </View>
 
-          <LineChart
-            data={{
-              labels: chart.labels,
-              datasets: [
-                { data: chart.glucose, color: () => "#3C3C3C" },
-                { data: chart.systolic, color: () => "#dc2626" },
-                { data: chart.diastolic, color: () => "#2563eb" },
-              ],
-              legend: ["혈당", "수축기", "이완기"],
-            }}
-            width={chartWidth}
-            height={220}
-            chartConfig={{
-              backgroundGradientFrom: "#fff",
-              backgroundGradientTo: "#fff",
-              decimalPlaces: 0,
-              color: () => "#000",
-              labelColor: () => "#000",
-            }}
-            bezier
-            style={styles.chart}
-          />
+          <View style={styles.tagRow}>
+            {home.profileCard.tags.slice(0, 4).map((tag, i) => (
+              <View key={i} style={styles.tag}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
 
-          {loadingB && (
-            <Text style={styles.loadingHint}>차트 불러오는 중...</Text>
+        {/* 오늘의 한마디 */}
+        <Text style={styles.section}>오늘의 한마디</Text>
+        <View style={styles.card}>
+          <View style={styles.messageRow}>
+            <View style={styles.messageAccent} />
+            <Text style={styles.messageText}>
+              {home.todayInsight.message}
+            </Text>
+          </View>
+        </View>
+
+        {/* 차트 */}
+        <Text style={styles.section}>혈당 그래프</Text>
+        <View style={styles.card}>
+          {chart.glucose.length === 0 ? (
+            <Text style={{ textAlign: "center", color: "#888" }}>
+              데이터 없음
+            </Text>
+          ) : (
+            <LineChart
+              data={{
+                labels: chart.labels,
+                datasets: [
+                  {
+                    data: chart.glucose,
+                    strokeWidth: 2,
+                  },
+                ],
+              }}
+              width={chartWidth}
+              height={220}
+              withDots={true}
+              withInnerLines={true}
+              withOuterLines={false}
+              withVerticalLines={false} // 👉 세로선 제거 (핵심)
+              yAxisInterval={1}
+              chartConfig={{
+                backgroundGradientFrom: "#fff",
+                backgroundGradientTo: "#fff",
+
+                decimalPlaces: 0,
+
+                color: () => "#222", // 라인 색
+                labelColor: () => "#999",
+
+                propsForDots: {
+                  r: "3",
+                  strokeWidth: "1",
+                  stroke: "#222",
+                },
+
+                propsForBackgroundLines: {
+                  stroke: "#EAEAEA", // 👉 연한 그리드
+                  strokeWidth: 1,
+                },
+              }}
+              style={{
+                marginLeft: -10, // 👉 좌측 여백 보정
+              }}
+              bezier
+            />
           )}
         </View>
 
-<View style={styles.quickRow}>
-  <Pressable
-    style={styles.quickBtnWrap}
-    onPress={() => router.push("/record/bloodPressure")}
-  >
-    <LinearGradient
-      colors={["#0D99FF", "#1D4BFF"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.quickBtn}
-    >
-      <Text style={styles.quickBtnText}>혈압 기록하기</Text>
-    </LinearGradient>
-  </Pressable>
+        {/* 기록하기 */}
+        <Text style={styles.section}>기록하기</Text>
 
-    <Pressable
-      style={styles.quickBtnWrap}
-      onPress={() => router.push("/record/bloodSugar")}
-    >
-      <LinearGradient
-        colors={["#0D99FF", "#1D4BFF"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.quickBtn}
-      >
-        <Text style={styles.quickBtnText}>혈당 기록하기</Text>
-      </LinearGradient>
-    </Pressable>
-  </View>
+        <View style={styles.recordRow}>
+          <Pressable
+            style={styles.recordBtn}
+            onPress={() => router.push("/record/bloodSugar")}
+          >
+            <View style={styles.recordIconWrap}>
+              <Ionicons name="water" size={20} color="#fff" />
+            </View>
+            <Text style={styles.recordText}>혈당</Text>
+          </Pressable>
 
-        <View style={styles.statsCard}>
-          <Text style={styles.statsTitle}>📊 빠른 통계</Text>
-          <Text style={styles.statsLine}>{quick.today}</Text>
-          <Text style={styles.statsLine}>{quick.week}</Text>
-          <Text style={styles.statsLineStrong}>{quick.avg}</Text>
+          <Pressable
+            style={styles.recordBtn}
+            onPress={() => router.push("/record/bloodPressure")}
+          >
+            <View style={styles.recordIconWrap}>
+              <Ionicons name="pulse-outline" size={20} color="#fff" />
+            </View>
+            <Text style={styles.recordText}>혈압</Text>
+          </Pressable>
+        </View>
+
+        {/* 걸음수 */}
+        <Text style={styles.section}>오늘의 걸음</Text>
+        <View style={styles.card}>
+          <Text style={styles.stepsValue}>
+            {home.steps.totalSteps.toLocaleString()} 걸음
+          </Text>
+
+          <Text style={styles.stepsSub}>
+            걷기를 통한 혈당 관리 함께해요
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F5F5F5" },
+/* ---------------- styles ---------------- */
 
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: "#F3F3F3" },
   header: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    paddingTop: 16,
+    paddingTop: 12,
     paddingHorizontal: 20,
   },
+  container: { padding: 20 },
 
-  container: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    marginTop: 20,
-  },
-
-  todayCard: {
-    backgroundColor: "#fff",
+  profileCard: {
+    backgroundColor: "#2B2B2B",
     borderRadius: 18,
     padding: 16,
+    marginBottom: 20,
   },
 
-  todayTitle: {
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  name: { color: "#fff", fontSize: 20, fontWeight: "800" },
+  date: { color: "#ccc", marginTop: 4 },
+
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#ddd",
+  },
+
+  tagRow: {
+    flexDirection: "row",
+    marginTop: 12,
+    flexWrap: "wrap",
+  },
+
+  tag: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginTop: 6,
+  },
+
+  tagText: { fontSize: 12 },
+
+  section: {
+    fontSize: 18,
     fontWeight: "800",
     marginBottom: 10,
   },
 
-  todayBody: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
+card: {
+  backgroundColor: "#fff",
+  borderRadius: 16,
+  paddingVertical: 20, 
+  paddingHorizontal: 10,
+  marginBottom: 20,
+},
 
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    padding: 12,
-    marginTop: 20,
-  },
-
-  cardTitle: {
-    fontWeight: "800",
-    marginBottom: 12,
-  },
-
-  cardHead: {
+  messageRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
   },
 
-  tabRow: {
-    flexDirection: "row",
-    gap: 8,
+  messageAccent: {
+    width: 3,
+    height: 24,
+    backgroundColor: "#222",
+    marginRight: 10,
   },
 
-  tabWrap: {
-    borderRadius: 14,
-  },
-
-  tab: {
-    paddingHorizontal: 12,
-    height: 30,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  tabUnselected: {
-    backgroundColor: "#E9EEF8",
-  },
-
-  tabText: {
-    fontSize: 12,
-    color: "#2B2B2B",
-  },
-
-  tabTextSel: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-
-  chart: {
-    borderRadius: 16,
-    marginTop: 10,
-  },
-
-  quickRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 16,
-  },
-
-  quickBtnWrap: {
+  messageText: {
     flex: 1,
-    borderRadius: 14,
-
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 4,
   },
 
-  quickBtn: {
-    height: 48,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
+  recordRow: {
+    flexDirection: "row",
+    gap: 28,
   },
 
-  quickBtnText: {
+  recordBtn: {
+    flex: 1,
+    height: 86,
+    borderRadius: 12,
+    backgroundColor: "#D98E97",
+    padding: 16,
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+
+  recordIconWrap: {},
+
+  recordText: {
+    alignSelf: "flex-end",
     color: "#fff",
     fontWeight: "800",
   },
 
-  statsCard: {
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    padding: 16,
-    marginTop: 16,
-  },
-
-  statsTitle: {
+  stepsValue: {
+    fontSize: 28,
     fontWeight: "800",
-    marginBottom: 8,
   },
 
-  statsLine: {
-    marginTop: 4,
-  },
-
-  statsLineStrong: {
-    fontWeight: "800",
+  stepsSub: {
     marginTop: 6,
-  },
-
-  loadingHint: {
-    marginTop: 8,
-    fontSize: 12,
-    color: "#999",
+    color: "#888",
   },
 });

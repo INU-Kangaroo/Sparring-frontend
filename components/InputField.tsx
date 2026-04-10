@@ -22,6 +22,7 @@ export default function InputField({
       placeholder={placeholder}
       keyboardType={keyboardType}
       secureTextEntry={secure}
+    z
     />
   );
 }

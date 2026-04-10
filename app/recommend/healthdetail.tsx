@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,9 +6,10 @@ import {
   Dimensions,
   Pressable,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useSharedValue,
@@ -29,20 +30,35 @@ import Svg, {
   Stop,
   Path,
 } from "react-native-svg";
+import {
+  refreshExerciseRecommendation,
+  ExerciseRequest,
+  ExerciseResponse,
+} from "../api/recommendation";
 
 const { width: W, height: H } = Dimensions.get("window");
 
 const SHEET_TOP = 100;
 const SHEET_BOTTOM = H - 280;
-const clamp = (v: number, min: number, max: number) =>
-  Math.min(Math.max(v, min), max);
+
+// API에 혈당 데이터가 없으므로 운동 시 일반적인 혈당 변화 곡선 사용
+const DEFAULT_GLUCOSE_CURVE = [
+  { t: 0, v: 140 },
+  { t: 5, v: 132 },
+  { t: 10, v: 122 },
+  { t: 15, v: 112 },
+  { t: 20, v: 105 },
+  { t: 25, v: 98 },
+  { t: 30, v: 92 },
+];
 
 type WorkoutItem = {
   id: string;
   name: string;
-  kcal: number;
-  info: string;
+  subInfo: string;       // 버튼 하단 작은 텍스트
+  badgeText: string;     // 버튼 우측 텍스트 (kcal 범위 or 횟수)
   calorieData: { t: number; v: number }[];
+  precautions: string[];
   sections: {
     id: string;
     title: string;
@@ -50,7 +66,50 @@ type WorkoutItem = {
   }[];
 };
 
-// 그래프 컴포넌트
+// API 응답 → 화면용 WorkoutItem 변환
+function mapApiToItems(res: ExerciseResponse): WorkoutItem[] {
+  const cardiacItems: WorkoutItem[] = res.cardiacExercises.map((e, idx) => ({
+    id: `cardiac-${idx}`,
+    name: e.name,
+    subInfo: e.duration,
+    badgeText: `${e.minCalories}~${e.maxCalories}kcal`,
+    calorieData: DEFAULT_GLUCOSE_CURVE,
+    precautions: e.precautions,
+    sections: [
+      {
+        id: "s1",
+        title: "유산소 운동",
+        rows: [
+          { id: "r1", label: "권장 시간", value: e.duration },
+          { id: "r2", label: "칼로리 소모", value: `${e.minCalories}~${e.maxCalories}kcal` },
+        ],
+      },
+    ],
+  }));
+
+  const strengthItems: WorkoutItem[] = res.strengthExercises.map((e, idx) => ({
+    id: `strength-${idx}`,
+    name: e.name,
+    subInfo: `${e.duration} | ${e.frequency}`,
+    badgeText: e.frequency,
+    calorieData: DEFAULT_GLUCOSE_CURVE,
+    precautions: e.precautions,
+    sections: [
+      {
+        id: "s1",
+        title: "근력 운동",
+        rows: [
+          { id: "r1", label: "운동 시간", value: e.duration },
+          { id: "r2", label: "권장 횟수", value: e.frequency },
+        ],
+      },
+    ],
+  }));
+
+  return [...cardiacItems, ...strengthItems];
+}
+
+// ── 그래프 ──────────────────────────────────────────────────
 function CalorieGraph({ data }: { data: { t: number; v: number }[] }) {
   const GRAPH_W = W - 80;
   const GRAPH_H = 140;
@@ -67,13 +126,11 @@ function CalorieGraph({ data }: { data: { t: number; v: number }[] }) {
   const minV = 0;
   const maxV = Math.max(...data.map((d) => d.v)) + 10;
 
-  const toX = (t: number) =>
-    PAD_L + ((t - minT) / (maxT - minT)) * innerW;
+  const toX = (t: number) => PAD_L + ((t - minT) / (maxT - minT)) * innerW;
   const toY = (v: number) =>
     PAD_T + innerH - ((v - minV) / (maxV - minV)) * innerH;
 
   const points = data.map((d) => `${toX(d.t)},${toY(d.v)}`).join(" ");
-
   const areaPath =
     `M ${toX(data[0].t)},${toY(data[0].v)} ` +
     data.slice(1).map((d) => `L ${toX(d.t)},${toY(d.v)}`).join(" ") +
@@ -94,72 +151,41 @@ function CalorieGraph({ data }: { data: { t: number; v: number }[] }) {
           <Stop offset="100%" stopColor="rgba(255,255,255,0.02)" />
         </SvgGradient>
       </Defs>
-
       <Path d={areaPath} fill="url(#calorieGrad)" />
-
       {yTicks.map((v) => (
         <React.Fragment key={v}>
           <Line
-            x1={PAD_L}
-            y1={toY(v)}
-            x2={PAD_L + innerW}
-            y2={toY(v)}
-            stroke="rgba(255,255,255,0.25)"
-            strokeWidth={1}
-            strokeDasharray="4,4"
+            x1={PAD_L} y1={toY(v)} x2={PAD_L + innerW} y2={toY(v)}
+            stroke="rgba(255,255,255,0.25)" strokeWidth={1} strokeDasharray="4,4"
           />
           <SvgText
-            x={PAD_L - 4}
-            y={toY(v) + 4}
-            fontSize={9}
-            fill="rgba(255,255,255,0.8)"
-            textAnchor="end"
+            x={PAD_L - 4} y={toY(v) + 4}
+            fontSize={9} fill="rgba(255,255,255,0.8)" textAnchor="end"
           >
             {v}
           </SvgText>
         </React.Fragment>
       ))}
-
       <Line
-        x1={PAD_L}
-        y1={PAD_T + innerH}
-        x2={PAD_L + innerW}
-        y2={PAD_T + innerH}
-        stroke="rgba(255,255,255,0.4)"
-        strokeWidth={1}
+        x1={PAD_L} y1={PAD_T + innerH} x2={PAD_L + innerW} y2={PAD_T + innerH}
+        stroke="rgba(255,255,255,0.4)" strokeWidth={1}
       />
-
       {xLabels.map((d) => (
         <SvgText
-          key={d.t}
-          x={toX(d.t)}
-          y={PAD_T + innerH + 14}
-          fontSize={9}
-          fill="rgba(255,255,255,0.8)"
-          textAnchor="middle"
+          key={d.t} x={toX(d.t)} y={PAD_T + innerH + 14}
+          fontSize={9} fill="rgba(255,255,255,0.8)" textAnchor="middle"
         >
           {d.t}분
         </SvgText>
       ))}
-
       <Polyline
-        points={points}
-        fill="none"
-        stroke="white"
-        strokeWidth={2.5}
-        strokeLinejoin="round"
-        strokeLinecap="round"
+        points={points} fill="none" stroke="white"
+        strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"
       />
-
       {data.map((d, i) => (
         <Circle
-          key={i}
-          cx={toX(d.t)}
-          cy={toY(d.v)}
-          r={3.5}
-          fill="white"
-          stroke="rgba(255,255,255,0.5)"
-          strokeWidth={1.5}
+          key={i} cx={toX(d.t)} cy={toY(d.v)} r={3.5}
+          fill="white" stroke="rgba(255,255,255,0.5)" strokeWidth={1.5}
         />
       ))}
     </Svg>
@@ -175,70 +201,73 @@ function WorkoutRowBlock({ label, value }: { label: string; value: string }) {
   );
 }
 
+function PrecautionBox({ bullets }: { bullets: string[] }) {
+  return (
+    <View style={styles.cautionBox}>
+      <Text style={styles.cautionTitle}>주의사항</Text>
+      <View style={{ marginTop: 10, gap: 8 }}>
+        {bullets.map((b, idx) => (
+          <View key={idx} style={styles.bulletRow}>
+            <Text style={styles.bulletDot}>•</Text>
+            <Text style={styles.bulletText}>{b}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// ── 메인 컴포넌트 ───────────────────────────────────────────
 export default function HealthDetail() {
   const insets = useSafeAreaInsets();
 
-  const data = useMemo<WorkoutItem[]>(
-    () => [
-      {
-        id: "1",
-        name: "레그컬",
-        kcal: 130,
-        info: "10분 | 4회",
-        calorieData: [
-          { t: 0, v: 140 },
-          { t: 5, v: 132 },
-          { t: 10, v: 122 },
-          { t: 15, v: 112 },
-          { t: 20, v: 105 },
-          { t: 25, v: 98 },
-          { t: 30, v: 92 },
-        ],
-        sections: [
-          {
-            id: "s1",
-            title: "근력 운동",
-            rows: [
-              { id: "r1", label: "레그컬", value: "10분 | 4회" },
-              { id: "r2", label: "스쿼트", value: "10분 | 2회" },
-              { id: "r3", label: "런지", value: "15분 | 3회" },
-            ],
-          },
-        ],
-      },
-      {
-        id: "2",
-        name: "빨리걷기",
-        kcal: 150,
-        info: "30분 | 1회",
-        calorieData: [
-          { t: 0, v: 140 },
-          { t: 5, v: 130 },
-          { t: 10, v: 118 },
-          { t: 15, v: 105 },
-          { t: 20, v: 95 },
-          { t: 25, v: 88 },
-          { t: 30, v: 82 },
-        ],
-        sections: [
-          {
-            id: "s1",
-            title: "유산소 운동",
-            rows: [
-              { id: "r1", label: "빨리걷기", value: "30분 이상" },
-              { id: "r2", label: "조깅", value: "30분 이상" },
-              { id: "r3", label: "수영", value: "20분 이상" },
-            ],
-          },
-        ],
-      },
-    ],
-    []
+  // healthfilter에서 넘어온 params
+  const params = useLocalSearchParams<{
+    data: string;
+    duration: string;
+    intensity: string;
+    location: string;
+  }>();
+
+  const filterBody: ExerciseRequest = {
+    duration: (params.duration ?? "MEDIUM") as ExerciseRequest["duration"],
+    intensity: (params.intensity ?? "MODERATE") as ExerciseRequest["intensity"],
+    location: (params.location ?? "INDOOR") as ExerciseRequest["location"],
+  };
+
+  // params.data 파싱
+  const initialData = useMemo<WorkoutItem[]>(() => {
+    try {
+      const parsed: ExerciseResponse = JSON.parse(params.data ?? "{}");
+      const items = mapApiToItems(parsed);
+      return items.length > 0 ? items : [];
+    } catch {
+      return [];
+    }
+  }, [params.data]);
+
+  const [data, setData] = useState<WorkoutItem[]>(initialData);
+  const [selected, setSelected] = useState<WorkoutItem | null>(
+    initialData[0] ?? null
   );
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [selected, setSelected] = useState<WorkoutItem>(data[0]);
+  const handleRefresh = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      const res = await refreshExerciseRecommendation(filterBody);
+      const mapped = mapApiToItems(res);
+      setData(mapped);
+      if (mapped.length > 0) setSelected(mapped[0]);
+    } catch {
+      alert("새로고침에 실패했어요. 다시 시도해주세요.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
-  // ── Bottom Sheet ──────────────────────────────────────────
+  // ── Bottom Sheet ────────────────────────────────────────
   const top = useSharedValue(SHEET_BOTTOM);
   const startTop = useSharedValue(SHEET_BOTTOM);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -255,7 +284,8 @@ export default function HealthDetail() {
       startTop.value = top.value;
     })
     .onUpdate((e) => {
-      top.value = clamp(startTop.value + e.translationY, SHEET_TOP, SHEET_BOTTOM);
+      const nextTop = startTop.value + e.translationY;
+      top.value = Math.min(Math.max(nextTop, SHEET_TOP), SHEET_BOTTOM);
     })
     .onEnd((e) => {
       const mid = (SHEET_TOP + SHEET_BOTTOM) / 2;
@@ -268,33 +298,61 @@ export default function HealthDetail() {
 
   const sheetStyle = useAnimatedStyle(() => ({ top: top.value }));
 
-  // 버튼 눌러도 시트 위치 변경 없음 - 데이터만 교체
-  const selectItem = (item: WorkoutItem) => {
-    setSelected(item);
-  };
+  // ── 빈 데이터 처리 ────────────────────────────────────────
+  if (data.length === 0) {
+    return (
+      <View style={[styles.safe, { alignItems: "center", justifyContent: "center" }]}>
+        <Ionicons name="fitness-outline" size={48} color="#ccc" />
+        <Text style={{ marginTop: 16, color: "#888", fontSize: 15 }}>
+          추천 운동이 없어요
+        </Text>
+        <Pressable onPress={() => router.back()} style={styles.emptyBackBtn}>
+          <Text style={styles.emptyBackText}>필터 다시 선택</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top + 40 }]}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.push("/recommend/recommendation")} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={22} color="#111" />
-        </Pressable>
+        <View style={styles.headerRow}>
+          <Pressable
+            onPress={() => router.push("/recommend/recommendation")}
+            style={styles.backBtn}
+          >
+            <Ionicons name="chevron-back" size={22} color="#111" />
+          </Pressable>
+
+          {/* 새로고침 버튼 */}
+          <Pressable
+            onPress={handleRefresh}
+            style={styles.refreshBtn}
+            disabled={refreshing}
+          >
+            {refreshing ? (
+              <ActivityIndicator size="small" color="#0D99FF" />
+            ) : (
+              <Ionicons name="refresh" size={20} color="#0D99FF" />
+            )}
+          </Pressable>
+        </View>
         <Text style={styles.h1}>운동</Text>
         <Text style={styles.h2}>현재 혈당정보를 기반으로 맞춤 운동을 추천해드려요</Text>
       </View>
 
-      {/* 운동 버튼 리스트 */}
+      {/* 운동 리스트 */}
       <ScrollView
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       >
         {data.map((item) => {
-          const isActive = selected.id === item.id;
+          const isActive = selected?.id === item.id;
           return (
             <Pressable
               key={item.id}
-              onPress={() => selectItem(item)}
+              onPress={() => setSelected(item)}
               style={({ pressed }) => [pressed && { opacity: 0.85 }]}
             >
               {isActive ? (
@@ -306,17 +364,17 @@ export default function HealthDetail() {
                 >
                   <View style={styles.btnRow}>
                     <Text style={styles.btnNameActive}>{item.name}</Text>
-                    <Text style={styles.btnKcalActive}>{item.kcal}kcal</Text>
+                    <Text style={styles.btnKcalActive}>{item.badgeText}</Text>
                   </View>
-                  <Text style={styles.btnInfoActive}>{item.info}</Text>
+                  <Text style={styles.btnInfoActive}>{item.subInfo}</Text>
                 </LinearGradient>
               ) : (
                 <View style={styles.btnInactive}>
                   <View style={styles.btnRow}>
                     <Text style={styles.btnName}>{item.name}</Text>
-                    <Text style={styles.btnKcal}>{item.kcal}kcal</Text>
+                    <Text style={styles.btnKcal}>{item.badgeText}</Text>
                   </View>
-                  <Text style={styles.btnInfo}>{item.info}</Text>
+                  <Text style={styles.btnInfo}>{item.subInfo}</Text>
                 </View>
               )}
             </Pressable>
@@ -326,60 +384,70 @@ export default function HealthDetail() {
       </ScrollView>
 
       {/* 바텀 시트 */}
-      <GestureDetector gesture={pan}>
-        <Animated.View style={[styles.sheet, sheetStyle]}>
-          <LinearGradient
-            colors={["#61ADFF", "#AFD3FF"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.sheetGradient}
-          >
-            <View style={styles.sheetHandle} />
-
-            <ScrollView
-              style={{ flex: 1 }}
-              contentContainerStyle={styles.sheetScrollContent}
-              scrollEnabled={sheetOpen}
-              showsVerticalScrollIndicator={false}
+      {selected && (
+        <GestureDetector gesture={pan}>
+          <Animated.View style={[styles.sheet, sheetStyle]}>
+            <LinearGradient
+              colors={["#61ADFF", "#AFD3FF"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.sheetGradient}
             >
-              {/* 운동 이름 + kcal */}
-              <Text style={styles.sheetTitle}>{selected.name}</Text>
-              <Text style={styles.sheetKcal}>{selected.kcal}kcal</Text>
-              <Text style={styles.sheetInfo}>{selected.info}</Text>
+              <View style={styles.sheetHandle} />
 
-              {/* 칼로리 소모 그래프 */}
-              <View style={styles.graphSection}>
-                <Text style={styles.graphLabel}>혈당 변화 예측</Text>
-                <View style={styles.graphBox}>
-                  <CalorieGraph data={selected.calorieData} />
-                </View>
-                <Text style={styles.graphCaption}>
-                  * 운동 시 혈당 변화 추이 (개인차가 있을 수 있어요)
-                </Text>
-              </View>
+              <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={styles.sheetScrollContent}
+                scrollEnabled={sheetOpen}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* 운동 이름 + 정보 */}
+                <Text style={styles.sheetTitle}>{selected.name}</Text>
+                <Text style={styles.sheetKcal}>{selected.badgeText}</Text>
+                <Text style={styles.sheetInfo}>{selected.subInfo}</Text>
 
-              <View style={styles.divider} />
-
-              {/* 운동 섹션 */}
-              {selected.sections.map((sec, idx) => (
-                <View key={sec.id} style={styles.section}>
-                  <Text style={styles.sectionTitle}>{sec.title}</Text>
-                  <View style={styles.rowsWrap}>
-                    {sec.rows.map((r) => (
-                      <WorkoutRowBlock key={r.id} label={r.label} value={r.value} />
-                    ))}
+                {/* 혈당 변화 그래프 */}
+                <View style={styles.graphSection}>
+                  <Text style={styles.graphLabel}>혈당 변화 예측</Text>
+                  <View style={styles.graphBox}>
+                    <CalorieGraph data={selected.calorieData} />
                   </View>
-                  {idx !== selected.sections.length - 1 && (
-                    <View style={styles.divider} />
-                  )}
+                  <Text style={styles.graphCaption}>
+                    * 운동 시 혈당 변화 추이 (개인차가 있을 수 있어요)
+                  </Text>
                 </View>
-              ))}
 
-              <View style={{ height: 100 }} />
-            </ScrollView>
-          </LinearGradient>
-        </Animated.View>
-      </GestureDetector>
+                <View style={styles.divider} />
+
+                {/* 운동 세부 정보 */}
+                {selected.sections.map((sec, idx) => (
+                  <View key={sec.id} style={styles.section}>
+                    <Text style={styles.sectionTitle}>{sec.title}</Text>
+                    <View style={styles.rowsWrap}>
+                      {sec.rows.map((r) => (
+                        <WorkoutRowBlock key={r.id} label={r.label} value={r.value} />
+                      ))}
+                    </View>
+                    {idx !== selected.sections.length - 1 && (
+                      <View style={styles.divider} />
+                    )}
+                  </View>
+                ))}
+
+                {/* 주의사항 */}
+                {selected.precautions.length > 0 && (
+                  <>
+                    <View style={styles.divider} />
+                    <PrecautionBox bullets={selected.precautions} />
+                  </>
+                )}
+
+                <View style={{ height: 100 }} />
+              </ScrollView>
+            </LinearGradient>
+          </Animated.View>
+        </GestureDetector>
+      )}
     </View>
   );
 }
@@ -387,7 +455,14 @@ export default function HealthDetail() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#FFFFFF" },
 
+  // 헤더
   header: { paddingHorizontal: 24 },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
   backBtn: {
     width: 36,
     height: 36,
@@ -395,7 +470,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#F4F4F4",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+  },
+  refreshBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#EEF6FF",
+    alignItems: "center",
+    justifyContent: "center",
   },
   h1: { fontSize: 23, fontWeight: "700", color: "#111111" },
   h2: { marginTop: 10, marginBottom: 20, fontSize: 15, color: "#666666" },
@@ -406,7 +488,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
 
-  // 활성 버튼
+  // 버튼 - 활성
   btnActive: {
     borderRadius: 15,
     paddingHorizontal: 18,
@@ -421,7 +503,7 @@ const styles = StyleSheet.create({
   btnKcalActive: { fontSize: 15, fontWeight: "700", color: "#fff" },
   btnInfoActive: { marginTop: 5, fontSize: 12, color: "rgba(255,255,255,0.8)" },
 
-  // 비활성 버튼
+  // 버튼 - 비활성
   btnInactive: {
     borderRadius: 15,
     paddingHorizontal: 18,
@@ -487,10 +569,7 @@ const styles = StyleSheet.create({
   },
 
   // 그래프
-  graphSection: {
-    alignItems: "center",
-    marginBottom: 6,
-  },
+  graphSection: { alignItems: "center", marginBottom: 6 },
   graphLabel: {
     fontSize: 13,
     fontWeight: "700",
@@ -541,4 +620,47 @@ const styles = StyleSheet.create({
   },
   workoutLabel: { fontSize: 15, fontWeight: "700", color: "#fff" },
   workoutValue: { fontSize: 15, fontWeight: "800", color: "#fff" },
+
+  // 주의사항
+  cautionBox: {
+    width: "100%",
+    borderRadius: 18,
+    backgroundColor: "rgba(29, 130, 239, 0.55)",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  cautionTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 2,
+  },
+  bulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  bulletDot: { fontSize: 14, lineHeight: 20, color: "#FFFFFF" },
+  bulletText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 20,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.92)",
+  },
+
+  // 빈 데이터 화면
+  emptyBackBtn: {
+    marginTop: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    backgroundColor: "#0D99FF",
+  },
+  emptyBackText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
+  },
 });

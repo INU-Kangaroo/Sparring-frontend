@@ -12,6 +12,14 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import {
+  ChatbotApiMessage,
+  ChatbotSession,
+  createChatbotSession,
+  fetchChatbotSession,
+  fetchChatbotSessions,
+  streamChatbotMessage,
+} from "../api/chatbot";
 
 type Role = "user" | "bot";
 
@@ -22,10 +30,7 @@ type ChatMessage = {
   createdAt: number;
 };
 
-const BOT_NAME = "챗봇 이름";
-
-const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-1.5-flash";
+const BOT_NAME = "Sparring 챗봇";
 
 const FAQ_LIST = [
   "혈당이 높을 때 뭘 먹어야 해요?",
@@ -35,25 +40,64 @@ const FAQ_LIST = [
   "혈당 측정은 하루 몇 번이 좋나요?",
 ];
 
+const WELCOME_MESSAGE: ChatMessage = {
+  id: "seed-1",
+  role: "bot",
+  text: "안녕하세요! 무엇을 도와드릴까요?",
+  createdAt: Date.now() - 1000,
+};
+
+const mapApiRoleToUiRole = (role: ChatbotApiMessage["role"]): Role =>
+  role === "USER" ? "user" : "bot";
+
+const toTimestamp = (value: string) => {
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? Date.now() : parsed;
+};
+
+const toUiMessages = (messages: ChatbotApiMessage[]): ChatMessage[] => {
+  if (messages.length === 0) {
+    return [WELCOME_MESSAGE];
+  }
+
+  return messages.map((message, index) => ({
+    id: `${message.role}-${message.timestamp}-${index}`,
+    role: mapApiRoleToUiRole(message.role),
+    text: message.content,
+    createdAt: toTimestamp(message.timestamp),
+  }));
+};
+
+const buildSessionTitle = (text: string) => {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return trimmed.length > 20 ? `${trimmed.slice(0, 20)}...` : trimmed;
+};
+
 export default function ChatAI() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "seed-1",
-      role: "bot",
-      text: "안녕하세요! 무엇을 도와드릴까요?",
-      createdAt: Date.now() - 1000,
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [faqVisible, setFaqVisible] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionTitle, setSessionTitle] = useState<string | null>(null);
 
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const streamAbortControllerRef = useRef<AbortController | null>(null);
 
   const canSend = useMemo(
-    () => input.trim().length > 0 && !isSending,
-    [input, isSending]
+    () => input.trim().length > 0 && !isSending && !isInitializing,
+    [input, isInitializing, isSending]
   );
+
+  const faqVisible =
+    !isInitializing &&
+    !isSending &&
+    messages.length === 1 &&
+    messages[0]?.id === WELCOME_MESSAGE.id;
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -62,42 +106,55 @@ export default function ChatAI() {
     return () => clearTimeout(t);
   }, [messages.length]);
 
-  const goBack = () => router.back();
+  useEffect(() => {
+    let isMounted = true;
 
-  const callGemini = async (prompt: string) => {
-    if (!GEMINI_API_KEY) {
-      throw new Error("Gemini API Key가 없어요. .env에 EXPO_PUBLIC_GEMINI_API_KEY를 설정해줘!");
-    }
+    const initializeSession = async () => {
+      try {
+        const sessions = await fetchChatbotSessions();
+        const latestSession = [...sessions].sort(
+          (a, b) =>
+            new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
+        )[0];
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+        if (!latestSession) {
+          return;
+        }
 
-    const body = {
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
+        const sessionDetail = await fetchChatbotSession(latestSession.sessionId);
+        if (!isMounted) {
+          return;
+        }
+
+        applySession(sessionDetail);
+      } catch (error) {
+        console.log("Failed to initialize chatbot session", error);
+      } finally {
+        if (isMounted) {
+          setIsInitializing(false);
+        }
+      }
     };
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    initializeSession();
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Gemini API error: ${res.status} ${errText}`);
-    }
+    return () => {
+      isMounted = false;
+      streamAbortControllerRef.current?.abort();
+    };
+  }, []);
 
-    const data = await res.json();
-    const text =
-      data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text).join("") ?? "";
-    return text.trim() || "음… 잠시만요. 다시 한 번 말해줄래요?";
+  const goBack = () => router.back();
+
+  const applySession = (session: ChatbotSession) => {
+    setSessionId(session.sessionId);
+    setSessionTitle(session.title);
+    setMessages(toUiMessages(session.messages));
   };
 
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || isSending) return;
-
-    setFaqVisible(false);
+    if (!trimmed || isSending || isInitializing) return;
 
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
@@ -117,22 +174,75 @@ export default function ChatAI() {
     ]);
 
     try {
-      const answer = await callGemini(trimmed);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === loadingId ? { ...m, text: answer, createdAt: Date.now() } : m
-        )
-      );
+      let activeSessionId = sessionId;
+
+      if (!activeSessionId) {
+        const createdSession = await createChatbotSession({
+          title: buildSessionTitle(trimmed),
+        });
+        activeSessionId = createdSession.sessionId;
+        setSessionId(createdSession.sessionId);
+        setSessionTitle(createdSession.title);
+      }
+
+      const abortController = new AbortController();
+      streamAbortControllerRef.current = abortController;
+
+      const streamedText = await streamChatbotMessage({
+        sessionId: activeSessionId,
+        message: trimmed,
+        signal: abortController.signal,
+        onChunk: (nextText) => {
+          setMessages((prev) =>
+            prev.map((message) =>
+              message.id === loadingId
+                ? {
+                    ...message,
+                    text: nextText || "…",
+                    createdAt: Date.now(),
+                  }
+                : message
+            )
+          );
+        },
+      });
+
+      if (!streamedText.trim()) {
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === loadingId
+              ? {
+                  ...message,
+                  text: "응답이 비어 있어요. 잠시 후 다시 시도해주세요.",
+                  createdAt: Date.now(),
+                }
+              : message
+          )
+        );
+      }
+
+      try {
+        const refreshedSession = await fetchChatbotSession(activeSessionId);
+        applySession(refreshedSession);
+      } catch (error) {
+        console.log("Failed to refresh chatbot session", error);
+      }
     } catch (e: any) {
+      const errorMessage =
+        e?.response?.status === 401 || e?.message?.includes("401")
+          ? "로그인이 필요해요. 다시 로그인한 뒤 챗봇을 이용해주세요."
+          : "지금은 답변을 가져오지 못했어요. 잠시 후 다시 시도해주세요.";
+
       setMessages((prev) =>
         prev.map((m) =>
           m.id === loadingId
-            ? { ...m, text: "지금은 답변을 가져오지 못했어요. 네트워크/키 설정을 확인해줘!" }
+            ? { ...m, text: errorMessage }
             : m
         )
       );
-      console.log(e?.message ?? e);
+      console.log("Failed to send chatbot message", e);
     } finally {
+      streamAbortControllerRef.current = null;
       setIsSending(false);
     }
   };
@@ -172,6 +282,12 @@ export default function ChatAI() {
         <Pressable onPress={goBack} hitSlop={10} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={22} color="#111" />
         </Pressable>
+        <View style={styles.headerTextWrap}>
+          <Text style={styles.headerTitle}>{sessionTitle ?? BOT_NAME}</Text>
+          <Text style={styles.headerSubtitle}>
+            {isInitializing ? "대화 불러오는 중..." : "건강 상담을 도와드려요"}
+          </Text>
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -225,7 +341,7 @@ export default function ChatAI() {
               multiline
               returnKeyType="send"
               onSubmitEditing={onSend}
-              editable={!isSending}
+              editable={!isSending && !isInitializing}
             />
           </View>
           <Pressable
@@ -250,8 +366,16 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   safe: { flex: 1, backgroundColor: "#F6F6F6" },
 
-  header: { height: 54, justifyContent: "center", paddingHorizontal: 14 },
+  header: {
+    height: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+  },
   backBtn: { width: 40, height: 40, justifyContent: "center" },
+  headerTextWrap: { flex: 1, marginLeft: 4 },
+  headerTitle: { fontSize: 16, fontWeight: "700", color: "#111" },
+  headerSubtitle: { marginTop: 2, fontSize: 12, color: "#8C8C8C" },
 
   listContent: {
     paddingTop: 50,

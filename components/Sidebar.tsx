@@ -82,7 +82,7 @@ export default function SidebarMenu({
         ]}
       >
         <LinearGradient
-          colors={["#a9d7f4ff", "#3f8ff1ff", "#1541f5ff"]}
+          colors={["#F2F2F2", "#8C8C8C", "#0D0D0D"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradient}
@@ -118,7 +118,6 @@ const styles = StyleSheet.create({
 
   sideMenu: {
     height: "30%",
-    marginTop: 60,
     borderTopLeftRadius: 30,
     borderBottomLeftRadius: 30,
     overflow: "hidden",

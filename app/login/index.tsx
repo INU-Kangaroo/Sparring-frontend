@@ -6,11 +6,9 @@ import {
   StyleSheet,
   Pressable,
   Image,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import * as AppleAuthentication from "expo-apple-authentication";
 
 import { useOauthLogin } from "../../hooks/useOAuthLogin";
 import { useKakaoLogin } from "../../hooks/useKakaoLogin";
@@ -21,9 +19,12 @@ export default function LoginScreen() {
 
   const onGoogleLogin = async () => {
     try {
+      console.log("구글 로그인 버튼 클릭");
       await google.login();
+      console.log("구글 로그인 성공 → /main/main 이동");
       router.replace("/main/main");
     } catch (error) {
+      console.log("구글 로그인 실패 =", error);
       const message =
         error instanceof Error ? error.message : "구글 로그인에 실패했습니다.";
       Alert.alert("로그인 실패", message);
@@ -32,9 +33,12 @@ export default function LoginScreen() {
 
   const onKakaoLogin = async () => {
     try {
+      console.log("카카오 로그인 버튼 클릭");
       await kakao.login();
+      console.log("카카오 로그인 성공 → /main/main 이동");
       router.replace("/main/main");
     } catch (error) {
+      console.log("카카오 로그인 버튼 핸들러 실패 =", error);
       const message =
         error instanceof Error ? error.message : "카카오 로그인에 실패했습니다.";
       Alert.alert("로그인 실패", message);
@@ -86,10 +90,10 @@ export default function LoginScreen() {
             </Text>
           </Pressable>
 
-         <Pressable
-            style={[styles.socialBtn, isGoogleDisabled ? styles.disabledBtn : null]}
+          <Pressable
+            style={[styles.socialBtn, kakao.disabled ? styles.disabledBtn : null]}
             onPress={onKakaoLogin}
-            disabled={isGoogleDisabled}
+            disabled={kakao.disabled}
           >
             <Image
               source={require("../../assets/images/kakao.png")}
@@ -109,6 +113,7 @@ export default function LoginScreen() {
             <Image
               source={require("../../assets/images/login.png")}
               style={styles.leftIcon}
+              resizeMode="contain"
             />
             <Text style={styles.btnText}>
               {isAnyLoading ? "로그인 중..." : "로그인"}
@@ -169,11 +174,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
-  },
-  appleBtn: {
-    width: "100%",
-    maxWidth: 343,
-    height: 51,
   },
   leftIcon: {
     width: 20,

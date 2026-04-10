@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, Fragment } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -21,21 +21,26 @@ import HomeFab from "../../components/HomeButton";
 import InfoModal from "../../components/InfoModal";
 import BloodInputModal from "../../components/BloodInput";
 import BackButton from "@/components/BackButton";
-import RecordBox from "../../components/RecordBox";
-import { createBloodSugarLog, getBloodSugarDaily } from "../api/bloodSugar";
-import HorizonLine from "../../components/HorizonLine";
+import HorizonLine from "@/components/HorizonLine";
 
-// -------- date utils --------
+import {
+  createBloodSugarLog,
+  getBloodSugarDaily,
+  //deleteBloodSugarLog, 
+} from "../api/bloodSugar";
+
+// -------- utils --------
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const toYmd = (d: Date) =>
   `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const toHm = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 const formatTime = (d: Date) => toHm(d);
-// ----------------------------
+// ----------------------
 
 const screenWidth = Dimensions.get("window").width;
 
 type BloodRecordUI = {
+  id: number; // ✅ 중요 (삭제용)
   glucoseLevel: number;
   measuredAt: Date;
   measurementLabel: string;
@@ -45,29 +50,15 @@ function normalizeDaily(raw: any): BloodRecordUI[] {
   const arr = Array.isArray(raw)
     ? raw
     : raw?.logs ?? raw?.data ?? raw?.items ?? [];
-  if (!Array.isArray(arr)) return [];
 
   return arr
-    .map((it: any) => {
-      const glucose = Number(
-        it?.glucoseLevel ?? it?.value ?? it?.bloodSugar ?? it?.glucose
-      );
-      const measuredAtStr =
-        it?.measuredAt ?? it?.measured_at ?? it?.timestamp ?? it?.createdAt;
-      const label = String(
-        it?.measurementLabel ?? it?.label ?? it?.title ?? ""
-      );
-
-      if (!Number.isFinite(glucose)) return null;
-      if (!measuredAtStr) return null;
-
-      return {
-        glucoseLevel: glucose,
-        measuredAt: new Date(measuredAtStr),
-        measurementLabel: label,
-      } as BloodRecordUI;
-    })
-    .filter(Boolean) as BloodRecordUI[];
+    .map((it: any) => ({
+      id: it?.id, // ✅ 추가
+      glucoseLevel: Number(it?.glucoseLevel),
+      measuredAt: new Date(it?.measuredAt),
+      measurementLabel: it?.measurementLabel ?? "",
+    }))
+    .filter((v: any) => v && v.glucoseLevel);
 }
 
 export default function BloodSugarScreen() {
@@ -87,7 +78,7 @@ export default function BloodSugarScreen() {
   const [modalTitle, setModalTitle] = useState("");
   const [modalContent, setModalContent] = useState("");
 
-  const [chartWidth, setChartWidth] = useState<number>(screenWidth - 36);
+  const [chartWidth, setChartWidth] = useState(screenWidth - 36);
 
   const fetchDaily = async () => {
     try {
@@ -97,14 +88,8 @@ export default function BloodSugarScreen() {
         (a, b) => a.measuredAt.getTime() - b.measuredAt.getTime()
       );
       setRecords(list);
-    } catch (e: any) {
-      console.log(
-        "bloodSugar fetchDaily error",
-        e?.response?.status,
-        e?.response?.data ?? e
-      );
-      Alert.alert("불러오기 실패", e?.message ?? "혈당 기록을 불러오지 못했어요.");
-      setRecords([]);
+    } catch {
+      Alert.alert("에러", "불러오기 실패");
     } finally {
       setLoading(false);
     }
@@ -114,28 +99,38 @@ export default function BloodSugarScreen() {
     fetchDaily();
   }, [selectedYmd]);
 
+  // ✅ 삭제 함수
+  const handleDelete = (id: number) => {
+    Alert.alert("삭제", "정말 삭제하시겠습니까?", [
+      { text: "취소" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            //await deleteBloodSugarLog(id);
+            setRecords((prev) => prev.filter((r) => r.id !== id));
+          } catch {
+            Alert.alert("삭제 실패");
+          }
+        },
+      },
+    ]);
+  };
+
   const chart = useMemo(() => {
     const labels = records.map((r) => formatTime(r.measuredAt));
     const values = records.map((r) => r.glucoseLevel);
 
-    const maxLabels = 6;
-    let thinnedLabels = labels;
-
-    if (labels.length > maxLabels) {
-      const step = Math.ceil(labels.length / maxLabels);
-      thinnedLabels = labels.map((t, i) => (i % step === 0 ? t : ""));
-    }
-
     return {
-      labels: thinnedLabels.length ? thinnedLabels : ["-"],
+      labels: labels.length ? labels : ["-"],
       values: values.length ? values : [0],
     };
   }, [records]);
 
-  const displayTitle = (r: BloodRecordUI) => r.measurementLabel || "혈당";
-
   return (
     <SafeAreaView style={styles.safe}>
+      {/* 헤더 */}
       <View style={styles.header}>
         <BackButton onPress={() => router.replace("/main/main")} />
         <Text style={styles.headerTitle}>기록하기</Text>
@@ -143,18 +138,11 @@ export default function BloodSugarScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
+        {/* 날짜 */}
         <View style={styles.dateRow}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.datePillWrap,
-              pressed && styles.pressedBtn,
-            ]}
-            onPress={() => setShowDatePicker((prev) => !prev)}
-          >
+          <Pressable onPress={() => setShowDatePicker(!showDatePicker)}>
             <LinearGradient
-              colors={["#0D99FF", "#1D4BFF"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              colors={["#0d0d0dec", "#262626"]}
               style={styles.datePill}
             >
               <Ionicons name="calendar" size={14} color="#fff" />
@@ -163,170 +151,158 @@ export default function BloodSugarScreen() {
           </Pressable>
 
           {showDatePicker && (
-            <View style={styles.datePickerInline}>
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display={Platform.OS === "ios" ? "compact" : "default"}
-                onChange={(event, selected) => {
-                  if ((event as any)?.type === "dismissed") {
-                    setShowDatePicker(false);
-                    return;
-                  }
-
-                  if (selected) {
-                    setDate(selected);
-                  }
-
-                  if (Platform.OS !== "ios") {
-                    setShowDatePicker(false);
-                  }
-                }}
-              />
-            </View>
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display={Platform.OS === "ios" ? "compact" : "default"}
+              onChange={(e, d) => {
+                if (d) setDate(d);
+                setShowDatePicker(false);
+              }}
+            />
           )}
         </View>
 
-        <Text style={styles.sectionTitle}>혈당 기록</Text>
+        {/* 혈당 */}
+        <Text style={styles.sectionTitle}>혈당</Text>
 
-        {loading && (
-          <View style={{ marginTop: 10 }}>
-            <ActivityIndicator />
-          </View>
-        )}
+        {loading && <ActivityIndicator style={{ marginTop: 10 }} />}
 
-        <View style={{ marginTop: 6 }}>
+        <View style={{ marginTop: 10 }}>
           {!loading && records.length === 0 ? (
             <Text style={styles.emptyText}>
-              아직 기록이 없어요. 아래 ＋ 버튼으로 추가해줘!
+              아직 기록이 없어요. 아래 버튼으로 추가해줘!
             </Text>
           ) : (
             records.map((r, idx) => (
-              <Fragment key={`${r.measuredAt.toISOString()}-${idx}`}>
-                <RecordBox
-                  title={displayTitle(r)}
-                  time={formatTime(r.measuredAt)}
-                  value={`${r.glucoseLevel} mg/dL`}
-                  fullWidth
-                  valueIcon="water"
-                />
-                {idx !== records.length - 1 && (
-                  <View style={styles.recordDivider} />
-                )}
-              </Fragment>
+              <View key={r.id}>
+                <View style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.cardTitle}>
+                      {r.measurementLabel || "혈당"}
+                    </Text>
+
+                    <Pressable onPress={() => handleDelete(r.id)}>
+                      <Ionicons name="close" size={18} color="#999" />
+                    </Pressable>
+                  </View>
+
+                  <Text style={styles.cardSub}>
+                    ⏰ {formatTime(r.measuredAt)} · {r.glucoseLevel} mg/dL
+                  </Text>
+                </View>
+
+                
+                {idx !== records.length - 1 && <HorizonLine />}
+              </View>
             ))
           )}
         </View>
 
+        {/* 추가 버튼 */}
         <Pressable
-          style={({ pressed }) => [
-            styles.addBarWrap,
-            saving && { opacity: 0.7 },
-            pressed && styles.pressedBtn,
-          ]}
+          style={styles.addButton}
           onPress={() => setInputVisible(true)}
-          disabled={saving}
         >
-          <LinearGradient
-            colors={["#0D99FF", "#1D4BFF"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.addBar}
-          >
-            <Text style={styles.addPlus}>＋</Text>
-          </LinearGradient>
+          <Text style={styles.addButtonText}>+ 혈당 추가</Text>
         </Pressable>
 
+        {/* 정보 버튼 */}
         <View style={styles.btnRow}>
           <Pressable
-            style={({ pressed }) => [
-              styles.darkBtnWrap,
-              pressed && styles.pressedBtn,
-            ]}
-            onPress={() => {
-              setModalTitle("혈당 측정 방법");
-              setModalContent(
-                "1. 손을 깨끗이 씻고 말립니다.\n\n" +
-                  "2. 테스트 스트립을 측정기에 삽입합니다.\n\n" +
-                  "3. 채혈기로 손가락 끝을 살짝 찔러 혈액을 채취합니다.\n\n" +
-                  "4. 혈액을 테스트 스트립에 묻힙니다.\n\n" +
-                  "5. 결과를 기록합니다."
-              );
-              setModalVisible(true);
-            }}
+            style={styles.darkBtn}
+            onPress={() => { 
+              setModalTitle("혈당 측정 방법"); 
+              setModalContent( "1. 손을 깨끗이 씻고 말립니다.\n\n" + "2. 테스트 스트립을 측정기에 삽입합니다.\n\n" + "3. 채혈기로 손가락 끝을 살짝 찔러 혈액을 채취합니다.\n\n" + "4. 혈액을 테스트 스트립에 묻힙니다.\n\n" + "5. 결과를 기록합니다." ); 
+              setModalVisible(true); }}
           >
-            <LinearGradient
-              colors={["#0D99FF", "#1D4BFF"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.darkBtn}
-            >
-              <Text style={styles.darkBtnText}>혈당 측정 방법</Text>
-            </LinearGradient>
+            <Text style={styles.darkBtnText}>혈당 측정 방법</Text>
           </Pressable>
 
           <Pressable
-            style={({ pressed }) => [
-              styles.darkBtnWrap,
-              pressed && styles.pressedBtn,
-            ]}
+            style={styles.darkBtn}
             onPress={() => {
-              setModalTitle("혈당 정상 수치");
-              setModalContent(
-                "✔ 공복 혈당: 70-99 mg/dL\n\n✔ 식후 2시간 혈당: 140 mg/dL 미만"
-              );
+              setModalTitle("정상 수치");
+              setModalContent( "✔ 공복 혈당: 70-99 mg/dL\n\n✔ 식후 2시간 혈당: 140 mg/dL 미만" );
               setModalVisible(true);
             }}
           >
-            <LinearGradient
-              colors={["#0D99FF", "#1D4BFF"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.darkBtn}
-            >
-              <Text style={styles.darkBtnText}>혈당 정상 수치</Text>
-            </LinearGradient>
+            <Text style={styles.darkBtnText}>정상 혈당 수치</Text>
           </Pressable>
         </View>
 
-        <View style={styles.chartCard}>
-          <View style={styles.chartHead}>
-            <Text style={styles.cardTitle}>혈당 추세</Text>
-            <Text style={styles.smallText}>단위: mg/dL</Text>
-          </View>
+        {/* 차트 */}
+        <LineChart
+          data={{
+            labels: chart.labels,
+            datasets: [
+              {
+                data: chart.values,
+                strokeWidth: 2,
+              },
+            ],
+          }}
+          width={chartWidth}
+          height={220}
+          fromZero
+          yAxisInterval={1}
+          segments={2} // y축 칸 개수 
+          withInnerLines={true}
+          withOuterLines={true}
+          withVerticalLines={true}
+          withHorizontalLines={true}
+          chartConfig={{
+            backgroundGradientFrom: "#fff",
+            backgroundGradientTo: "#fff",
 
-          <View
-            style={styles.chartWrap}
-            onLayout={(e) => {
-              const w = e.nativeEvent.layout.width;
-              if (w && Math.abs(w - chartWidth) > 1) setChartWidth(w);
-            }}
-          >
-            <LineChart
-              data={{
-                labels: chart.labels,
-                datasets: [{ data: chart.values, color: () => "#d30c0c" }],
-              }}
-              width={chartWidth}
-              height={180}
-              fromZero
-              withInnerLines
-              withOuterLines={false}
-              chartConfig={{
-                backgroundGradientFrom: "#fff",
-                backgroundGradientTo: "#fff",
-                decimalPlaces: 0,
-                color: () => "#3C3C3C",
-                labelColor: () => "#666",
-                propsForDots: { r: "3" },
-              }}
-              style={{ borderRadius: 14 }}
-            />
-          </View>
-        </View>
+            decimalPlaces: 0,
+
+            color: () => "#D99197", // 빨간 선
+            labelColor: () => "#666",
+
+            propsForDots: {
+              r: "4",
+              strokeWidth: "2",
+              stroke: "#e19e9e",
+            },
+
+            propsForBackgroundLines: {
+              stroke: "#e0e0e0", // 격자 색
+              strokeWidth: 1,
+            },
+          }}
+          style={{
+            borderRadius: 16,
+          }}
+        />
       </ScrollView>
 
       <HomeFab onPress={() => router.push("/main/main")} />
+
+      {/* 입력 */}
+      <BloodInputModal
+        visible={inputVisible}
+        onClose={() => setInputVisible(false)}
+        onSubmit={async ({ title, value, measuredAt }) => {
+          try {
+            setSaving(true);
+
+            await createBloodSugarLog({
+              glucoseLevel: Number(value),
+              measurementDate: toYmd(date),
+              measurementTime: toHm(measuredAt),
+              measurementLabel: title,
+            });
+
+            setInputVisible(false);
+            fetchDaily();
+          } catch {
+            Alert.alert("저장 실패");
+          } finally {
+            setSaving(false);
+          }
+        }}
+      />
 
       <InfoModal
         visible={modalVisible}
@@ -334,197 +310,83 @@ export default function BloodSugarScreen() {
         content={modalContent}
         onClose={() => setModalVisible(false)}
       />
-
-      <BloodInputModal
-        visible={inputVisible}
-        onClose={() => setInputVisible(false)}
-        onSubmit={async ({ title, value, measuredAt }) => {
-          const measurementLabel = title?.trim() || "공복";
-          const measurementDate = toYmd(date);
-          const measurementTime = toHm(measuredAt);
-
-          try {
-            setSaving(true);
-
-            const res = await createBloodSugarLog({
-              glucoseLevel: Number(value),
-              measurementDate,
-              measurementTime,
-              measurementLabel,
-            });
-
-            console.log("bloodSugar save res", res);
-
-            const merged = new Date(date);
-            merged.setHours(
-              measuredAt.getHours(),
-              measuredAt.getMinutes(),
-              0,
-              0
-            );
-
-            setRecords((prev) =>
-              [
-                ...prev,
-                {
-                  glucoseLevel: Number(value),
-                  measuredAt: merged,
-                  measurementLabel,
-                },
-              ].sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime())
-            );
-
-            setInputVisible(false);
-            await fetchDaily();
-          } catch (e: any) {
-            console.log(
-              "bloodSugar save error",
-              e?.response?.status,
-              e?.response?.data ?? e
-            );
-            Alert.alert("저장 실패", e?.message ?? "혈당 기록 저장에 실패했어요.");
-          } finally {
-            setSaving(false);
-          }
-        }}
-      />
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F5F5F5" },
 
   header: {
-    height: 52,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 12,
+    padding: 12,
   },
+
   headerTitle: { fontWeight: "800", fontSize: 16 },
 
   container: { padding: 18, paddingBottom: 120 },
 
-  dateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 14,
-    zIndex: 10,
-  },
-
-  datePillWrap: {
-    alignSelf: "flex-start",
-    borderRadius: 18,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 3,
-  },
+  dateRow: { flexDirection: "row", marginBottom: 14 },
 
   datePill: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 8,
     paddingHorizontal: 14,
     height: 34,
     borderRadius: 18,
   },
 
-  dateText: { color: "#fff", fontWeight: "800", fontSize: 12 },
-
-  datePickerInline: {
-    marginLeft: 8,
-    justifyContent: "center",
-  },
+  dateText: { color: "#fff", fontWeight: "800" },
 
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "800",
-    color: "#222",
     marginBottom: 6,
   },
 
-  emptyText: { color: "#777", fontSize: 12, marginTop: 8, fontWeight: "700" },
+  emptyText: { color: "#777", fontSize: 12 },
 
-  recordDivider: {
-    height: 1,
-    backgroundColor: "#E5E5E5",
-    marginVertical: 10,
-    marginHorizontal: 4,
-  },
-
-  addBarWrap: {
-    marginTop: 30,
-    borderRadius: 12,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
-    elevation: 4,
-  },
-
-  addBar: {
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-
-  addPlus: { color: "#fff", fontSize: 26, fontWeight: "900" },
-
-  btnRow: { flexDirection: "row", gap: 10, marginTop: 10, marginBottom: 12 },
-
-  darkBtnWrap: {
-    flex: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
-    elevation: 4,
-  },
-
-  darkBtn: {
-    flex: 1,
-    height: 38,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  darkBtnText: { color: "#fff", fontWeight: "800", fontSize: 12 },
-
-  pressedBtn: {
-    opacity: 0.82,
-  },
-
-  chartCard: {
-    marginTop: 30,
-    backgroundColor: "#fff",
+  card: {
+    backgroundColor: "#F7F7F7",
     borderRadius: 14,
     padding: 14,
     marginBottom: 12,
   },
 
-  chartHead: {
+  cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "baseline",
+  },
+
+  cardTitle: { fontWeight: "700" },
+
+  cardSub: { marginTop: 6, color: "#777" },
+
+  addButton: {
+    marginTop: 20,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: "#D99197",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  addButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+
+  btnRow: { flexDirection: "row", gap: 12, marginTop: 20 },
+
+  darkBtn: {
+    marginTop: 1,
+    flex: 1,
+    backgroundColor: "#262626",
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
     marginBottom: 10,
   },
 
-  cardTitle: { fontSize: 13, fontWeight: "900", color: "#111" },
-  smallText: { fontSize: 11, fontWeight: "700", color: "#777" },
-
-  chartWrap: {
-    width: "100%",
-    borderRadius: 14,
-    overflow: "hidden",
-  },
+  darkBtnText: { color: "#fff" },
 });

@@ -6,6 +6,7 @@ import BackButton from "../../components/BackButton";
 import InputField from "../../components/InputField";
 import NextButton from "../../components/NextButton";
 import { useSurveyDraft } from "../survey/surveyContext";
+import SignupProgress from "@/components/SignupProgress";
 
 export default function Stats() {
   const router = useRouter();
@@ -31,10 +32,13 @@ export default function Stats() {
 
   return (
     <View style={styles.container}>
-      <BackButton onPress={() => router.back()} />
+        <View style={styles.header}>
+          <BackButton onPress={() => router.back()} />
+          <SignupProgress step={0} />
+      </View>
 
       <Text style={styles.heading}>나의 건강 시그널을 확인하고 싶다면?</Text>
-      <Text style={styles.heading2}>3초만에 회원가입!</Text>
+      <Text style={styles.heading2}>3초만에 설문조사!</Text>
 
       <Text style={styles.subtext}>당신의 사전 정보를 알려주세요</Text>
 
@@ -78,6 +82,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     backgroundColor: "#fff",
   },
+  header: { flexDirection: "row", alignItems: "center", width: "100%", paddingHorizontal: 1 },
+
   heading: {
     marginTop: 30,
     fontSize: 20,

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Highlight } from "../api/insights";
+import { ActivitySummary, Highlight } from "../api/insights";
 
 type DayData = {
   day: string;
@@ -17,6 +17,7 @@ type WeeklySummaryProps = {
   normalTotal: number;
   dayData: DayData[];
   highlights: Highlight[];
+  activitySummary?: ActivitySummary;
 };
 
 export default function WeeklySummary({
@@ -27,6 +28,7 @@ export default function WeeklySummary({
   normalTotal,
   dayData,
   highlights,
+  activitySummary,
 }: WeeklySummaryProps) {
   const measurePct =
     totalPossible > 0
@@ -34,6 +36,16 @@ export default function WeeklySummary({
       : 0;
   const normalPct =
     normalTotal > 0 ? Math.round((normalCount / normalTotal) * 100) : 0;
+  const averageSteps = activitySummary?.averageSteps;
+  const postMealActivityDays = activitySummary?.postMealActivityDays;
+  const postMealActivityTargetDays = activitySummary?.postMealActivityTargetDays;
+  const postMealActivityRate =
+    activitySummary?.postMealActivityRate ??
+    (postMealActivityDays != null &&
+    postMealActivityTargetDays != null &&
+    postMealActivityTargetDays > 0
+      ? Math.round((postMealActivityDays / postMealActivityTargetDays) * 100)
+      : null);
 
   return (
     <View style={styles.sectionWrap}>
@@ -80,6 +92,31 @@ export default function WeeklySummary({
             <Text style={styles.statGray}> ({normalPct}%)</Text>
           </Text>
         </View>
+
+        {(averageSteps != null || postMealActivityDays != null) && (
+          <>
+            <View style={styles.cardDivider} />
+            <View style={styles.activityGrid}>
+              <View style={styles.activityCard}>
+                <Text style={styles.activityLabel}>평균 걸음수</Text>
+                <Text style={styles.activityValue}>
+                  {averageSteps != null ? `${averageSteps.toLocaleString()}보` : "-"}
+                </Text>
+              </View>
+              <View style={styles.activityCard}>
+                <Text style={styles.activityLabel}>식후 활동 실천</Text>
+                <Text style={styles.activityValue}>
+                  {postMealActivityDays != null && postMealActivityTargetDays != null
+                    ? `${postMealActivityDays}/${postMealActivityTargetDays}일`
+                    : "-"}
+                </Text>
+                {postMealActivityRate != null ? (
+                  <Text style={styles.activitySub}>{postMealActivityRate}%</Text>
+                ) : null}
+              </View>
+            </View>
+          </>
+        )}
 
         <View style={styles.cardDivider} />
 
@@ -176,6 +213,35 @@ const styles = StyleSheet.create({
     color: "#3F7BFF",
     textAlign: "right",
     marginBottom: 4,
+  },
+  activityGrid: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  activityCard: {
+    flex: 1,
+    backgroundColor: "#F8FAFF",
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#E6EEFF",
+  },
+  activityLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#7B86A7",
+    marginBottom: 6,
+  },
+  activityValue: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#2F4FD7",
+  },
+  activitySub: {
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#8B93A8",
   },
 
   dayRow: {

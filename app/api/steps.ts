@@ -1,5 +1,44 @@
 import { get, post } from "./index";
 
+export type StepSource = "APPLE_HEALTH" | "GOOGLE_FIT" | "MANUAL" | string;
+
+export type StepSyncRequest = {
+  stepDate: string;
+  steps: number;
+  source: StepSource;
+};
+
+export type StepSyncResponse = {
+  stepDate: string;
+  steps: number;
+  source: StepSource;
+  syncedAt?: string;
+};
+
+export type TodayStepsResponse = {
+  date?: string;
+  stepDate?: string;
+  steps?: number;
+  totalSteps?: number;
+  updatedAt?: string;
+};
+
+export type StepsRecord = {
+  date?: string;
+  stepDate?: string;
+  steps?: number;
+  totalSteps?: number;
+};
+
+type StepRecordParams = {
+  period: "daily" | "weekly" | "monthly" | "range";
+  date?: string;
+  year?: number;
+  month?: number;
+  startDate?: string;
+  endDate?: string;
+};
+
 function unwrap<T = any>(resData: any): T {
   if (resData == null) return resData as T;
   if (typeof resData === "object" && "data" in resData) {
@@ -8,56 +47,77 @@ function unwrap<T = any>(resData: any): T {
   return resData as T;
 }
 
-/** 오늘 걸음수 */
-export type TodayStepsResponse = {
-  date: string;
-  steps: number;
-};
+function normalizeTodaySteps(data?: TodayStepsResponse | null): TodayStepsResponse {
+  const totalSteps = data?.totalSteps ?? data?.steps ?? 0;
+  return {
+    date: data?.date ?? data?.stepDate ?? "",
+    stepDate: data?.stepDate ?? data?.date ?? "",
+    steps: data?.steps ?? totalSteps,
+    totalSteps,
+    updatedAt: data?.updatedAt,
+  };
+}
 
-/** 기간별 걸음수 */
-export type StepsRecord = {
-  date: string;
-  steps: number;
-};
+function normalizeStepRecord(record: StepsRecord): StepsRecord {
+  const totalSteps = record?.totalSteps ?? record?.steps ?? 0;
+  return {
+    date: record?.date ?? record?.stepDate ?? "",
+    stepDate: record?.stepDate ?? record?.date ?? "",
+    steps: record?.steps ?? totalSteps,
+    totalSteps,
+  };
+}
 
-/** 1️⃣ 걸음수 동기화 */
-export async function syncSteps() {
+async function getStepRecords(params: StepRecordParams): Promise<StepsRecord[]> {
   try {
-    const res = await post("/api/records/steps/sync");
-    return unwrap(res.data);
+    const res = await get("/api/records/steps", { params });
+    const data = unwrap<StepsRecord[] | any>(res.data ?? res);
+    return Array.isArray(data) ? data.map(normalizeStepRecord) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function syncSteps(payload?: StepSyncRequest) {
+  try {
+    const res = payload
+      ? await post("/api/records/steps/sync", payload)
+      : await post("/api/records/steps/sync");
+    return unwrap<StepSyncResponse | any>(res.data ?? res);
   } catch (e) {
     console.error("steps sync error", e);
     return null;
   }
 }
 
-/** 2️⃣ 오늘 걸음수 조회 */
 export async function getTodaySteps(): Promise<TodayStepsResponse> {
   try {
     const res = await get("/api/records/steps/today");
-    const data = unwrap<TodayStepsResponse>(res.data);
-
-    if (data?.steps != null) return data;
-  } catch {}
-
-  return {
-    date: "",
-    steps: 0,
-  };
+    return normalizeTodaySteps(unwrap<TodayStepsResponse>(res.data ?? res));
+  } catch {
+    return normalizeTodaySteps(null);
+  }
 }
 
-/** 3️⃣ 기간별 조회 */
 export async function getSteps(
   startDate: string,
   endDate: string
 ): Promise<StepsRecord[]> {
-  try {
-    const res = await get("/api/records/steps", {
-      params: { startDate, endDate },
-    });
+  return getStepRecords({ period: "range", startDate, endDate });
+}
 
-    return unwrap<StepsRecord[]>(res.data) ?? [];
-  } catch {
-    return [];
-  }
+export async function getDailySteps(date: string) {
+  return getStepRecords({ period: "daily", date });
+}
+
+export async function getWeeklySteps(date?: string) {
+  return getStepRecords({ period: "weekly", ...(date ? { date } : {}) });
+}
+
+export async function getMonthlySteps(year: number, month?: number) {
+  return getStepRecords({ period: "monthly", year, ...(month ? { month } : {}) });
+}
+
+export async function getStepLogs(startDate: string, endDate: string) {
+  return getStepRecords({ period: "range", startDate, endDate });
 }

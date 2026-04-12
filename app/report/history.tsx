@@ -7,7 +7,6 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
-  FlatList,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,17 +25,29 @@ const formatDate = (dateStr: string): string => {
   return `${month}.${String(day).padStart(2, "0")}`;
 };
 
+const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = [
+  undefined,
+  CURRENT_YEAR,
+  CURRENT_YEAR - 1,
+  CURRENT_YEAR - 2,
+];
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => index + 1);
+
 export default function ReportHistoryScreen() {
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reports, setReports] = useState<WeeklyReportItem[]>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [userName, setUserName] = useState("유저");
+  const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
+  const [selectedMonth, setSelectedMonth] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     fetchReports(0);
-  }, []);
+  }, [selectedYear, selectedMonth]);
 
   useEffect(() => {
     let mounted = true;
@@ -62,13 +73,21 @@ export default function ReportHistoryScreen() {
 
   const fetchReports = async (pageNum: number) => {
     try {
-      setLoading(true);
+      if (pageNum === 0) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
       setError(null);
       const data = await getWeeklyReportHistory({
+        year: selectedYear,
+        month: selectedMonth,
         page: pageNum,
         size: 20,
       });
-      setReports(data.items || []);
+      setReports((prev) =>
+        pageNum === 0 ? data.items || [] : [...prev, ...(data.items || [])]
+      );
       setPage(pageNum);
       setHasMore(data.hasNext ?? false);
     } catch (err) {
@@ -76,6 +95,7 @@ export default function ReportHistoryScreen() {
       setError("보고서 목록을 불러오지 못했습니다.");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -86,6 +106,15 @@ export default function ReportHistoryScreen() {
       pathname: "/report/[id]",
       params: { id: reportId },
     });
+  };
+
+  const handleYearSelect = (year?: number) => {
+    setSelectedYear(year);
+    setSelectedMonth(undefined);
+  };
+
+  const handleMonthSelect = (month?: number) => {
+    setSelectedMonth(month);
   };
 
   if (loading) {
@@ -136,6 +165,78 @@ export default function ReportHistoryScreen() {
           <Text style={styles.titleAccent}>지난 혈당 보고서</Text>
           입니다!
         </Text>
+
+        <View style={styles.filterSection}>
+          <Text style={styles.filterLabel}>연도</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            {YEAR_OPTIONS.map((yearOption) => {
+              const isActive = selectedYear === yearOption;
+              return (
+                <Pressable
+                  key={yearOption ?? "all-year"}
+                  onPress={() => handleYearSelect(yearOption)}
+                  style={[styles.filterChip, isActive && styles.filterChipActive]}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isActive && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {yearOption ? `${yearOption}년` : "전체"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <Text style={[styles.filterLabel, { marginTop: 12 }]}>월</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            <Pressable
+              onPress={() => handleMonthSelect(undefined)}
+              style={[
+                styles.filterChip,
+                selectedMonth == null && styles.filterChipActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  selectedMonth == null && styles.filterChipTextActive,
+                ]}
+              >
+                전체
+              </Text>
+            </Pressable>
+            {MONTH_OPTIONS.map((monthOption) => {
+              const isActive = selectedMonth === monthOption;
+              return (
+                <Pressable
+                  key={monthOption}
+                  onPress={() => handleMonthSelect(monthOption)}
+                  style={[styles.filterChip, isActive && styles.filterChipActive]}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isActive && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {monthOption}월
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
 
         {/* 주간 선택 리스트 */}
         <View style={styles.listWrap}>
@@ -196,8 +297,11 @@ export default function ReportHistoryScreen() {
             <Pressable
               style={styles.loadMoreBtn}
               onPress={() => fetchReports(page + 1)}
+              disabled={loadingMore}
             >
-              <Text style={styles.loadMoreText}>더 보기</Text>
+              <Text style={styles.loadMoreText}>
+                {loadingMore ? "불러오는 중..." : "더 보기"}
+              </Text>
             </Pressable>
           )}
         </View>
@@ -215,6 +319,41 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 18, paddingBottom: 18 },
   title: { marginTop: 14, fontSize: 20, fontWeight: "700", color: "#111", lineHeight: 28 },
   titleAccent: { color: "#3F7BFF", fontWeight: "700" },
+  filterSection: {
+    marginTop: 18,
+  },
+  filterLabel: {
+    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#666",
+  },
+  filterRow: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E6E6E6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterChipActive: {
+    backgroundColor: "#3F7BFF",
+    borderColor: "#3F7BFF",
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#555",
+  },
+  filterChipTextActive: {
+    color: "#FFFFFF",
+  },
   sectionLabel: { marginTop: 18, marginBottom: 10, fontSize: 13, fontWeight: "600", color: "#666" },
   listWrap: { marginTop: 10 },
   weekList: { gap: 10 },

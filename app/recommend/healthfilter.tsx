@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { fetchExerciseRecommendation, ExerciseRequest } from "../api/recommendation";
 
 type Option = { id: string; label: string };
@@ -15,7 +16,7 @@ const DURATION_MAP: Record<string, ExerciseRequest["duration"]> = {
 };
 const INTENSITY_MAP: Record<string, ExerciseRequest["intensity"]> = {
   low: "LOW",
-  mid: "MEDIUM", // API docs/타입과 일치
+  mid: "MODERATE",
   high: "HIGH",
 };
 const LOCATION_MAP: Record<string, ExerciseRequest["location"]> = {
@@ -31,10 +32,10 @@ function getApiErrorMessage(error: unknown) {
 
   if (status) {
     const detail = responseData?.message ?? responseData?.errors ?? JSON.stringify(responseData ?? {});
-    return `운동 추천 호출 실패 (${status})\n${detail}`;
+    return `활동 추천 호출 실패 (${status})\n${detail}`;
   }
 
-  return `운동 추천 호출 실패\n${String(message ?? error)}`;
+  return `활동 추천 호출 실패\n${String(message ?? error)}`;
 }
 
 function Chip({
@@ -121,12 +122,15 @@ export default function HealthFilter() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>운동 추천 필터</Text>
-      <Text style={styles.subtitle}>원하는 조건을 선택하고 추천을 받아보세요</Text>
+      <Pressable onPress={() => router.back()} style={styles.backBtn}>
+        <Ionicons name="chevron-back" size={22} color="#111" />
+      </Pressable>
+      <Text style={styles.title}>활동 추천 필터</Text>
+      <Text style={styles.subtitle}>원하는 활동 조건을 선택하고 추천을 받아보세요</Text>
 
       <View style={{ height: 78 }} />
 
-      <Text style={styles.question}>원하는 운동 시간대를 골라주세요.</Text>
+      <Text style={styles.question}>원하는 활동 시간을 골라주세요.</Text>
       <View style={styles.row}>
         {timeOptions.map((o) => (
           <Chip
@@ -138,7 +142,7 @@ export default function HealthFilter() {
         ))}
       </View>
 
-      <Text style={[styles.question, { marginTop: 22 }]}>원하는 운동 강도를 골라주세요.</Text>
+      <Text style={[styles.question, { marginTop: 22 }]}>원하는 활동 강도를 골라주세요.</Text>
       <View style={styles.row}>
         {intensityOptions.map((o) => (
           <Chip
@@ -150,7 +154,7 @@ export default function HealthFilter() {
         ))}
       </View>
 
-      <Text style={[styles.question, { marginTop: 22 }]}>원하는 운동 장소를 골라주세요.</Text>
+      <Text style={[styles.question, { marginTop: 22 }]}>원하는 활동 장소를 골라주세요.</Text>
       <View style={styles.row}>
         {placeOptions.map((o) => (
           <Chip
@@ -182,7 +186,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
     paddingHorizontal: 22,
-    paddingTop: 60,
+    paddingTop: 12,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#F4F4F4",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
   },
   title: {
     fontSize: 25,

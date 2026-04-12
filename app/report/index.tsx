@@ -56,10 +56,16 @@ const getCategoryEmoji = (category: string): string => {
     BLOOD_SUGAR: "🩸",
     BLOOD_PRESSURE: "❤️",
     MEAL: "🍽️",
-    EXERCISE: "🏃",
+    EXERCISE: "🚶",
+    ACTIVITY: "🚶",
   };
   return map[category] || "💡";
 };
+
+const normalizeActivityCopy = (text?: string) =>
+  String(text ?? "")
+    .replaceAll("운동", "활동")
+    .replaceAll("운동량", "활동량");
 
 export default function ReportScreen() {
   const [loading, setLoading] = useState(true);
@@ -123,7 +129,7 @@ export default function ReportScreen() {
   const summaryText =
     reportData?.type === "NO_DATA"
       ? "혈당/혈압 기록이 부족해요. 기록을 추가하시면 보고서를 생성할 수 있어요."
-      : reportData?.aiComment || "오류";
+      : normalizeActivityCopy(reportData?.aiComment) || "오류";
 
   const scoreData = {
     totalScore: reportData?.overallScore || 0,
@@ -140,7 +146,7 @@ export default function ReportScreen() {
         color: reportData?.scores?.measurementConsistency! >= 70 ? "#4CAF50" : "#FFC107",
       },
       {
-        label: "패턴 안정성",
+        label: "식사·활동 리듬",
         score: reportData?.scores?.lifestyle || 0,
         color: reportData?.scores?.lifestyle! >= 70 ? "#4CAF50" : "#FFC107",
       },
@@ -256,6 +262,7 @@ export default function ReportScreen() {
           avgGlucose={summaryMetrics?.avgGlucose || 0}
           normalCount={summaryMetrics?.normalCount || 0}
           normalTotal={summaryMetrics?.normalTotal || 0}
+          activitySummary={reportData?.activitySummary}
           dayData={["월", "화", "수", "목", "금", "토", "일"].map((day, index) => ({
             day,
             emoji:
@@ -267,7 +274,10 @@ export default function ReportScreen() {
               ).get(day) || "❓",
             count: summaryMetrics?.dayCounts[index] || 0,
           }))}
-          highlights={reportData?.highlights || []}
+          highlights={(reportData?.highlights || []).map((item) => ({
+            ...item,
+            message: normalizeActivityCopy(item.message),
+          }))}
         />
 
         <WarningsList
@@ -277,10 +287,10 @@ export default function ReportScreen() {
                   {
                     id: "1",
                     icon: getCategoryEmoji(reportData.improvement.category),
-                    problem: reportData.improvement.timeLabel,
-                    detail: reportData.improvement.detail,
+                    problem: normalizeActivityCopy(reportData.improvement.timeLabel),
+                    detail: normalizeActivityCopy(reportData.improvement.detail),
                     dayDetails: "",
-                    tips: reportData.improvement.tips || [],
+                    tips: (reportData.improvement.tips || []).map(normalizeActivityCopy),
                   },
                 ]
               : []

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   SafeAreaView,
   View,
   Text,
@@ -16,6 +17,7 @@ import {
   ChatbotApiMessage,
   ChatbotSession,
   createChatbotSession,
+  deleteChatbotSession,
   fetchChatbotSession,
   fetchChatbotSessions,
   streamChatbotMessage,
@@ -33,17 +35,17 @@ type ChatMessage = {
 const BOT_NAME = "Sparring 챗봇";
 
 const FAQ_LIST = [
-  "혈당이 높을 때 뭘 먹어야 해요?",
-  "운동은 언제 하는 게 좋나요?",
-  "저혈당 증상은 뭔가요?",
-  "식후 혈당을 낮추는 방법은?",
-  "혈당 측정은 하루 몇 번이 좋나요?",
+  "식후 혈당 관리에 도움이 되는 식사 원칙을 알려줘",
+  "혈당 기록을 읽는 기본 방법을 설명해줘",
+  "식후 걷기가 왜 도움이 되는지 알려줘",
+  "혈당 측정 시점별 차이를 설명해줘",
+  "저혈당이 의심될 때 확인할 점을 정리해줘",
 ];
 
 const WELCOME_MESSAGE: ChatMessage = {
   id: "seed-1",
   role: "bot",
-  text: "안녕하세요! 무엇을 도와드릴까요?",
+  text: "안녕하세요. 혈당 관리와 기록 확인에 필요한 설명을 도와드릴게요.",
   createdAt: Date.now() - 1000,
 };
 
@@ -150,6 +152,54 @@ export default function ChatAI() {
     setSessionId(session.sessionId);
     setSessionTitle(session.title);
     setMessages(toUiMessages(session.messages));
+  };
+
+  const resetChatState = () => {
+    streamAbortControllerRef.current?.abort();
+    streamAbortControllerRef.current = null;
+    setSessionId(null);
+    setSessionTitle(null);
+    setMessages([WELCOME_MESSAGE]);
+    setInput("");
+    setIsSending(false);
+  };
+
+  const handleDeleteSession = () => {
+    if (!sessionId || isSending || isInitializing) {
+      return;
+    }
+
+    Alert.alert(
+      "대화 삭제",
+      "현재 대화를 삭제하고 처음 상태로 돌아갈까요?",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteChatbotSession(sessionId);
+              resetChatState();
+            } catch (error) {
+              console.log("Failed to delete chatbot session", error);
+              Alert.alert(
+                "삭제 실패",
+                "대화를 삭제하지 못했어요. 잠시 후 다시 시도해주세요."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleStartNewChat = () => {
+    if (isSending || isInitializing) {
+      return;
+    }
+
+    resetChatState();
   };
 
   const sendMessage = async (text: string) => {
@@ -285,9 +335,31 @@ export default function ChatAI() {
         <View style={styles.headerTextWrap}>
           <Text style={styles.headerTitle}>{sessionTitle ?? BOT_NAME}</Text>
           <Text style={styles.headerSubtitle}>
-            {isInitializing ? "대화 불러오는 중..." : "건강 상담을 도와드려요"}
+            {isInitializing ? "대화 불러오는 중..." : "설명형 안내와 FAQ 중심으로 도와드려요"}
           </Text>
         </View>
+        <Pressable
+          onPress={handleStartNewChat}
+          hitSlop={10}
+          style={[
+            styles.newChatBtn,
+            (isSending || isInitializing) && styles.deleteBtnDisabled,
+          ]}
+          disabled={isSending || isInitializing}
+        >
+          <Ionicons name="add-circle-outline" size={20} color="#666" />
+        </Pressable>
+        <Pressable
+          onPress={handleDeleteSession}
+          hitSlop={10}
+          style={[
+            styles.deleteBtn,
+            (!sessionId || isSending || isInitializing) && styles.deleteBtnDisabled,
+          ]}
+          disabled={!sessionId || isSending || isInitializing}
+        >
+          <Ionicons name="trash-outline" size={20} color="#666" />
+        </Pressable>
       </View>
 
       <KeyboardAvoidingView
@@ -335,7 +407,7 @@ export default function ChatAI() {
             <TextInput
               value={input}
               onChangeText={setInput}
-              placeholder="메시지를 입력하세요."
+              placeholder="궁금한 점을 설명형으로 물어보세요."
               placeholderTextColor="#B9B9B9"
               style={styles.input}
               multiline
@@ -374,6 +446,21 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 40, height: 40, justifyContent: "center" },
   headerTextWrap: { flex: 1, marginLeft: 4 },
+  deleteBtn: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newChatBtn: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteBtnDisabled: {
+    opacity: 0.35,
+  },
   headerTitle: { fontSize: 16, fontWeight: "700", color: "#111" },
   headerSubtitle: { marginTop: 2, fontSize: 12, color: "#8C8C8C" },
 

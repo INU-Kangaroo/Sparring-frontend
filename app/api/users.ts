@@ -21,6 +21,11 @@ export type UpdateUserProfileRequest = Partial<{
   profileImageUrl: string;
 }>;
 
+export type ChangePasswordRequest = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export type UserDashboardResponse = {
   profile?: {
     username?: string;
@@ -65,5 +70,10 @@ export async function getMyDashboard(): Promise<UserDashboardResponse> {
 
 export async function deleteMyAccount() {
   const res = await del("/api/users/me");
+  return unwrap(res.data);
+}
+
+export async function changeMyPassword(payload: ChangePasswordRequest) {
+  const res = await patch("/api/users/me/password", payload);
   return unwrap(res.data);
 }

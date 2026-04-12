@@ -4,7 +4,7 @@ import { post } from "./index";
 
 export type ExerciseRequest = {
   duration: "SHORT" | "MEDIUM" | "LONG";
-  intensity: "LOW" | "MEDIUM" | "HIGH"; // 서버 API에서 middle intensity를 MEDIUM으로 기대할 가능성이 높음
+  intensity: "LOW" | "MODERATE" | "HIGH";
   location: "INDOOR" | "OUTDOOR" | "GYM";
 };
 
@@ -38,6 +38,71 @@ export type Supplement = {
 
 export type SupplementResponse = {
   supplements: Supplement[];
+};
+
+export type FoodRecommendationRequest = {
+  mealType: "breakfast" | "lunch" | "dinner" | "snack";
+};
+
+export type FoodMenuItem = {
+  id?: number | string;
+  name?: string;
+  kcal?: number;
+  carbs?: number | string;
+  protein?: number | string;
+  fat?: number | string;
+  sodium?: number | string;
+};
+
+export type FoodRecommendationItem = {
+  recommendationCardId?: number | string;
+  rank?: number;
+  title?: string;
+  nutrients?: {
+    kcal?: number;
+    carbs?: number | string;
+    sugar?: number | string;
+    fiber?: number | string;
+    protein?: number | string;
+    fat?: number | string;
+    saturatedFat?: number | string;
+    transFat?: number | string;
+    cholesterol?: number | string;
+    sodium?: number | string;
+  };
+  menus?: FoodMenuItem[];
+  foodId?: string | number;
+  foodName?: string;
+  foodOrigin?: string;
+  categoryLarge?: string;
+  categoryMedium?: string;
+  glucoseFriendlyScore?: number;
+  score?: number;
+  reactionGrade?: string;
+  responseLevel?: string;
+  reasonTags?: string[];
+  refIntakeAmount?: string;
+  foodWeight?: string;
+  calories?: number;
+  carbs?: number | string;
+  sugar?: number | string;
+  fiber?: number | string;
+  protein?: number | string;
+  fat?: number | string;
+  saturatedFat?: number | string;
+  transFat?: number | string;
+  cholesterol?: number | string;
+  sodium?: number | string;
+  reasons?: string[];
+};
+
+export type FoodRecommendationResponse = {
+  recommendationId?: number | string;
+  mealType?: string;
+  mealTime?: string;
+  foods?: FoodRecommendationItem[];
+  recommendations?: FoodRecommendationItem[];
+  items?: FoodRecommendationItem[];
 };
 
 function unwrap<T>(payload: any): T {
@@ -87,4 +152,26 @@ export async function refreshSupplementRecommendation(): Promise<SupplementRespo
     "/api/recommendations/supplement/refresh"
   );
   return unwrap<SupplementResponse>(res.data);
+}
+
+export async function fetchFoodRecommendation(
+  params: FoodRecommendationRequest
+): Promise<FoodRecommendationResponse> {
+  const res = await post<FoodRecommendationResponse>(
+    "/api/recommendations/food",
+    undefined,
+    { params }
+  );
+  return unwrap<FoodRecommendationResponse>(res.data);
+}
+
+export async function refreshFoodRecommendation(
+  params: FoodRecommendationRequest
+): Promise<FoodRecommendationResponse> {
+  const res = await post<FoodRecommendationResponse>(
+    "/api/recommendations/food/refresh",
+    undefined,
+    { params }
+  );
+  return unwrap<FoodRecommendationResponse>(res.data);
 }

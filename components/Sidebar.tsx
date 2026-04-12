@@ -23,7 +23,7 @@ type SidebarMenuProps = {
 
 export default function SidebarMenu({
   exposeOpen,
-  width = 130, 
+  width = 156,
   items,
 }: SidebarMenuProps) {
   const router = useRouter();
@@ -82,7 +82,7 @@ export default function SidebarMenu({
         ]}
       >
         <LinearGradient
-          colors={["#a9d7f4ff", "#3f8ff1ff", "#1541f5ff"]}
+          colors={["#F2F2F2", "#8C8C8C", "#0D0D0D"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradient}
@@ -97,7 +97,9 @@ export default function SidebarMenu({
               }}
             >
               <View style={styles.menuRow}>
-                <Text style={styles.menuText}>{item.label}</Text>
+                <Text style={styles.menuText} numberOfLines={1}>
+                  {item.label}
+                </Text>
               </View>
             </Pressable>
           ))}
@@ -117,16 +119,15 @@ const styles = StyleSheet.create({
   },
 
   sideMenu: {
-    height: "30%",
-    marginTop: 60,
+    alignSelf: "flex-start",
     borderTopLeftRadius: 30,
     borderBottomLeftRadius: 30,
     overflow: "hidden",
   },
 
   gradient: {
-    flex: 1,
     paddingTop: 10,
+    paddingBottom: 14,
     paddingHorizontal: 30,
   },
 
@@ -144,5 +145,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+    flexShrink: 0,
   },
 });

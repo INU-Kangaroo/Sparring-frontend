@@ -28,9 +28,16 @@ export type Highlight = {
   message: string;
 };
 
+export type ActivitySummary = {
+  averageSteps?: number;
+  postMealActivityDays?: number;
+  postMealActivityTargetDays?: number;
+  postMealActivityRate?: number;
+};
+
 /** 개선 사항 */
 export type Improvement = {
-  category: "BLOOD_SUGAR" | "BLOOD_PRESSURE" | "MEAL" | "EXERCISE";
+  category: "BLOOD_SUGAR" | "BLOOD_PRESSURE" | "MEAL" | "EXERCISE" | "ACTIVITY";
   timeLabel: string;
   detail: string;
   tips: string[];
@@ -38,7 +45,7 @@ export type Improvement = {
 
 /** 이번주/특정 주간 보고서 상세 */
 export type WeeklyReportResponse = {
-  type: "BOTH_STABLE" | "BOTH_CAUTION" | "BOTH_BAD" | "MIXED";
+  type: "BOTH_STABLE" | "BOTH_CAUTION" | "BOTH_BAD" | "MIXED" | "NO_DATA";
   message: string;
   reportId: number;
   startDate: string;
@@ -50,6 +57,7 @@ export type WeeklyReportResponse = {
   overallScore: number;
   scoreLabel: string;
   scores: ScoresData;
+  activitySummary?: ActivitySummary;
   dailyConditions: DailyCondition[];
   highlights: Highlight[];
   improvement: Improvement;
@@ -75,6 +83,35 @@ export type WeeklyReportHistoryResponse = {
   totalPages: number;
   hasNext: boolean;
   hasPrevious: boolean;
+};
+
+const EMPTY_WEEKLY_REPORT: WeeklyReportResponse = {
+  type: "NO_DATA",
+  message: "보고서 생성을 위한 데이터가 부족합니다.",
+  reportId: 0,
+  startDate: "",
+  endDate: "",
+  recordDays: 0,
+  bloodSugarRecordDays: 0,
+  bloodPressureRecordDays: 0,
+  aiComment: "기록을 추가하면 주간 보고서를 볼 수 있어요.",
+  overallScore: 0,
+  scoreLabel: "",
+  scores: { healthManagement: 0, measurementConsistency: 0, lifestyle: 0 },
+  activitySummary: undefined,
+  dailyConditions: [],
+  highlights: [],
+  improvement: { category: "BLOOD_SUGAR", timeLabel: "", detail: "", tips: [] },
+};
+
+const EMPTY_WEEKLY_REPORT_HISTORY: WeeklyReportHistoryResponse = {
+  items: [],
+  page: 0,
+  size: 20,
+  totalElements: 0,
+  totalPages: 0,
+  hasNext: false,
+  hasPrevious: false,
 };
 
 // ── 유틸 함수 ──────────────────────────────────────────────────────
@@ -112,29 +149,13 @@ export async function getWeeklyReport(): Promise<WeeklyReportResponse> {
   try {
     const res = await get<WeeklyReportResponse>("/api/insights/weekly");
     const data = unwrap<WeeklyReportResponse>(res.data);
-    return data || {};
+    return data || EMPTY_WEEKLY_REPORT;
   } catch (error: any) {
     const status = error?.response?.status;
     const code = error?.response?.data?.code;
     if (status === 400 && code === "RP003") {
       console.warn("[API] getWeeklyReport no data to create report. returning empty.");
-      return {
-        type: "NO_DATA",
-        message: "보고서 생성을 위한 데이터가 부족합니다.",
-        reportId: 0,
-        startDate: "",
-        endDate: "",
-        recordDays: 0,
-        bloodSugarRecordDays: 0,
-        bloodPressureRecordDays: 0,
-        aiComment: "기록을 추가하면 주간 보고서를 볼 수 있어요.",
-        overallScore: 0,
-        scoreLabel: "",
-        scores: { healthManagement: 0, measurementConsistency: 0, lifestyle: 0 },
-        dailyConditions: [],
-        highlights: [],
-        improvement: { category: "BLOOD_SUGAR", timeLabel: "", detail: "", tips: [] },
-      };
+      return EMPTY_WEEKLY_REPORT;
     }
     console.error("[API] getWeeklyReport error:", error);
     throw error;
@@ -173,7 +194,11 @@ export async function getWeeklyReportHistory(
 
     const res = await get<WeeklyReportHistoryResponse>(url);
     const data = unwrap<WeeklyReportHistoryResponse>(res.data);
-    return data || {};
+    return {
+      ...EMPTY_WEEKLY_REPORT_HISTORY,
+      ...data,
+      items: Array.isArray(data?.items) ? data.items : [],
+    };
   } catch (error) {
     console.error("[API] getWeeklyReportHistory error:", error);
     throw error;
@@ -192,7 +217,7 @@ export async function getWeeklyReportDetail(
       `/api/insights/weekly/${reportId}`
     );
     const data = unwrap<WeeklyReportResponse>(res.data);
-    return data || {};
+    return data || EMPTY_WEEKLY_REPORT;
   } catch (error) {
     console.error("[API] getWeeklyReportDetail error:", error);
     throw error;

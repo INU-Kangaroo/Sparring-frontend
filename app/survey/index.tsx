@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
   card: {
     height: 420, // 화면에 보이는 큰 박스 느낌
     borderWidth: 1,
-    borderColor: "#E5E5E5",
+    borderColor: "#D99197",
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
@@ -60,6 +60,6 @@ const styles = StyleSheet.create({
   startText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#113ed2", // 이미지처럼 비활성 느낌의 회색
+    color: "#D99197", // 이미지처럼 비활성 느낌의 회색
   },
 });

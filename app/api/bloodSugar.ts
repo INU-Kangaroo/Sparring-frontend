@@ -13,37 +13,61 @@ export type BloodSugarLog = {
   measurementLabel: string;
 };
 
+export type RecordPeriod = "daily" | "weekly" | "monthly" | "range";
+
+export type BloodSugarQueryParams = {
+  period: RecordPeriod;
+  date?: string;
+  year?: number;
+  month?: number;
+  startDate?: string;
+  endDate?: string;
+};
+
 const unwrap = <T>(res: any): T => (res?.data?.data ?? res?.data ?? res) as T;
 
 export async function createBloodSugarLog(payload: BloodSugarCreateRequest) {
-  const res = await post("/api/measurements/blood-sugar/logs", payload);
+  const res = await post("/api/records/blood-sugar", payload);
   return unwrap<BloodSugarLog>(res);
 }
 
-export async function getBloodSugarDaily(date: string) {
-  const res = await get("/api/measurements/blood-sugar/logs/daily", {
-    params: { date },
-  });
-  return unwrap<BloodSugarLog[] | any>(res);
-}
-
-export async function getBloodSugarLogs(startDate: string, endDate: string) {
-  const res = await get("/api/measurements/blood-sugar/logs", {
-    params: { startDate, endDate },
+export async function getBloodSugarRecords(params: BloodSugarQueryParams) {
+  const res = await get("/api/records/blood-sugar", {
+    params,
   });
   return unwrap<any>(res);
 }
 
-export async function getBloodSugarMonthlyStats(year: number) {
-  const res = await get("/api/measurements/blood-sugar/logs/monthly-stats", {
-    params: { year },
+export async function getBloodSugarDaily(date?: string) {
+  return getBloodSugarRecords({
+    period: "daily",
+    ...(date ? { date } : {}),
   });
-  return unwrap<any>(res);
+}
+
+export async function getBloodSugarWeekly(date?: string) {
+  return getBloodSugarRecords({
+    period: "weekly",
+    ...(date ? { date } : {}),
+  });
 }
 
 export async function getBloodSugarMonthly(year: number, month: number) {
-  const res = await get("/api/measurements/blood-sugar/logs/monthly", {
-    params: { year, month },
+  return getBloodSugarRecords({
+    period: "monthly",
+    year,
+    month,
   });
-  return unwrap<any>(res);
+}
+
+export async function getBloodSugarLogs(startDate: string, endDate: string) {
+  return getBloodSugarRecords({
+    period: "range",
+    startDate,
+    endDate,
+  });
+}
+
+export async function getBloodSugarMonthlyStats(year: number) {
+  return getBloodSugarRecords({ period: "monthly", year });
 }

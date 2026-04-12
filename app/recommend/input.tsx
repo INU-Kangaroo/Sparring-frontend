@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,17 +8,15 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-  TouchableOpacity,
   Alert,
 } from "react-native";
 import { createFoodLog, searchFoods } from "../api/foods";
-import { createExerciseLog } from "../api/exercises";
+import { getTodaySteps } from "../api/steps";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 type MealType = "아침" | "점심" | "저녁" | "간식";
-type Intensity = "가벼움" | "보통" | "격렬";
 
 type FoodEntry = {
   id: string;
@@ -27,16 +25,7 @@ type FoodEntry = {
   meal: MealType | null;
 };
 
-type WorkoutEntry = {
-  id: string;
-  name: string;
-  time: string;
-  duration: string;
-  intensity: Intensity | null;
-};
-
 const MEAL_TYPES: MealType[] = ["아침", "점심", "저녁", "간식"];
-const INTENSITIES: Intensity[] = ["가벼움", "보통", "격렬"];
 
 const generateId = () => Math.random().toString(36).slice(2);
 
@@ -47,14 +36,10 @@ const MEAL_TIME_MAP: Record<MealType, string> = {
   간식: "SNACK",
 };
 
-const INTENSITY_MAP: Record<Intensity, "LOW" | "MEDIUM" | "HIGH"> = {
-  가벼움: "LOW",
-  보통: "MEDIUM",
-  격렬: "HIGH",
-};
-
 function toIsoDateTime(date: Date, time: string) {
-  const [hour = "00", minute = "00"] = time.split(":").map((s) => s.padStart(2, "0"));
+  const [hour = "00", minute = "00"] = time
+    .split(":")
+    .map((s) => s.padStart(2, "0"));
   const d = new Date(date);
   d.setHours(Number(hour));
   d.setMinutes(Number(minute));
@@ -64,103 +49,84 @@ function toIsoDateTime(date: Date, time: string) {
 }
 
 export default function InputScreen() {
-  const [tab, setTab] = useState<"food" | "workout">("food");
+  const [stepState, setStepState] = useState<{
+    connected: boolean;
+    totalSteps: number | null;
+  }>({
+    connected: false,
+    totalSteps: null,
+  });
 
   const [foods, setFoods] = useState<FoodEntry[]>([
     { id: generateId(), name: "", time: "", meal: null },
   ]);
-  const [workouts, setWorkouts] = useState<WorkoutEntry[]>([
-    { id: generateId(), name: "", time: "", duration: "", intensity: null },
-  ]);
 
-  // ── Food helpers ──────────────────────────────────────────
+  useEffect(() => {
+    let mounted = true;
+
+    const loadTodaySteps = async () => {
+      try {
+        const stepData = await getTodaySteps();
+        if (!mounted) return;
+        setStepState({
+          connected: true,
+          totalSteps:
+            stepData?.totalSteps != null ? Number(stepData.totalSteps) : null,
+        });
+      } catch (error) {
+        console.log("getTodaySteps error", error);
+        if (!mounted) return;
+        setStepState({
+          connected: false,
+          totalSteps: null,
+        });
+      }
+    };
+
+    loadTodaySteps();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const updateFood = (id: string, patch: Partial<FoodEntry>) =>
     setFoods((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
 
   const addFood = () =>
-    setFoods((prev) => [
-      ...prev,
-      { id: generateId(), name: "", time: "", meal: null },
-    ]);
+    setFoods((prev) => [...prev, { id: generateId(), name: "", time: "", meal: null }]);
 
   const removeFood = (id: string) =>
     setFoods((prev) => prev.filter((f) => f.id !== id));
-
-  // ── Workout helpers ───────────────────────────────────────
-  const updateWorkout = (id: string, patch: Partial<WorkoutEntry>) =>
-    setWorkouts((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, ...patch } : w))
-    );
-
-  const addWorkout = () =>
-    setWorkouts((prev) => [
-      ...prev,
-      { id: generateId(), name: "", time: "", duration: "", intensity: null },
-    ]);
-
-  const removeWorkout = (id: string) =>
-    setWorkouts((prev) => prev.filter((w) => w.id !== id));
 
   const handleSave = async () => {
     const today = new Date();
 
     try {
-      if (tab === "food") {
-        if (foods.length === 0) throw new Error("식단이 없습니다.");
+      if (foods.length === 0) throw new Error("식단이 없습니다.");
 
-        for (const food of foods) {
-          if (!food.name.trim() || !food.time.trim() || !food.meal) continue;
+      for (const food of foods) {
+        if (!food.name.trim() || !food.time.trim() || !food.meal) continue;
 
-          const keyword = food.name.trim();
-          const searchResults = await searchFoods(keyword, 0, 1);
-          if (!Array.isArray(searchResults) || searchResults.length === 0) {
-            console.warn("food not found for name", keyword);
-            continue;
-          }
-
-          const foodId = searchResults[0].id;
-          const mealTime = MEAL_TIME_MAP[food.meal];
-          const loggedAt = toIsoDateTime(today, food.time);
-
-          await createFoodLog({
-            foodId,
-            mealTime,
-            loggedAt,
-            eatenAmountGram: 100,
-          });
+        const keyword = food.name.trim();
+        const searchResults = await searchFoods(keyword, 0, 1);
+        if (!Array.isArray(searchResults) || searchResults.length === 0) {
+          console.warn("food not found for name", keyword);
+          continue;
         }
-      } else if (tab === "workout") {
-        if (workouts.length === 0) throw new Error("운동이 없습니다.");
 
-        for (const workout of workouts) {
-          if (
-            !workout.name.trim() ||
-            !workout.time.trim() ||
-            !workout.duration.trim() ||
-            !workout.intensity
-          ) {
-            continue;
-          }
-
-          const loggedAt = toIsoDateTime(today, workout.time);
-          const durationMinutes = Number(workout.duration);
-          if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
-            throw new Error("운동 시간(분)을 올바르게 입력하세요.");
-          }
-
-          await createExerciseLog({
-            exerciseName: workout.name.trim(),
-            durationMinutes,
-            intensity: INTENSITY_MAP[workout.intensity],
-            loggedAt,
-          });
-        }
+        await createFoodLog({
+          foodId: searchResults[0].id,
+          mealTime: MEAL_TIME_MAP[food.meal],
+          loggedAt: toIsoDateTime(today, food.time),
+          eatenAmountGram: 100,
+        });
       }
 
-      Alert.alert("저장 완료", "기록이 성공적으로 저장되었습니다.");
+      Alert.alert("저장 완료", "식사 기록이 성공적으로 저장되었습니다.");
       router.push("/recommend/recommendation");
     } catch (error) {
-      console.error("save record error", error);
+      console.error("save food record error", error);
       Alert.alert(
         "저장 실패",
         error instanceof Error ? error.message : "기록 저장 중 오류가 발생했습니다."
@@ -174,52 +140,14 @@ export default function InputScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.container}>
-        {/* 헤더 */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color="#222" />
           </Pressable>
           <View>
             <Text style={styles.headerTitle}>오늘의 기록</Text>
-            <Text style={styles.headerSub}>식단과 운동을 입력해주세요</Text>
+            <Text style={styles.headerSub}>식사 기록과 운동 상태를 확인해주세요</Text>
           </View>
-        </View>
-
-        {/* 탭 */}
-        <View style={styles.tabRow}>
-          <Pressable
-            style={[styles.tabBtn, tab === "food" && styles.tabBtnActive]}
-            onPress={() => setTab("food")}
-          >
-            <Ionicons
-              name="restaurant-outline"
-              size={16}
-              color={tab === "food" ? "#fff" : "#aaa"}
-            />
-            <Text
-              style={[styles.tabText, tab === "food" && styles.tabTextActive]}
-            >
-              식단
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.tabBtn, tab === "workout" && styles.tabBtnActive]}
-            onPress={() => setTab("workout")}
-          >
-            <Ionicons
-              name="barbell-outline"
-              size={16}
-              color={tab === "workout" ? "#fff" : "#aaa"}
-            />
-            <Text
-              style={[
-                styles.tabText,
-                tab === "workout" && styles.tabTextActive,
-              ]}
-            >
-              운동
-            </Text>
-          </Pressable>
         </View>
 
         <ScrollView
@@ -228,200 +156,117 @@ export default function InputScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── 식단 탭 ── */}
-          {tab === "food" && (
-            <View>
-              {foods.map((food, idx) => (
-                <View key={food.id} style={styles.card}>
-                  {/* 카드 헤더 */}
-                  <View style={styles.cardHeader}>
-                    <View style={styles.cardIndexBadge}>
-                      <Text style={styles.cardIndexText}>{idx + 1}</Text>
-                    </View>
-                    <Text style={styles.cardLabel}>식사 기록</Text>
-                    {foods.length > 1 && (
-                      <Pressable
-                        onPress={() => removeFood(food.id)}
-                        style={styles.removeBtn}
-                      >
-                        <Ionicons
-                          name="close-circle"
-                          size={20}
-                          color="#ddd"
-                        />
-                      </Pressable>
-                    )}
-                  </View>
+          <View style={styles.sectionIntro}>
+            <Text style={styles.sectionTitle}>식사 기록</Text>
+            <Text style={styles.sectionBody}>
+              추천은 식단 중심으로 진행돼요. 운동은 직접 입력 대신 걸음수 연동과 식후 걷기 실천 여부로 정리될 예정이에요.
+            </Text>
+          </View>
 
-                  {/* 음식 이름 */}
-                  <Text style={styles.fieldLabel}>음식 이름</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="예) 된장찌개, 현미밥"
-                    placeholderTextColor="#ccc"
-                    value={food.name}
-                    onChangeText={(v) => updateFood(food.id, { name: v })}
-                  />
-
-                  {/* 식사 시간 + 구분 */}
-                  <View style={styles.rowFields}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.fieldLabel}>식사 시간</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="예) 08:30"
-                        placeholderTextColor="#ccc"
-                        value={food.time}
-                        onChangeText={(v) => updateFood(food.id, { time: v })}
-                        keyboardType="numbers-and-punctuation"
-                      />
-                    </View>
-                    <View style={{ width: 12 }} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.fieldLabel}>식사 구분</Text>
-                      <View style={styles.chipRowSmall}>
-                        {MEAL_TYPES.map((m) => (
-                          <Pressable
-                            key={m}
-                            onPress={() => updateFood(food.id, { meal: m })}
-                            style={[
-                              styles.chipSmall,
-                              food.meal === m && styles.chipSmallActive,
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.chipSmallText,
-                                food.meal === m && styles.chipSmallTextActive,
-                              ]}
-                            >
-                              {m}
-                            </Text>
-                          </Pressable>
-                        ))}
-                      </View>
-                    </View>
+          <View>
+            {foods.map((food, idx) => (
+              <View key={food.id} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardIndexBadge}>
+                    <Text style={styles.cardIndexText}>{idx + 1}</Text>
                   </View>
+                  <Text style={styles.cardLabel}>식사 기록</Text>
+                  {foods.length > 1 && (
+                    <Pressable onPress={() => removeFood(food.id)} style={styles.removeBtn}>
+                      <Ionicons name="close-circle" size={20} color="#ddd" />
+                    </Pressable>
+                  )}
                 </View>
-              ))}
 
-              {/* 추가 버튼 */}
-              <Pressable onPress={addFood} style={styles.addBtn}>
-                <Ionicons name="add-circle-outline" size={20} color="#5A80FF" />
-                <Text style={styles.addBtnText}>식사 추가</Text>
-              </Pressable>
-            </View>
-          )}
+                <Text style={styles.fieldLabel}>음식 이름</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="예) 된장찌개, 현미밥"
+                  placeholderTextColor="#ccc"
+                  value={food.name}
+                  onChangeText={(value) => updateFood(food.id, { name: value })}
+                />
 
-          {/* ── 운동 탭 ── */}
-          {tab === "workout" && (
-            <View>
-              {workouts.map((workout, idx) => (
-                <View key={workout.id} style={styles.card}>
-                  <View style={styles.cardHeader}>
-                    <View style={styles.cardIndexBadge}>
-                      <Text style={styles.cardIndexText}>{idx + 1}</Text>
-                    </View>
-                    <Text style={styles.cardLabel}>운동 기록</Text>
-                    {workouts.length > 1 && (
-                      <Pressable
-                        onPress={() => removeWorkout(workout.id)}
-                        style={styles.removeBtn}
-                      >
-                        <Ionicons
-                          name="close-circle"
-                          size={20}
-                          color="#ddd"
-                        />
-                      </Pressable>
-                    )}
+                <View style={styles.rowFields}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>식사 시간</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="예) 08:30"
+                      placeholderTextColor="#ccc"
+                      value={food.time}
+                      onChangeText={(value) => updateFood(food.id, { time: value })}
+                      keyboardType="numbers-and-punctuation"
+                    />
                   </View>
-
-                  {/* 운동 종류 */}
-                  <Text style={styles.fieldLabel}>운동 종류</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="예) 러닝, 수영, 헬스"
-                    placeholderTextColor="#ccc"
-                    value={workout.name}
-                    onChangeText={(v) => updateWorkout(workout.id, { name: v })}
-                  />
-
-                  {/* 운동 시간 + 시간(분) */}
-                  <View style={styles.rowFields}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.fieldLabel}>운동 시작 시간</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="예) 19:00"
-                        placeholderTextColor="#ccc"
-                        value={workout.time}
-                        onChangeText={(v) =>
-                          updateWorkout(workout.id, { time: v })
-                        }
-                        keyboardType="numbers-and-punctuation"
-                      />
-                    </View>
-                    <View style={{ width: 12 }} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.fieldLabel}>운동 시간 (분)</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="예) 30"
-                        placeholderTextColor="#ccc"
-                        value={workout.duration}
-                        onChangeText={(v) =>
-                          updateWorkout(workout.id, { duration: v })
-                        }
-                        keyboardType="number-pad"
-                      />
-                    </View>
-                  </View>
-
-                  {/* 운동 강도 */}
-                  <Text style={styles.fieldLabel}>운동 강도</Text>
-                  <View style={styles.chipRow}>
-                    {INTENSITIES.map((intensity) => (
-                      <Pressable
-                        key={intensity}
-                        onPress={() =>
-                          updateWorkout(workout.id, { intensity })
-                        }
-                        style={[
-                          styles.chip,
-                          workout.intensity === intensity && styles.chipActive,
-                        ]}
-                      >
-                        <Text
+                  <View style={{ width: 12 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>식사 구분</Text>
+                    <View style={styles.chipRowSmall}>
+                      {MEAL_TYPES.map((meal) => (
+                        <Pressable
+                          key={meal}
+                          onPress={() => updateFood(food.id, { meal })}
                           style={[
-                            styles.chipText,
-                            workout.intensity === intensity &&
-                              styles.chipTextActive,
+                            styles.chipSmall,
+                            food.meal === meal && styles.chipSmallActive,
                           ]}
                         >
-                          {intensity === "가벼움"
-                            ? "🚶 가벼움"
-                            : intensity === "보통"
-                            ? "🏃 보통"
-                            : "🔥 격렬"}
-                        </Text>
-                      </Pressable>
-                    ))}
+                          <Text
+                            style={[
+                              styles.chipSmallText,
+                              food.meal === meal && styles.chipSmallTextActive,
+                            ]}
+                          >
+                            {meal}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
                   </View>
                 </View>
-              ))}
+              </View>
+            ))}
 
-              <Pressable onPress={addWorkout} style={styles.addBtn}>
-                <Ionicons name="add-circle-outline" size={20} color="#5A80FF" />
-                <Text style={styles.addBtnText}>운동 추가</Text>
-              </Pressable>
+            <Pressable onPress={addFood} style={styles.addBtn}>
+              <Ionicons name="add-circle-outline" size={20} color="#5A80FF" />
+              <Text style={styles.addBtnText}>식사 추가</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.activityCard}>
+            <View style={styles.activityHeader}>
+              <Ionicons name="walk-outline" size={20} color="#5A80FF" />
+              <Text style={styles.activityTitle}>오늘의 운동</Text>
             </View>
-          )}
+            <Text style={styles.activityBody}>
+              운동 직접 입력 UI는 제외되고, 앞으로는 걸음수 연동 상태와 식후 걷기 실천 여부를 중심으로 보여드릴 예정이에요.
+            </Text>
+            <View style={styles.activityMetricRow}>
+              <View style={styles.activityMetric}>
+                <Text style={styles.activityMetricLabel}>걸음수 연동 상태</Text>
+                <Text style={styles.activityMetricValue}>
+                  {stepState.connected ? "연동됨" : "연동 전"}
+                </Text>
+              </View>
+              <View style={styles.activityMetric}>
+                <Text style={styles.activityMetricLabel}>오늘 걸음수</Text>
+                <Text style={styles.activityMetricValue}>
+                  {stepState.totalSteps != null
+                    ? `${stepState.totalSteps.toLocaleString()}보`
+                    : "-"}
+                </Text>
+              </View>
+            </View>
+            <View style={[styles.activityMetric, styles.activityWideMetric]}>
+              <Text style={styles.activityMetricLabel}>식후 걷기 실천 여부</Text>
+              <Text style={styles.activityMetricValue}>기록 준비 중</Text>
+            </View>
+          </View>
 
           <View style={{ height: 40 }} />
         </ScrollView>
 
-        {/* 저장 버튼 */}
         <View style={styles.saveBar}>
           <Pressable onPress={handleSave} style={{ borderRadius: 999 }}>
             <LinearGradient
@@ -445,8 +290,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8F9FF",
   },
-
-  // 헤더
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -477,43 +320,23 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: "500",
   },
-
-  // 탭
-  tabRow: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: "#fff",
-  },
-  tabBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: "#F4F4F4",
-  },
-  tabBtnActive: {
-    backgroundColor: "#1D4BFF",
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#aaa",
-  },
-  tabTextActive: {
-    color: "#fff",
-  },
-
-  // 스크롤
   scrollContent: {
     padding: 20,
   },
-
-  // 카드
+  sectionIntro: {
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#222",
+    marginBottom: 6,
+  },
+  sectionBody: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#666",
+  },
   card: {
     backgroundColor: "#fff",
     borderRadius: 20,
@@ -553,8 +376,6 @@ const styles = StyleSheet.create({
   removeBtn: {
     padding: 2,
   },
-
-  // 필드
   fieldLabel: {
     fontSize: 12,
     fontWeight: "700",
@@ -578,36 +399,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
   },
-
-  // 칩
-  chipRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 4,
-  },
-  chip: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: "center",
-    backgroundColor: "#F4F4F4",
-    borderWidth: 1,
-    borderColor: "#ECECEC",
-  },
-  chipActive: {
-    backgroundColor: "#EEF3FF",
-    borderColor: "#5A80FF",
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#aaa",
-  },
-  chipTextActive: {
-    color: "#1D4BFF",
-  },
-
-  // 작은 칩 (식사 구분)
   chipRowSmall: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -634,51 +425,93 @@ const styles = StyleSheet.create({
   chipSmallTextActive: {
     color: "#1D4BFF",
   },
-
-  // 추가 버튼
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 14,
+    backgroundColor: "#fff",
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: "#E4ECFF",
+    borderWidth: 1,
     borderStyle: "dashed",
-    backgroundColor: "#F6F8FF",
-    marginBottom: 4,
+    borderColor: "#C7D4FF",
+    paddingVertical: 14,
   },
   addBtnText: {
     fontSize: 14,
     fontWeight: "700",
     color: "#5A80FF",
   },
-
-  // 저장 바
+  activityCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 18,
+    marginTop: 16,
+    shadowColor: "#4060FF",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  activityHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  activityTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#222",
+  },
+  activityBody: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#666",
+  },
+  activityMetricRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 16,
+  },
+  activityMetric: {
+    flex: 1,
+    backgroundColor: "#F8F9FF",
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#ECEEFF",
+  },
+  activityWideMetric: {
+    marginTop: 10,
+  },
+  activityMetricLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#8A8A8A",
+    marginBottom: 6,
+  },
+  activityMetricValue: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#222",
+  },
   saveBar: {
     paddingHorizontal: 20,
-    paddingBottom: Platform.OS === "ios" ? 34 : 20,
+    paddingBottom: 24,
     paddingTop: 12,
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
+    backgroundColor: "#F8F9FF",
   },
   saveBtn: {
+    height: 52,
+    borderRadius: 999,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 16,
-    borderRadius: 999,
-    shadowColor: "#1D4BFF",
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
   },
   saveBtnText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
     color: "#fff",
   },

@@ -67,7 +67,7 @@ export default function RecommendationScreen() {
   };
 
   const goDetailByKey = (key: CardKey) => {
-    if (key === "diet") router.push("/recommend/fooddetail");
+    if (key === "diet") router.push("/recommend/foodfilter");
     else if (key === "workout") router.push("/recommend/healthdetail");
     else router.push("/recommend/pilldetail");
   };
@@ -197,7 +197,7 @@ export default function RecommendationScreen() {
         <View style={styles.logHeader}>
           <Text style={styles.logTitle}>오늘의 기록</Text>
           <Text style={styles.logSubtitle}>
-            식단과 운동을 입력하고 맞춤 추천을 받아보세요
+            식사 기록과 운동 상태를 확인하고 맞춤 추천을 받아보세요
           </Text>
         </View>
 
@@ -210,8 +210,8 @@ export default function RecommendationScreen() {
               <Ionicons name="pencil" size={18} color="#5A80FF" />
             </View>
             <View>
-              <Text style={styles.logBtnTitle}>오늘 먹은 것 & 운동 입력</Text>
-              <Text style={styles.logBtnSub}>혈당·혈압 관리를 위한 맞춤 분석</Text>
+              <Text style={styles.logBtnTitle}>오늘 식사 기록 입력</Text>
+              <Text style={styles.logBtnSub}>식후 반응과 운동 흐름을 함께 살펴봐요</Text>
             </View>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#C0C0C0" />

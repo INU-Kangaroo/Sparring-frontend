@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import BackButton from "../../components/BackButton";
 import NextButton from "../../components/NextButton";
 import { useSurveyDraft } from "./surveyContext";
+import SignupProgress from "@/components/SignupProgress";
 
 type ChipProps = {
   label: string;
@@ -58,12 +59,12 @@ export default function Survey1Screen() {
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <BackButton onPress={() => router.back()} />
-
+          <View style={styles.header}>
+            <BackButton onPress={() => router.back()} />
+            <SignupProgress step={2} />
+        </View>
         <Text style={styles.heading}>나의 건강 시그널 확인하고 싶다면?</Text>
-        <Text style={styles.heading2}>회원가입을 축하드립니다!</Text>
-
-        <Text style={styles.subtext}>당신의 식습관에 대해 알려주세요</Text>
+        <Text style={styles.heading2}>식사 습관을 알려주세요</Text>
 
         <View style={styles.labelRow}>
           <Text style={styles.label}>하루 평균 식사 횟수</Text>
@@ -157,6 +158,7 @@ export default function Survey1Screen() {
 
 const styles = StyleSheet.create({
   container: { paddingTop: 60, paddingHorizontal: 30, paddingBottom: 40, backgroundColor: "#fff" },
+  header: { flexDirection: "row", alignItems: "center", width: "100%", paddingHorizontal: 1 }, 
   heading: { marginTop: 30, fontSize: 20, fontWeight: "600", color: "#111" },
   heading2: { marginTop: 5, fontSize: 20, fontWeight: "600", color: "#111" },
   subtext: { marginTop: 40, fontSize: 16, fontWeight: "500", color: "#111", marginBottom: 20 },
@@ -164,8 +166,8 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: "500", color: "#111" },
   star: { fontSize: 13, color: "#e53935" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
-  chip: { paddingHorizontal: 13, height: 35, borderRadius: 18, backgroundColor: "#747474ff", justifyContent: "center" },
-  chipSelected: { backgroundColor: "#1435b9f6" },
+  chip: { paddingHorizontal: 13, height: 35, borderRadius: 18, backgroundColor: "#8C8C8C", justifyContent: "center" },
+  chipSelected: { backgroundColor: "#262626" },
   chipText: { color: "#fff", fontSize: 14 },
   chipTextSelected: { fontWeight: "600" },
 });

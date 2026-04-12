@@ -21,7 +21,7 @@ export default function NextButton({
     >
       {disabled ? (
         <LinearGradient
-          colors={["#BDBDBD", "#999999"]}
+          colors={["#8C8C8C", "#8C8C8C"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.button}
@@ -30,7 +30,7 @@ export default function NextButton({
         </LinearGradient>
       ) : (
         <LinearGradient
-          colors={["#0D99FF", "#1D4BFF"]}
+          colors={["#D99197", "#D99197"]}
           start={{ x: 1, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.button}
@@ -44,7 +44,7 @@ export default function NextButton({
 
 const styles = StyleSheet.create({
   buttonWrap: {
-    width: "90%",
+    width: "100%",
     alignSelf: "center",
     marginBottom: 30,
     borderRadius: 15,

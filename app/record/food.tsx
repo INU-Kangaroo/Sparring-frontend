@@ -30,6 +30,22 @@ import {
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const toYmd = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const getServingText = (item: {
+  foodWeight?: string;
+  refIntakeAmount?: string;
+  servingSize?: number;
+  servingUnit?: string;
+}) =>
+  item.foodWeight ||
+  item.refIntakeAmount ||
+  (item.servingSize != null && item.servingUnit
+    ? `${item.servingSize}${item.servingUnit}`
+    : item.servingSize != null
+      ? String(item.servingSize)
+      : "-");
+
+const toNutritionText = (value?: number, unit = "g") =>
+  value == null ? "-" : `${value}${unit}`;
 
 export default function FoodRecordScreen() {
   const router = useRouter();
@@ -202,7 +218,7 @@ export default function FoodRecordScreen() {
               ]}
             >
               <Text style={styles.cardTitle}>{item.name}</Text>
-              <Text style={styles.cardSub}>{`${item.calories} kcal • ${item.servingSize}${item.servingUnit}`}</Text>
+              <Text style={styles.cardSub}>{`${item.calories} kcal • ${getServingText(item)}`}</Text>
             </Pressable>
           ))}
 
@@ -215,7 +231,43 @@ export default function FoodRecordScreen() {
                 <>
                   <Text style={styles.detailName}>{selectedFood.name}</Text>
                   <Text style={styles.detailText}>{`칼로리: ${selectedFood.calories} kcal`}</Text>
-                  <Text style={styles.detailText}>{`탄수화물: ${selectedFood.carbs}g, 단백질: ${selectedFood.protein}g, 지방: ${selectedFood.fat}g`}</Text>
+                  <Text style={styles.detailText}>{`기준량: ${getServingText(selectedFood)}`}</Text>
+                  {selectedFood.foodOrigin || selectedFood.manufacturer ? (
+                    <Text style={styles.detailText}>
+                      {[
+                        selectedFood.foodOrigin ? `원산지 ${selectedFood.foodOrigin}` : null,
+                        selectedFood.manufacturer ? `제조사 ${selectedFood.manufacturer}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </Text>
+                  ) : null}
+                  {(selectedFood.categoryLarge || selectedFood.categoryMedium) ? (
+                    <Text style={styles.detailText}>
+                      {[
+                        selectedFood.categoryLarge,
+                        selectedFood.categoryMedium,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </Text>
+                  ) : null}
+                  <Text style={styles.detailText}>
+                    {`탄수화물 ${toNutritionText(selectedFood.carbs)} · 당류 ${toNutritionText(selectedFood.sugar)} · 식이섬유 ${toNutritionText(selectedFood.fiber)}`}
+                  </Text>
+                  <Text style={styles.detailText}>
+                    {`단백질 ${toNutritionText(selectedFood.protein)} · 지방 ${toNutritionText(selectedFood.fat)} · 포화지방 ${toNutritionText(selectedFood.saturatedFat)}`}
+                  </Text>
+                  <Text style={styles.detailText}>
+                    {`트랜스지방 ${toNutritionText(selectedFood.transFat)} · 콜레스테롤 ${toNutritionText(selectedFood.cholesterol, "mg")} · 나트륨 ${toNutritionText(selectedFood.sodium, "mg")}`}
+                  </Text>
+                  {(selectedFood.calcium != null ||
+                    selectedFood.iron != null ||
+                    selectedFood.potassium != null) ? (
+                    <Text style={styles.detailText}>
+                      {`칼슘 ${toNutritionText(selectedFood.calcium, "mg")} · 철 ${toNutritionText(selectedFood.iron, "mg")} · 칼륨 ${toNutritionText(selectedFood.potassium, "mg")}`}
+                    </Text>
+                  ) : null}
                 </>
               )}
 
@@ -246,7 +298,9 @@ export default function FoodRecordScreen() {
               <RecordBox
                 key={item.id}
                 title={`${item.foodName ?? item.name ?? "알 수 없음"} (${item.mealTime ?? "-"})`}
-                time={item.eatenAt ? item.eatenAt.replace("T", " ").slice(0, 16) : "-"}
+                time={(item.loggedAt ?? item.eatenAt)
+                  ? (item.loggedAt ?? item.eatenAt).replace("T", " ").slice(0, 16)
+                  : "-"}
                 value={`${item.eatenAmountGram ?? item.eatenAmount ?? 0} g`}
                 fullWidth
               />

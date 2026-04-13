@@ -1,236 +1,151 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
   View,
   Text,
   StyleSheet,
   Pressable,
-  Image,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  getWeeklyReportHistory,
+  type WeeklyReportItem,
+} from "../api/insights";
+import { getMyProfile } from "../api/users";
+import { getSignupProfile } from "../utils/profileStorage";
 
-import ScoreCard from "./Scorecard";
-import WeeklySummary from "./Weeklysummary";
-import WarningsList from "./Warningslist";
-
-type WeeklyReport = {
-  id: string;
-  weekLabel: string;
-  rangeText: string;
-  recordDaysNum: string;
-  fastingNum: string;
-  afterMealNum: string;
-  summaryTitle: string;
-  summaryText: string;
-  // 컴포넌트 데이터
-  scoreData: {
-    totalScore: number;
-    comment: string;
-    items: { label: string; score: number; color: string }[];
-  };
-  weeklyData: {
-    totalMeasured: number;
-    totalPossible: number;
-    avgGlucose: number;
-    normalCount: number;
-    normalTotal: number;
-    dayData: { day: string; emoji: string; count: number }[];
-  };
-  warningsData: {
-    id: string;
-    icon: string;
-    problem: string;
-    detail: string;
-    dayDetails: string;
-    tips: string[];
-  }[];
+const formatDate = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${month}.${String(day).padStart(2, "0")}`;
 };
 
+const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = [
+  undefined,
+  CURRENT_YEAR,
+  CURRENT_YEAR - 1,
+  CURRENT_YEAR - 2,
+];
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => index + 1);
+
 export default function ReportHistoryScreen() {
-  const userName = "OOO";
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [reports, setReports] = useState<WeeklyReportItem[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [userName, setUserName] = useState("유저");
+  const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
+  const [selectedMonth, setSelectedMonth] = useState<number | undefined>(undefined);
 
-  const reports: WeeklyReport[] = useMemo(
-    () => [
-      {
-        id: "w4",
-        weekLabel: "2월 1주",
-        rangeText: "02.03 ~ 02.09",
-        recordDaysNum: "7",
-        fastingNum: "102",
-        afterMealNum: "138",
-        summaryTitle: "건강관리 상태 ~~",
-        summaryText:
-          "이번 주는 식후 혈당이 조금 높게 나왔어요. 단 음식/야식 빈도를 줄이고, 식사 후 10~15분 산책을 해보면 도움이 됩니다!",
-        scoreData: {
-          totalScore: 75,
-          comment: "잘하고 있어요! 조금만 더",
-          items: [
-            { label: "혈당 관리", score: 80, color: "#4CAF50" },
-            { label: "측정 꾸준함", score: 70, color: "#FFC107" },
-            { label: "패턴 안정성", score: 85, color: "#4CAF50" },
-          ],
-        },
-        weeklyData: {
-          totalMeasured: 18,
-          totalPossible: 21,
-          avgGlucose: 125,
-          normalCount: 12,
-          normalTotal: 18,
-          dayData: [
-            { day: "월", emoji: "😊", count: 3 },
-            { day: "화", emoji: "😊", count: 3 },
-            { day: "수", emoji: "😐", count: 2 },
-            { day: "목", emoji: "😐", count: 3 },
-            { day: "금", emoji: "😊", count: 3 },
-            { day: "토", emoji: "😐", count: 2 },
-            { day: "일", emoji: "😐", count: 2 },
-          ],
-        },
-        warningsData: [
-          {
-            id: "1",
-            icon: "⚡",
-            problem: "점심 식후 혈당",
-            detail: "10번 중 7번 높음\n평균: 165 (목표: 140)",
-            dayDetails: "월 170, 화 165, 목 180 🔴",
-            tips: ["밥 양 20% 줄이기", "현미밥으로 변경", "식후 15분 걷기"],
-          },
-        ],
-      },
-      {
-        id: "w3",
-        weekLabel: "1월 5주",
-        rangeText: "01.27 ~ 02.02",
-        recordDaysNum: "7",
-        fastingNum: "96",
-        afterMealNum: "126",
-        summaryTitle: "컨디션 좋음",
-        summaryText:
-          "식전/식후 모두 안정적으로 유지되고 있어요. 지금 루틴을 그대로 이어가면 좋아요.",
-        scoreData: {
-          totalScore: 88,
-          comment: "이번 주 최고예요!",
-          items: [
-            { label: "혈당 관리", score: 90, color: "#4CAF50" },
-            { label: "측정 꾸준함", score: 85, color: "#4CAF50" },
-            { label: "패턴 안정성", score: 88, color: "#4CAF50" },
-          ],
-        },
-        weeklyData: {
-          totalMeasured: 20,
-          totalPossible: 21,
-          avgGlucose: 112,
-          normalCount: 17,
-          normalTotal: 20,
-          dayData: [
-            { day: "월", emoji: "😊", count: 3 },
-            { day: "화", emoji: "😊", count: 3 },
-            { day: "수", emoji: "😊", count: 3 },
-            { day: "목", emoji: "😊", count: 3 },
-            { day: "금", emoji: "😊", count: 3 },
-            { day: "토", emoji: "😐", count: 3 },
-            { day: "일", emoji: "😐", count: 2 },
-          ],
-        },
-        warningsData: [],
-      },
-      {
-        id: "w2",
-        weekLabel: "1월 4주",
-        rangeText: "01.20 ~ 01.26",
-        recordDaysNum: "7",
-        fastingNum: "108",
-        afterMealNum: "142",
-        summaryTitle: "주의가 필요해요",
-        summaryText:
-          "식후 수치가 자주 튀는 편이에요. 탄수화물 양을 살짝 줄이고, 단백질·채소를 먼저 먹는 순서로 바꿔보세요.",
-        scoreData: {
-          totalScore: 62,
-          comment: "조금 더 신경 써봐요",
-          items: [
-            { label: "혈당 관리", score: 60, color: "#FF6B6B" },
-            { label: "측정 꾸준함", score: 65, color: "#FFC107" },
-            { label: "패턴 안정성", score: 58, color: "#FF6B6B" },
-          ],
-        },
-        weeklyData: {
-          totalMeasured: 15,
-          totalPossible: 21,
-          avgGlucose: 138,
-          normalCount: 8,
-          normalTotal: 15,
-          dayData: [
-            { day: "월", emoji: "😟", count: 2 },
-            { day: "화", emoji: "😊", count: 3 },
-            { day: "수", emoji: "😟", count: 2 },
-            { day: "목", emoji: "😐", count: 2 },
-            { day: "금", emoji: "😟", count: 2 },
-            { day: "토", emoji: "😐", count: 2 },
-            { day: "일", emoji: "😐", count: 2 },
-          ],
-        },
-        warningsData: [
-          {
-            id: "1",
-            icon: "⚡",
-            problem: "식후 혈당 급등",
-            detail: "10번 중 8번 높음\n평균: 142 (목표: 140)",
-            dayDetails: "월 155, 수 148, 금 160 🔴",
-            tips: ["탄수화물 섭취 줄이기", "채소 먼저 먹기", "식후 스트레칭"],
-          },
-        ],
-      },
-      {
-        id: "w1",
-        weekLabel: "1월 3주",
-        rangeText: "01.13 ~ 01.19",
-        recordDaysNum: "7",
-        fastingNum: "99",
-        afterMealNum: "131",
-        summaryTitle: "무난한 흐름",
-        summaryText:
-          "전반적으로 큰 변동 없이 무난해요. 다만 간식이 늘어나는 날엔 식후가 올라갈 수 있으니 간식 타이밍만 점검해봐요.",
-        scoreData: {
-          totalScore: 78,
-          comment: "꾸준히 잘하고 있어요",
-          items: [
-            { label: "혈당 관리", score: 82, color: "#4CAF50" },
-            { label: "측정 꾸준함", score: 72, color: "#FFC107" },
-            { label: "패턴 안정성", score: 80, color: "#4CAF50" },
-          ],
-        },
-        weeklyData: {
-          totalMeasured: 17,
-          totalPossible: 21,
-          avgGlucose: 118,
-          normalCount: 13,
-          normalTotal: 17,
-          dayData: [
-            { day: "월", emoji: "😊", count: 3 },
-            { day: "화", emoji: "😊", count: 2 },
-            { day: "수", emoji: "😐", count: 3 },
-            { day: "목", emoji: "😊", count: 3 },
-            { day: "금", emoji: "😐", count: 2 },
-            { day: "토", emoji: "😐", count: 2 },
-            { day: "일", emoji: "😐", count: 2 },
-          ],
-        },
-        warningsData: [],
-      },
-    ],
-    []
-  );
+  useEffect(() => {
+    fetchReports(0);
+  }, [selectedYear, selectedMonth]);
 
-  const [selectedId, setSelectedId] = useState(reports[0]?.id);
-  const selected = useMemo(
-    () => reports.find((r) => r.id === selectedId) ?? reports[0],
-    [reports, selectedId]
-  );
+  useEffect(() => {
+    let mounted = true;
+
+    const loadUserName = async () => {
+      try {
+        const profile = await getMyProfile();
+        if (!mounted) return;
+        setUserName(profile.username?.trim() || "유저");
+      } catch {
+        const signupProfile = await getSignupProfile();
+        if (!mounted) return;
+        setUserName(signupProfile.username?.trim() || "유저");
+      }
+    };
+
+    loadUserName();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const fetchReports = async (pageNum: number) => {
+    try {
+      if (pageNum === 0) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+      setError(null);
+      const data = await getWeeklyReportHistory({
+        year: selectedYear,
+        month: selectedMonth,
+        page: pageNum,
+        size: 20,
+      });
+      setReports((prev) =>
+        pageNum === 0 ? data.items || [] : [...prev, ...(data.items || [])]
+      );
+      setPage(pageNum);
+      setHasMore(data.hasNext ?? false);
+    } catch (err) {
+      console.error("Failed to fetch report history:", err);
+      setError("보고서 목록을 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
 
   const goBack = () => router.back();
+
+  const handleReportPress = (reportId: number) => {
+    router.push({
+      pathname: "/report/[id]",
+      params: { id: reportId },
+    });
+  };
+
+  const handleYearSelect = (year?: number) => {
+    setSelectedYear(year);
+    setSelectedMonth(undefined);
+  };
+
+  const handleMonthSelect = (month?: number) => {
+    setSelectedMonth(month);
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.header}>
+          <Pressable onPress={goBack} hitSlop={10} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={22} color="#111" />
+          </Pressable>
+        </View>
+        <View style={[styles.safe, { justifyContent: "center", alignItems: "center" }]}>
+          <ActivityIndicator size="large" color="#3F7BFF" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.header}>
+          <Pressable onPress={goBack} hitSlop={10} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={22} color="#111" />
+          </Pressable>
+        </View>
+        <View style={[styles.safe, { justifyContent: "center", alignItems: "center" }]}>
+          <Text style={{ fontSize: 16, color: "#666" }}>{error}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -251,24 +166,94 @@ export default function ReportHistoryScreen() {
           입니다!
         </Text>
 
+        <View style={styles.filterSection}>
+          <Text style={styles.filterLabel}>연도</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            {YEAR_OPTIONS.map((yearOption) => {
+              const isActive = selectedYear === yearOption;
+              return (
+                <Pressable
+                  key={yearOption ?? "all-year"}
+                  onPress={() => handleYearSelect(yearOption)}
+                  style={[styles.filterChip, isActive && styles.filterChipActive]}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isActive && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {yearOption ? `${yearOption}년` : "전체"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <Text style={[styles.filterLabel, { marginTop: 12 }]}>월</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            <Pressable
+              onPress={() => handleMonthSelect(undefined)}
+              style={[
+                styles.filterChip,
+                selectedMonth == null && styles.filterChipActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  selectedMonth == null && styles.filterChipTextActive,
+                ]}
+              >
+                전체
+              </Text>
+            </Pressable>
+            {MONTH_OPTIONS.map((monthOption) => {
+              const isActive = selectedMonth === monthOption;
+              return (
+                <Pressable
+                  key={monthOption}
+                  onPress={() => handleMonthSelect(monthOption)}
+                  style={[styles.filterChip, isActive && styles.filterChipActive]}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isActive && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {monthOption}월
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+
         {/* 주간 선택 리스트 */}
         <View style={styles.listWrap}>
           <Text style={styles.sectionLabel}>주간 보고서</Text>
           <View style={styles.weekList}>
-            {reports.map((r) => {
-              const active = r.id === selectedId;
-              return (
+            {reports.length > 0 ? (
+              reports.map((report) => (
                 <Pressable
-                  key={r.id}
-                  onPress={() => setSelectedId(r.id)}
+                  key={report.reportId}
+                  onPress={() => handleReportPress(report.reportId)}
                   style={({ pressed }) => [
                     styles.weekItem,
-                    active && styles.weekItemActive,
                     pressed && { opacity: 0.95 },
                   ]}
                 >
                   <LinearGradient
-                    colors={active ? ["#E8E8E8", "#F2F2F2"] : ["#EEEEEE", "#F6F6F6"]}
+                    colors={["#E8E8E8", "#F2F2F2"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                     style={styles.weekTopBar}
@@ -276,109 +261,49 @@ export default function ReportHistoryScreen() {
                   <View style={styles.weekItemContent}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.weekTitle}>
-                        {r.weekLabel}{" "}
-                        <Text style={styles.weekRange}>({r.rangeText})</Text>
+                        {report.weekLabel}{" "}
+                        <Text style={styles.weekRange}>
+                          ({formatDate(report.startDate)} ~ {formatDate(report.endDate)})
+                        </Text>
                       </Text>
                       <View style={styles.weekMiniRow}>
-                        <Text style={styles.miniLabel}>식전</Text>
-                        <Text style={styles.miniValueBlue}>{r.fastingNum}</Text>
-                        <Text style={styles.miniUnit}>mg/dl</Text>
+                        <Text style={styles.miniLabel}>혈당기록</Text>
+                        <Text style={styles.miniValueBlue}>{report.bloodSugarRecordDays}</Text>
+                        <Text style={styles.miniUnit}>회</Text>
                         <View style={styles.dot} />
-                        <Text style={styles.miniLabel}>식후</Text>
-                        <Text style={styles.miniValueBlue}>{r.afterMealNum}</Text>
-                        <Text style={styles.miniUnit}>mg/dl</Text>
+                        <Text style={styles.miniLabel}>혈압기록</Text>
+                        <Text style={styles.miniValueBlue}>{report.bloodPressureRecordDays}</Text>
+                        <Text style={styles.miniUnit}>회</Text>
+                      </View>
+                      <View style={{ marginTop: 4 }}>
+                        <Text style={styles.scoreText}>
+                          점수: <Text style={{ fontWeight: "700" }}>{report.overallScore}</Text>
+                        </Text>
                       </View>
                     </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={18}
-                      color={active ? "#3F7BFF" : "#AAA"}
-                    />
+                    <Ionicons name="chevron-forward" size={18} color="#3F7BFF" />
                   </View>
                 </Pressable>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* 선택된 주간 상세 */}
-        <View style={styles.detailWrap}>
-          <Text style={styles.sectionLabel}>선택한 주간 상세</Text>
-
-          {/* stats */}
-          <View style={styles.statsWrap}>
-            <LinearGradient
-              colors={["#E8E8E8", "#f2f2f2"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.statBarBg}
-            />
-            <View style={styles.statsContent}>
-              <View style={styles.statCol}>
-                <Text style={styles.statLabel}>기록일</Text>
-                <Text>
-                  <Text style={styles.valueNumber}>{selected?.recordDaysNum}</Text>
-                  <Text style={styles.valueUnit}>일</Text>
-                </Text>
-              </View>
-              <View style={styles.statCol}>
-                <Text style={styles.statLabel}>식전 혈당</Text>
-                <Text>
-                  <Text style={styles.valueNumber}>{selected?.fastingNum}</Text>
-                  <Text style={styles.valueUnit}>mg/dl</Text>
-                </Text>
-              </View>
-              <View style={styles.statCol}>
-                <Text style={styles.statLabel}>식후 혈당</Text>
-                <Text>
-                  <Text style={styles.valueNumber}>{selected?.afterMealNum}</Text>
-                  <Text style={styles.valueUnit}>mg/dl</Text>
-                </Text>
-              </View>
-            </View>
-            <View style={styles.statsDivider} />
+              ))
+            ) : (
+              <Text style={{ textAlign: "center", marginVertical: 20, color: "#999" }}>
+                보고서가 없습니다.
+              </Text>
+            )}
           </View>
 
-          {/* 클립보드 카드 */}
-          <View style={styles.clipboardWrap}>
-            <Image
-              source={require("../../assets/images/subtract.png")}
-              style={styles.clipTop}
-              resizeMode="contain"
-            />
-            <View style={styles.paper}>
-              <Text style={styles.paperTitle}>{selected?.summaryTitle}</Text>
-              <Text style={styles.paperBody}>{selected?.summaryText}</Text>
-            </View>
-          </View>
-
-          {/* ── 3개 컴포넌트 ── */}
-          <ScoreCard
-            totalScore={selected.scoreData.totalScore}
-            comment={selected.scoreData.comment}
-            items={selected.scoreData.items}
-          />
-
-          <WeeklySummary
-            totalMeasured={selected.weeklyData.totalMeasured}
-            totalPossible={selected.weeklyData.totalPossible}
-            avgGlucose={selected.weeklyData.avgGlucose}
-            normalCount={selected.weeklyData.normalCount}
-            normalTotal={selected.weeklyData.normalTotal}
-            dayData={selected.weeklyData.dayData}
-          />
-
-          {selected.warningsData.length > 0 && (
-            <WarningsList items={selected.warningsData} />
+          {/* 페이지네이션 */}
+          {reports.length > 0 && hasMore && (
+            <Pressable
+              style={styles.loadMoreBtn}
+              onPress={() => fetchReports(page + 1)}
+              disabled={loadingMore}
+            >
+              <Text style={styles.loadMoreText}>
+                {loadingMore ? "불러오는 중..." : "더 보기"}
+              </Text>
+            </Pressable>
           )}
-
-          {/* 이번 주 보고서로 돌아가기 */}
-          <Pressable
-            onPress={() => router.push("/report")}
-            style={({ pressed }) => [styles.btn, pressed && { opacity: 0.9 }]}
-          >
-            <Text style={styles.btnText}>이번 주 보고서로 돌아가기</Text>
-          </Pressable>
         </View>
 
         <View style={{ height: 40 }} />
@@ -389,17 +314,47 @@ export default function ReportHistoryScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F6F6F6" },
-
   header: { height: 54, justifyContent: "center", paddingHorizontal: 14 },
   backBtn: { width: 40, height: 40, justifyContent: "center" },
-
   scroll: { paddingHorizontal: 18, paddingBottom: 18 },
-
   title: { marginTop: 14, fontSize: 20, fontWeight: "700", color: "#111", lineHeight: 28 },
   titleAccent: { color: "#3F7BFF", fontWeight: "700" },
-
+  filterSection: {
+    marginTop: 18,
+  },
+  filterLabel: {
+    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#666",
+  },
+  filterRow: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E6E6E6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterChipActive: {
+    backgroundColor: "#3F7BFF",
+    borderColor: "#3F7BFF",
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#555",
+  },
+  filterChipTextActive: {
+    color: "#FFFFFF",
+  },
   sectionLabel: { marginTop: 18, marginBottom: 10, fontSize: 13, fontWeight: "600", color: "#666" },
-
   listWrap: { marginTop: 10 },
   weekList: { gap: 10 },
   weekItem: {
@@ -416,72 +371,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#F0F0F0",
   },
-  weekItemActive: { borderColor: "#D8E4FF" },
   weekTopBar: { width: "100%", height: 28 },
   weekItemContent: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
   },
-  weekTitle: { fontSize: 14, fontWeight: "700", color: "#111" },
-  weekRange: { fontSize: 12, fontWeight: "600", color: "#888" },
-  weekMiniRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
-  miniLabel: { fontSize: 12, fontWeight: "600", color: "#777", marginRight: 6 },
-  miniValueBlue: { fontSize: 12.5, fontWeight: "700", color: "#3F7BFF" },
-  miniUnit: { fontSize: 12.5, fontWeight: "700", color: "#111", marginLeft: 2, marginRight: 10 },
-  dot: { width: 4, height: 4, borderRadius: 999, backgroundColor: "#D0D0D0", marginHorizontal: 6 },
-
-  detailWrap: { marginTop: 18 },
-
-  statsWrap: { width: 349, alignSelf: "center", marginTop: 6 },
-  statBarBg: {
-    width: 349,
-    height: 32,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-  },
-  statsContent: {
-    width: 349,
+  weekTitle: { fontSize: 14, fontWeight: "600", color: "#111" },
+  weekRange: { fontSize: 12, fontWeight: "400", color: "#999" },
+  weekMiniRow: {
+    marginTop: 6,
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 26,
-    paddingTop: 10,
-  },
-  statCol: { alignItems: "center" },
-  statLabel: { fontSize: 13, fontWeight: "500", color: "#777" },
-  valueNumber: { marginTop: 6, fontSize: 15, fontWeight: "600", color: "#3F7BFF" },
-  valueUnit: { fontSize: 15, fontWeight: "600", color: "#111" },
-  statsDivider: { width: 349, height: 1, backgroundColor: "#E6E6E6", marginTop: 12 },
-
-  clipboardWrap: { marginTop: 22, alignItems: "center" },
-  clipTop: { width: 180, height: 60, marginBottom: -10, zIndex: 2 },
-  paper: {
-    width: 254,
-    minHeight: 160,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4,
-  },
-  paperTitle: { fontSize: 13, fontWeight: "600", color: "#666", marginBottom: 10 },
-  paperBody: { fontSize: 12.5, fontWeight: "400", color: "#666", lineHeight: 18 },
-
-  btn: {
-    marginTop: 26,
-    alignSelf: "center",
-    width: 214,
-    height: 44,
-    borderRadius: 28,
-    backgroundColor: "#3B3B3B",
-    justifyContent: "center",
     alignItems: "center",
+    gap: 4,
   },
-  btnText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
+  miniLabel: { fontSize: 11, fontWeight: "500", color: "#888" },
+  miniValueBlue: { fontSize: 12, fontWeight: "600", color: "#3F7BFF" },
+  miniUnit: { fontSize: 11, fontWeight: "400", color: "#888" },
+  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: "#DDD", marginHorizontal: 2 },
+  scoreText: { fontSize: 12, fontWeight: "500", color: "#666" },
+  loadMoreBtn: {
+    marginTop: 16,
+    alignSelf: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: "#F0F0F0",
+  },
+  loadMoreText: { fontSize: 13, fontWeight: "600", color: "#333" },
 });

@@ -6,6 +6,7 @@ import BackButton from "../../components/BackButton";
 import NextButton from "../../components/NextButton";
 import { useSignupDraft } from "./signupContext";
 import { signupApi } from "../api/signup";
+import { saveSignupProfile } from "../utils/profileStorage";
 
 export default function Birthdate() {
   const router = useRouter();
@@ -53,6 +54,13 @@ export default function Birthdate() {
 
       const result = await signupApi(payload);
       console.log("signup result =", result);
+
+      await saveSignupProfile({
+        email: payload.email,
+        username: payload.username,
+        gender: payload.gender,
+        birthDate: payload.birthDate,
+      });
 
       Alert.alert("회원가입 완료", "로그인을 진행해주세요.");
       resetDraft();

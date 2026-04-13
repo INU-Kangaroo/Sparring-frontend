@@ -41,7 +41,7 @@ const { width: W, height: H } = Dimensions.get("window");
 const SHEET_TOP = 100;
 const SHEET_BOTTOM = H - 280;
 
-// API에 혈당 데이터가 없으므로 운동 시 일반적인 혈당 변화 곡선 사용
+// API에 실제 반응 데이터가 없으므로 활동 시 일반적인 변화 곡선을 사용
 const DEFAULT_GLUCOSE_CURVE = [
   { t: 0, v: 140 },
   { t: 5, v: 132 },
@@ -204,7 +204,7 @@ function WorkoutRowBlock({ label, value }: { label: string; value: string }) {
 function PrecautionBox({ bullets }: { bullets: string[] }) {
   return (
     <View style={styles.cautionBox}>
-      <Text style={styles.cautionTitle}>주의사항</Text>
+      <Text style={styles.cautionTitle}>참고 포인트</Text>
       <View style={{ marginTop: 10, gap: 8 }}>
         {bullets.map((b, idx) => (
           <View key={idx} style={styles.bulletRow}>
@@ -408,12 +408,12 @@ export default function HealthDetail() {
 
                 {/* 혈당 변화 그래프 */}
                 <View style={styles.graphSection}>
-                  <Text style={styles.graphLabel}>혈당 변화 예측</Text>
+                  <Text style={styles.graphLabel}>예상 식후 혈당 반응</Text>
                   <View style={styles.graphBox}>
                     <CalorieGraph data={selected.calorieData} />
                   </View>
                   <Text style={styles.graphCaption}>
-                    * 운동 시 혈당 변화 추이 (개인차가 있을 수 있어요)
+                    * 활동 전후 반응 흐름을 참고하는 그래프예요
                   </Text>
                 </View>
 

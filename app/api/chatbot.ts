@@ -38,6 +38,14 @@ type StreamChatbotMessageOptions = {
   onChunk?: (nextText: string, incomingText: string) => void;
 };
 
+const unwrap = <T>(payload: any): T => {
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return payload.data as T;
+  }
+
+  return payload as T;
+};
+
 const getBaseUrl = () =>
   api.defaults.baseURL ||
   process.env.EXPO_PUBLIC_BACKEND_URL ||
@@ -158,24 +166,25 @@ const processSseBuffer = (
 
 export const createChatbotSession = async (payload?: CreateChatbotSessionRequest) => {
   const response = await post<ChatbotSessionResponse>("/api/chatbot/sessions", payload ?? {});
-  return normalizeSession(response.data);
+  return normalizeSession(unwrap<ChatbotSessionResponse>(response.data));
 };
 
 export const fetchChatbotSessions = async () => {
   const response = await get<ChatbotSession[]>("/api/chatbot/sessions");
-  return Array.isArray(response.data) ? response.data : [];
+  const payload = unwrap<ChatbotSession[] | ChatbotSessionResponse>(response.data);
+  return Array.isArray(payload) ? payload : payload ? [payload] : [];
 };
 
 export const fetchChatbotSession = async (sessionId: string) => {
   const response = await get<ChatbotSessionResponse>(`/api/chatbot/sessions/${sessionId}`);
-  return normalizeSession(response.data);
+  return normalizeSession(unwrap<ChatbotSessionResponse>(response.data));
 };
 
 export const deleteChatbotSession = async (sessionId: string) => {
   const response = await api.delete<DeleteChatbotSessionResponse>(
     `/api/chatbot/sessions/${sessionId}`
   );
-  return response.data;
+  return unwrap<DeleteChatbotSessionResponse>(response.data);
 };
 
 export const streamChatbotMessage = async ({

@@ -2,13 +2,14 @@
   "expo": {
     "name": "kangaroo",
     "slug": "kangaroo",
-    "scheme": "kangaroo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
+    "scheme": "kangaroo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
+      "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -30,8 +31,10 @@
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "package": "com.sparring.kangaroo",
-      "usesCleartextTraffic": true
+      "package": "com.anonymous.kangaroo",
+      "usesCleartextTraffic": true,
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "bundler": "metro",
@@ -42,6 +45,7 @@
       "@react-native-community/datetimepicker",
       "expo-font",
       "expo-secure-store",
+      "expo-apple-authentication",
       [
         "expo-build-properties",
         {

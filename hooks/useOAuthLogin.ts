@@ -18,8 +18,15 @@ const GOOGLE_CLIENT_ID =
   export function useOauthLogin() {
     const [isLoading, setIsLoading] = useState(false);
 
-  const redirectUri =
-    "com.googleusercontent.apps.37689583487-nqo5jr9nuemk4289gnvq3cutuuf4c7de:/oauthredirect";
+  const redirectUri = useMemo(
+    () =>
+      AuthSession.makeRedirectUri({
+        path: "oauthredirect",
+        native:
+          "com.googleusercontent.apps.37689583487-nqo5jr9nuemk4289gnvq3cutuuf4c7de:/oauthredirect",
+      }),
+    []
+  );
 
   const discovery = useMemo(
     () => ({

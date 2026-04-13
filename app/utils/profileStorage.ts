@@ -35,6 +35,15 @@ async function getItem(key: string) {
   return SecureStore.getItemAsync(key);
 }
 
+async function removeItem(key: string) {
+  if (Platform.OS === "web") {
+    localStorage.removeItem(key);
+    return;
+  }
+
+  await SecureStore.deleteItemAsync(key);
+}
+
 export async function saveSignupProfile(profile: SignupProfile) {
   const existing = await getSignupProfile();
   const merged = { ...existing, ...profile };
@@ -76,4 +85,12 @@ export async function updateStoredSurveyAnswer(
   const filtered = existing.filter((item) => item.questionKey !== questionKey);
   filtered.push({ questionKey, value });
   await saveSurveyAnswers(filtered);
+}
+
+export async function clearSignupProfile() {
+  await removeItem(SIGNUP_PROFILE_KEY);
+}
+
+export async function clearSurveyAnswers() {
+  await removeItem(SURVEY_ANSWERS_KEY);
 }

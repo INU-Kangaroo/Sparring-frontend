@@ -71,3 +71,7 @@ export async function getBloodPressureLogs(startDate: string, endDate: string) {
     endDate,
   });
 }
+
+export async function getBloodPressureMonthlyStats(year: number) {
+  return getBloodPressureRecords({ period: "monthly", year });
+}

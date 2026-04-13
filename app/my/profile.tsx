@@ -15,8 +15,16 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
-import { getMyProfile, updateMyProfile } from "../api/users";
 import {
+  changeMyPassword,
+  deleteMyAccount,
+  getMyProfile,
+  updateMyProfile,
+} from "../api/users";
+import { removeTokenFromStorage } from "../utils/asyncStorage";
+import {
+  clearSignupProfile,
+  clearSurveyAnswers,
   saveSignupProfile,
   updateStoredSurveyAnswer,
 } from "../utils/profileStorage";
@@ -43,12 +51,24 @@ const EDITABLE_FIELDS: FieldKey[] = ["name", "birth", "height", "weight"];
 
 type ConfirmModalType = "logout" | "withdraw" | null;
 
+type PasswordForm = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
 const EMPTY_FORM: ProfileForm = {
   name: "",
   birth: "",
   email: "",
   height: "",
   weight: "",
+};
+
+const EMPTY_PASSWORD_FORM: PasswordForm = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
 };
 
 function formatDateForDisplay(value?: string) {
@@ -76,11 +96,14 @@ function parseOptionalNumber(value: string) {
 
 export default function ProfileScreen() {
   const [form, setForm] = useState<ProfileForm>(EMPTY_FORM);
+  const [passwordForm, setPasswordForm] = useState<PasswordForm>(EMPTY_PASSWORD_FORM);
   const [initialForm, setInitialForm] = useState<ProfileForm>(EMPTY_FORM);
   const [activeField, setActiveField] = useState<FieldKey | null>(null);
   const [modalType, setModalType] = useState<ConfirmModalType>(null);
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const inputRefs = useRef<Record<FieldKey, TextInput | null>>({
     name: null,
@@ -154,9 +177,31 @@ export default function ProfileScreen() {
     setModalType("withdraw");
   };
 
-  const confirmAction = () => {
-    setModalType(null);
-    router.replace("/login");
+  const resetLocalUserState = async () => {
+    await Promise.all([
+      removeTokenFromStorage(),
+      clearSignupProfile(),
+      clearSurveyAnswers(),
+    ]);
+  };
+
+  const confirmAction = async () => {
+    if (!modalType) return;
+
+    try {
+      if (modalType === "withdraw") {
+        await deleteMyAccount();
+      }
+
+      await resetLocalUserState();
+      setModalType(null);
+      router.replace("/login");
+    } catch (e: any) {
+      Alert.alert(
+        modalType === "withdraw" ? "회원 탈퇴 실패" : "로그아웃 실패",
+        e?.response?.data?.message ?? e?.message ?? "잠시 후 다시 시도해주세요."
+      );
+    }
   };
 
   const cancelAction = () => {
@@ -230,6 +275,56 @@ export default function ProfileScreen() {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openPasswordModal = () => {
+    setPasswordForm(EMPTY_PASSWORD_FORM);
+    setPasswordModalVisible(true);
+  };
+
+  const closePasswordModal = () => {
+    if (passwordSaving) return;
+    setPasswordModalVisible(false);
+    setPasswordForm(EMPTY_PASSWORD_FORM);
+  };
+
+  const updatePasswordField = (key: keyof PasswordForm, value: string) => {
+    setPasswordForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handlePasswordChange = async () => {
+    const currentPassword = passwordForm.currentPassword.trim();
+    const newPassword = passwordForm.newPassword.trim();
+    const confirmPassword = passwordForm.confirmPassword.trim();
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      Alert.alert("입력 확인", "비밀번호 항목을 모두 입력해주세요.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      Alert.alert("입력 확인", "새 비밀번호는 8자 이상으로 입력해주세요.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Alert.alert("입력 확인", "새 비밀번호와 확인 비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    try {
+      setPasswordSaving(true);
+      await changeMyPassword({ currentPassword, newPassword });
+      closePasswordModal();
+      Alert.alert("변경 완료", "비밀번호가 변경되었어요.");
+    } catch (e: any) {
+      Alert.alert(
+        "비밀번호 변경 실패",
+        e?.response?.data?.message ?? e?.message ?? "잠시 후 다시 시도해주세요."
+      );
+    } finally {
+      setPasswordSaving(false);
     }
   };
 
@@ -353,6 +448,11 @@ export default function ProfileScreen() {
               )}
             </View>
 
+            <Pressable style={styles.passwordButton} onPress={openPasswordModal}>
+              <Text style={styles.passwordButtonText}>비밀번호 변경</Text>
+              <Ionicons name="chevron-forward" size={16} color="#666" />
+            </Pressable>
+
             <View style={styles.footerActions}>
               <Pressable onPress={handleLogout} hitSlop={10}>
                 <Text style={styles.footerButton}>로그아웃</Text>
@@ -437,6 +537,69 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={passwordModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closePasswordModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>비밀번호 변경</Text>
+            <Text style={styles.modalMessage}>
+              현재 비밀번호와 새 비밀번호를 입력해주세요.
+            </Text>
+
+            <View style={styles.passwordFieldList}>
+              <TextInput
+                value={passwordForm.currentPassword}
+                onChangeText={(text) => updatePasswordField("currentPassword", text)}
+                placeholder="현재 비밀번호"
+                secureTextEntry
+                autoCapitalize="none"
+                style={styles.passwordInput}
+              />
+              <TextInput
+                value={passwordForm.newPassword}
+                onChangeText={(text) => updatePasswordField("newPassword", text)}
+                placeholder="새 비밀번호"
+                secureTextEntry
+                autoCapitalize="none"
+                style={styles.passwordInput}
+              />
+              <TextInput
+                value={passwordForm.confirmPassword}
+                onChangeText={(text) => updatePasswordField("confirmPassword", text)}
+                placeholder="새 비밀번호 확인"
+                secureTextEntry
+                autoCapitalize="none"
+                style={styles.passwordInput}
+              />
+            </View>
+
+            <View style={styles.modalButtons}>
+              <Pressable
+                onPress={closePasswordModal}
+                style={[styles.modalBtn, styles.modalBtnCancel]}
+                disabled={passwordSaving}
+              >
+                <Text style={styles.modalBtnTextCancel}>취소</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handlePasswordChange}
+                style={[styles.modalBtn, styles.modalBtnConfirm]}
+                disabled={passwordSaving}
+              >
+                <Text style={styles.modalBtnTextConfirm}>
+                  {passwordSaving ? "변경 중..." : "변경"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -512,6 +675,21 @@ const styles = StyleSheet.create({
   list: {
     backgroundColor: "#F5F5F5",
     borderRadius: 14,
+  },
+  passwordButton: {
+    marginTop: 14,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  passwordButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#222",
   },
   row: {
     flexDirection: "row",
@@ -610,6 +788,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     width: "100%",
+  },
+  passwordFieldList: {
+    width: "100%",
+    gap: 10,
+    marginBottom: 24,
+  },
+  passwordInput: {
+    width: "100%",
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: "#F5F5F5",
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: "#111",
   },
   modalBtn: {
     flex: 1,

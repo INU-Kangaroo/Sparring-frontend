@@ -19,13 +19,27 @@ export type ExerciseLog = {
 
 const unwrap = <T>(res: any): T => (res?.data?.data ?? res?.data ?? res) as T;
 
+type ExerciseRecordParams = {
+  period: "daily" | "weekly" | "monthly" | "range";
+  date?: string;
+  year?: number;
+  month?: number;
+  startDate?: string;
+  endDate?: string;
+};
+
+async function getExerciseRecords(params: ExerciseRecordParams) {
+  const res = await get("/api/records/exercise", { params });
+  return unwrap<ExerciseLog[] | any>(res);
+}
+
 /**
  * 운동 기록 저장
  * @param payload 운동 기록 데이터
  * @returns 저장된 운동 기록
  */
 export async function createExerciseLog(payload: ExerciseCreateRequest) {
-  const res = await post("/api/exercises/logs", payload);
+  const res = await post("/api/records/exercise", payload);
   return unwrap<ExerciseLog>(res);
 }
 
@@ -35,10 +49,15 @@ export async function createExerciseLog(payload: ExerciseCreateRequest) {
  * @returns 해당 날짜의 운동 기록 목록
  */
 export async function getExercisesDaily(date: string) {
-  const res = await get("/api/exercises/logs/daily", {
-    params: { date },
-  });
-  return unwrap<ExerciseLog[] | any>(res);
+  return getExerciseRecords({ period: "daily", date });
+}
+
+export async function getExercisesWeekly(date?: string) {
+  return getExerciseRecords({ period: "weekly", ...(date ? { date } : {}) });
+}
+
+export async function getExercisesMonthly(year: number, month?: number) {
+  return getExerciseRecords({ period: "monthly", year, ...(month ? { month } : {}) });
 }
 
 /**
@@ -48,8 +67,5 @@ export async function getExercisesDaily(date: string) {
  * @returns 해당 기간의 운동 기록 목록
  */
 export async function getExerciseLogs(startDate: string, endDate: string) {
-  const res = await get("/api/exercises/logs", {
-    params: { startDate, endDate },
-  });
-  return unwrap<ExerciseLog[] | any>(res);
+  return getExerciseRecords({ period: "range", startDate, endDate });
 }

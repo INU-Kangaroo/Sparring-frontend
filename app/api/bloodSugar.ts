@@ -67,3 +67,7 @@ export async function getBloodSugarLogs(startDate: string, endDate: string) {
     endDate,
   });
 }
+
+export async function getBloodSugarMonthlyStats(year: number) {
+  return getBloodSugarRecords({ period: "monthly", year });
+}

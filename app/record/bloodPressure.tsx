@@ -146,7 +146,7 @@ export default function BloodPressureScreen() {
           )}
         </View>
 
-        {/* 혈압 리스트 */}
+        {/* 혈압  */}
         <Text style={styles.sectionTitle}>혈압</Text>
 
         {loading && <ActivityIndicator style={{ marginTop: 10 }} />}

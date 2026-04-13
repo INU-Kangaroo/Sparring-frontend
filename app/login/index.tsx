@@ -62,16 +62,16 @@ export default function LoginScreen() {
       <View style={styles.container}>
         <View style={styles.centerWrap}>
           <Text style={styles.topText}>
-            나의 건강 시그널을 확인하고 싶다면 ?
+            나의 건강 시그널이 궁금하다면?
           </Text>
+           <Text style={styles.title}>Sparring과 같이 확인하기</Text>
 
           <Image
             source={require("../../assets/images/logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />
-
-          <Text style={styles.subtitle}>맞춤형 건강 관리 앱</Text>
+          <Text style={styles.subtitle}>Sparring</Text>
         </View>
 
         <View style={styles.buttonWrap}>
@@ -145,17 +145,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   topText: {
-    marginBottom: 24,
-    fontSize: 16,
+    marginTop: 40,
+    marginBottom: 10,
+    fontSize: 20,
     fontWeight: "700",
     color: "#000000",
     textAlign: "center",
   },
-  logo: { width: 180, height: 80 },
-  subtitle: {
-    marginTop: 12,
-    fontSize: 14,
-    fontWeight: "600",
+  title: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#000000",
+  },
+  logo: { width: 300, height: 270,},
+    subtitle: {
+    marginTop: -20,
+    fontSize: 20,
+    fontWeight: "700",
     color: "#000000",
   },
   buttonWrap: {

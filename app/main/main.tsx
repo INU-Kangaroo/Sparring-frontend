@@ -295,7 +295,7 @@ card: {
     flex: 1,
     height: 86,
     borderRadius: 12,
-    backgroundColor: "#D98E97",
+    backgroundColor: "#D99197",
     padding: 16,
     justifyContent: "space-between",
     marginBottom: 15,

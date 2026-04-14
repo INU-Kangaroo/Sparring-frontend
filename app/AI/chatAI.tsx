@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import Colors from "@/constants/Colors";
 import {
   ChatbotApiMessage,
   ChatbotSession,
@@ -494,7 +495,7 @@ const styles = StyleSheet.create({
   rowRight: { alignItems: "flex-end", marginBottom: 18 },
   bubbleRight: {
     maxWidth: "78%",
-    backgroundColor: "#6FA8FF",
+    backgroundColor: Colors.light.primaryMuted,
     borderRadius: 18,
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -526,7 +527,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderWidth: 1,
     borderColor: "#E0E8FF",
-    shadowColor: "#4060FF",
+    shadowColor: Colors.light.primaryStrong,
     shadowOpacity: 0.06,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
@@ -535,7 +536,7 @@ const styles = StyleSheet.create({
   faqBtnText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#3F7BFF",
+    color: Colors.light.primaryStrong,
   },
 
   // 입력 바

@@ -6,6 +6,7 @@ import {
   fetchFoodRecommendation,
   type FoodRecommendationRequest,
 } from "../api/recommendation";
+import Colors from "@/constants/Colors";
 
 type Option = { id: string; label: string };
 
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   mealChipActive: {
-    backgroundColor: "#0D99FF",
+    backgroundColor: Colors.light.primaryStrong,
   },
   mealChipInactive: {
     backgroundColor: "#FFFFFF",
@@ -333,7 +334,7 @@ const styles = StyleSheet.create({
     borderColor: "#EFEFEF",
   },
   chipActive: {
-    backgroundColor: "#0D99FF",
+    backgroundColor: Colors.light.primaryStrong,
   },
   chipText: {
     fontSize: 15,

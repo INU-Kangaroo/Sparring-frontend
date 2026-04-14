@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Colors from "@/constants/Colors";
 
 type RecordBoxProps = {
   title: string;
@@ -32,7 +33,7 @@ export default function RecordBox({
       </View>
 
       <View style={styles.recordItem}>
-        <Ionicons name={valueIcon} size={16} color="#D32F2F" />
+        <Ionicons name={valueIcon} size={16} color={Colors.light.primary} />
         <Text style={styles.recordText}>{value ?? "-"}</Text>
       </View>
     </Pressable>
@@ -48,6 +49,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 8,
+    color: Colors.light.text,
   },
   recordItem: {
     flexDirection: "row",
@@ -55,9 +57,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 4,
   },
-    recordText: {
+  recordText: {
     fontSize: 12,
-    color: "#333",
+    color: Colors.light.subtleText,
     fontWeight: "600",
   },
 });

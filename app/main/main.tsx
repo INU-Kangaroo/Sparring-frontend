@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { LineChart } from "react-native-chart-kit";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import Colors from "@/constants/Colors";
 import SidebarMenu from "../../components/Sidebar";
 import {
   getTodayInsight,
@@ -211,7 +212,7 @@ export default function MainScreen() {
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.header}>
         <Pressable onPress={() => openSidebar?.()}>
-          <Ionicons name="menu" size={24} color="#091441"  />
+          <Ionicons name="menu" size={24} color={Colors.light.text}  />
         </Pressable>
       </View>
 
@@ -239,7 +240,7 @@ export default function MainScreen() {
                   >
                     {selected ? (
                       <LinearGradient
-                        colors={["#0D99FF", "#1D4BFF"]}
+                        colors={[Colors.light.primary, Colors.light.primaryStrong]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.tab}
@@ -267,18 +268,18 @@ export default function MainScreen() {
               datasets: [
                 { data: chart.glucose, color: () => "#3C3C3C" },
                 { data: chart.systolic, color: () => "#dc2626" },
-                { data: chart.diastolic, color: () => "#2563eb" },
+                { data: chart.diastolic, color: () => Colors.light.primaryStrong },
               ],
               legend: ["혈당", "수축기", "이완기"],
             }}
             width={chartWidth}
             height={220}
             chartConfig={{
-              backgroundGradientFrom: "#fff",
-              backgroundGradientTo: "#fff",
+              backgroundGradientFrom: Colors.light.card,
+              backgroundGradientTo: Colors.light.card,
               decimalPlaces: 0,
-              color: () => "#000",
-              labelColor: () => "#000",
+              color: () => Colors.light.text,
+              labelColor: () => Colors.light.text,
             }}
             bezier={false}
             style={styles.chart}
@@ -295,7 +296,7 @@ export default function MainScreen() {
     onPress={() => router.push("/record/bloodPressure")}
   >
     <LinearGradient
-      colors={["#0D99FF", "#1D4BFF"]}
+      colors={[Colors.light.secondary, Colors.light.ink]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.quickBtn}
@@ -309,7 +310,7 @@ export default function MainScreen() {
       onPress={() => router.push("/record/bloodSugar")}
     >
       <LinearGradient
-        colors={["#0D99FF", "#1D4BFF"]}
+        colors={[Colors.light.primary, Colors.light.primaryStrong]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.quickBtn}
@@ -331,7 +332,7 @@ export default function MainScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F5F5F5" },
+  safe: { flex: 1, backgroundColor: Colors.light.background },
 
   header: {
     flexDirection: "row",
@@ -347,7 +348,7 @@ const styles = StyleSheet.create({
   },
 
   todayCard: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.card,
     borderRadius: 18,
     padding: 16,
   },
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.card,
     borderRadius: 18,
     padding: 12,
     marginTop: 20,
@@ -398,16 +399,16 @@ const styles = StyleSheet.create({
   },
 
   tabUnselected: {
-    backgroundColor: "#E9EEF8",
+    backgroundColor: Colors.light.primarySurface,
   },
 
   tabText: {
     fontSize: 12,
-    color: "#2B2B2B",
+    color: Colors.light.text,
   },
 
   tabTextSel: {
-    color: "#fff",
+    color: Colors.light.card,
     fontWeight: "700",
   },
 
@@ -426,7 +427,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 14,
 
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
@@ -441,12 +442,12 @@ const styles = StyleSheet.create({
   },
 
   quickBtnText: {
-    color: "#fff",
+    color: Colors.light.card,
     fontWeight: "800",
   },
 
   statsCard: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.card,
     borderRadius: 18,
     padding: 16,
     marginTop: 16,
@@ -469,6 +470,6 @@ const styles = StyleSheet.create({
   loadingHint: {
     marginTop: 8,
     fontSize: 12,
-    color: "#999",
+    color: Colors.light.subtleText,
   },
 });

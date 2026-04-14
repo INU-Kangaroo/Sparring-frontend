@@ -27,6 +27,7 @@ import {
   type FoodRecommendationResponse,
 } from "../api/recommendation";
 import { predictBloodSugar, type BloodSugarPredictionResponse } from "../api/prediction";
+import Colors from "@/constants/Colors";
 
 const { width: W, height: H } = Dimensions.get("window");
 
@@ -695,9 +696,9 @@ export default function DietRecommendScreen() {
           </Pressable>
           <Pressable onPress={handleRefresh} style={styles.refreshBtn} disabled={refreshing}>
             {refreshing ? (
-              <ActivityIndicator size="small" color="#0D99FF" />
+              <ActivityIndicator size="small" color={Colors.light.primaryStrong} />
             ) : (
-              <Ionicons name="refresh" size={20} color="#0D99FF" />
+              <Ionicons name="refresh" size={20} color={Colors.light.primaryStrong} />
             )}
           </Pressable>
         </View>
@@ -720,7 +721,7 @@ export default function DietRecommendScreen() {
             >
               {isActive ? (
                 <LinearGradient
-                  colors={["#0D99FF", "#1D4BFF"]}
+                  colors={[Colors.light.primary, Colors.light.primaryStrong]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.foodBtnActive}
@@ -777,7 +778,7 @@ export default function DietRecommendScreen() {
       {/* 바텀 시트 */}
       <Animated.View style={[styles.sheet, sheetStyle]}>
         <LinearGradient
-          colors={["#61ADFF", "#AFD3FF"]}
+          colors={[Colors.light.primaryMuted, Colors.light.primarySurfaceStrong]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.sheetGradient}
@@ -913,7 +914,7 @@ export default function DietRecommendScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: { flex: 1, backgroundColor: Colors.light.card },
   centerState: {
     alignItems: "center",
     justifyContent: "center",
@@ -922,12 +923,12 @@ const styles = StyleSheet.create({
   stateText: {
     marginTop: 14,
     fontSize: 15,
-    color: "#666",
+    color: Colors.light.subtleText,
     textAlign: "center",
   },
   stateButton: {
     marginTop: 18,
-    backgroundColor: "#0D99FF",
+    backgroundColor: Colors.light.primaryStrong,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 14,
@@ -948,7 +949,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#F4F4F4",
+    backgroundColor: Colors.light.mutedBackground,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -956,12 +957,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#EEF6FF",
+    backgroundColor: Colors.light.primarySurface,
     alignItems: "center",
     justifyContent: "center",
   },
-  h1: { fontSize: 23, fontWeight: "700", color: "#111111" },
-  h2: { marginTop: 10, marginBottom: 20, fontSize: 15, color: "#666666" },
+  h1: { fontSize: 23, fontWeight: "700", color: Colors.light.text },
+  h2: { marginTop: 10, marginBottom: 20, fontSize: 15, color: Colors.light.subtleText },
 
   listContent: {
     paddingHorizontal: 24,
@@ -974,7 +975,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 18,
     paddingVertical: 14,
-    shadowColor: "#1D4BFF",
+    shadowColor: Colors.light.primaryStrong,
     shadowOpacity: 0.25,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
@@ -1016,7 +1017,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   signalBadge: {
-    backgroundColor: "#F1F5FF",
+    backgroundColor: Colors.light.primarySurface,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -1030,7 +1031,7 @@ const styles = StyleSheet.create({
   signalBadgeText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#3562FF",
+    color: Colors.light.primaryStrong,
   },
   signalBadgeTextActive: {
     fontSize: 11,
@@ -1220,7 +1221,7 @@ const styles = StyleSheet.create({
   nutrientsWrap: { gap: 10 },
   nutrientRow: {
     borderRadius: 20,
-    backgroundColor: "#1D82EF",
+    backgroundColor: Colors.light.primaryStrong,
     paddingHorizontal: 18,
     height: 54,
     flexDirection: "row",

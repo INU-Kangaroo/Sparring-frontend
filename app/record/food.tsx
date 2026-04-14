@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import BackButton from "@/components/BackButton";
 import RecordBox from "@/components/RecordBox";
+import Colors from "@/constants/Colors";
 import {
   searchFoods,
   getFoodDetail,
@@ -166,10 +167,10 @@ export default function FoodRecordScreen() {
             onPress={() => setShowDatePicker((prev) => !prev)}
           >
             <LinearGradient
-              colors={["#0D99FF", "#1D4BFF"]}
+              colors={[Colors.light.secondary, Colors.light.ink]}
               style={styles.datePill}
             >
-              <Ionicons name="calendar" size={14} color="#fff" />
+              <Ionicons name="calendar" size={14} color={Colors.light.card} />
               <Text style={styles.dateText}>{selectedYmd}</Text>
             </LinearGradient>
           </Pressable>
@@ -313,29 +314,50 @@ export default function FoodRecordScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F5F5F5" },
+  safe: { flex: 1, backgroundColor: Colors.light.background },
   header: { flexDirection: "row", alignItems: "center", padding: 16 },
-  title: { fontSize: 18, fontWeight: "700", flex: 1, textAlign: "center" },
+  title: { fontSize: 18, fontWeight: "700", flex: 1, textAlign: "center", color: Colors.light.text },
   container: { paddingHorizontal: 16, paddingBottom: 120 },
   weekRow: { marginBottom: 16, alignItems: "center" },
   dateBtn: { width: "100%" },
   datePill: { flexDirection: "row", alignItems: "center", justifyContent: "center", borderRadius: 24, paddingVertical: 10 },
-  dateText: { color: "white", marginLeft: 6, fontWeight: "600" },
-  section: { marginBottom: 16, backgroundColor: "white", borderRadius: 16, padding: 12 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", marginBottom: 8 },
+  dateText: { color: Colors.light.card, marginLeft: 6, fontWeight: "600" },
+  section: { marginBottom: 16, backgroundColor: Colors.light.card, borderRadius: 16, padding: 12 },
+  sectionTitle: { fontSize: 14, fontWeight: "700", marginBottom: 8, color: Colors.light.text },
   row: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  input: { flex: 1, borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingHorizontal: 10, height: 42 },
-  searchBtn: { backgroundColor: "#0D99FF", borderRadius: 10, paddingHorizontal: 12, height: 42, justifyContent: "center" },
-  searchBtnText: { color: "white", fontWeight: "700" },
-  logBtn: { backgroundColor: "#1D4BFF", borderRadius: 10, paddingHorizontal: 14, height: 42, justifyContent: "center" },
-  logBtnText: { color: "white", fontWeight: "700" },
-  card: { marginBottom: 8, borderRadius: 10, backgroundColor: "#fafafa", padding: 10 },
-  selectedCard: { borderColor: "#1D4BFF", borderWidth: 2 },
-  cardTitle: { fontWeight: "700", fontSize: 14 },
-  cardSub: { color: "#666", marginTop: 2 },
-  detailBlock: { marginTop: 6, padding: 8, backgroundColor: "#f8faff", borderRadius: 10 },
-  detailTitle: { fontWeight: "700", marginBottom: 6 },
-  detailName: { fontWeight: "700", fontSize: 16 },
-  detailText: { fontSize: 13, color: "#444" },
-  emptyText: { color: "#999", paddingVertical: 12 },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 42,
+    backgroundColor: Colors.light.background,
+    color: Colors.light.text,
+  },
+  searchBtn: {
+    backgroundColor: Colors.light.secondary,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 42,
+    justifyContent: "center",
+  },
+  searchBtnText: { color: Colors.light.card, fontWeight: "700" },
+  logBtn: {
+    backgroundColor: Colors.light.primary,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    height: 42,
+    justifyContent: "center",
+  },
+  logBtnText: { color: Colors.light.card, fontWeight: "700" },
+  card: { marginBottom: 8, borderRadius: 10, backgroundColor: Colors.light.mutedBackground, padding: 10 },
+  selectedCard: { borderColor: Colors.light.primary, borderWidth: 2 },
+  cardTitle: { fontWeight: "700", fontSize: 14, color: Colors.light.text },
+  cardSub: { color: Colors.light.subtleText, marginTop: 2 },
+  detailBlock: { marginTop: 6, padding: 8, backgroundColor: Colors.light.background, borderRadius: 10 },
+  detailTitle: { fontWeight: "700", marginBottom: 6, color: Colors.light.text },
+  detailName: { fontWeight: "700", fontSize: 16, color: Colors.light.text },
+  detailText: { fontSize: 13, color: Colors.light.subtleText },
+  emptyText: { color: Colors.light.subtleText, paddingVertical: 12 },
 });

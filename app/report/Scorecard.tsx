@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import Colors from "@/constants/Colors";
 
 type ScoreItem = {
   label: string;
@@ -37,7 +38,7 @@ export default function ScoreCard({ totalScore, comment, items }: ScoreCardProps
           <View style={styles.gaugeWrap}>
             <View style={styles.gaugeTrack}>
               <LinearGradient
-                colors={["#0D99FF", "#1D4BFF"]}
+                colors={[Colors.light.primary, Colors.light.primaryStrong]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[styles.gaugeFill, { width: `${totalScore}%` }]}
@@ -86,18 +87,18 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 8,
-    backgroundColor: "#1D4BFF",
+    backgroundColor: Colors.light.primaryStrong,
     alignItems: "center",
     justifyContent: "center",
   },
-  sectionBadgeText: { fontSize: 12, fontWeight: "800", color: "#fff" },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: "#111" },
+  sectionBadgeText: { fontSize: 12, fontWeight: "800", color: Colors.light.card },
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: Colors.light.text },
 
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.card,
     borderRadius: 18,
     padding: 18,
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
   },
   cardDivider: {
     height: 1,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: Colors.light.mutedBackground,
     marginVertical: 14,
   },
 
@@ -115,14 +116,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 16,
   },
-  totalScoreLabel: { fontSize: 12, fontWeight: "600", color: "#999", marginBottom: 4 },
-  totalScoreNum: { fontSize: 32, fontWeight: "800", color: "#1D4BFF" },
-  totalScoreUnit: { fontSize: 18, fontWeight: "700", color: "#1D4BFF" },
+  totalScoreLabel: { fontSize: 12, fontWeight: "600", color: Colors.light.subtleText, marginBottom: 4 },
+  totalScoreNum: { fontSize: 32, fontWeight: "800", color: Colors.light.primaryStrong },
+  totalScoreUnit: { fontSize: 18, fontWeight: "700", color: Colors.light.primaryStrong },
 
   gaugeWrap: { flex: 1 },
   gaugeTrack: {
     height: 10,
-    backgroundColor: "#EEF3FF",
+    backgroundColor: Colors.light.primarySurface,
     borderRadius: 999,
     overflow: "hidden",
   },
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12,
     fontWeight: "600",
-    color: "#888",
+    color: Colors.light.subtleText,
     textAlign: "right",
   },
 
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
     width: 110,
   },
   scoreDot: { width: 10, height: 10, borderRadius: 999 },
-  scoreItemLabel: { fontSize: 14, fontWeight: "600", color: "#333" },
+  scoreItemLabel: { fontSize: 14, fontWeight: "600", color: Colors.light.text },
   scoreItemRight: {
     flex: 1,
     flexDirection: "row",
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
   scoreBarTrack: {
     flex: 1,
     height: 8,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: Colors.light.mutedBackground,
     borderRadius: 999,
     overflow: "hidden",
   },
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
   scoreItemNum: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#333",
+    color: Colors.light.text,
     width: 36,
     textAlign: "right",
   },

@@ -17,6 +17,7 @@ import {
 } from "../api/insights";
 import { getMyProfile } from "../api/users";
 import { getSignupProfile } from "../utils/profileStorage";
+import Colors from "@/constants/Colors";
 
 const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr);
@@ -126,7 +127,7 @@ export default function ReportHistoryScreen() {
           </Pressable>
         </View>
         <View style={[styles.safe, { justifyContent: "center", alignItems: "center" }]}>
-          <ActivityIndicator size="large" color="#3F7BFF" />
+          <ActivityIndicator size="large" color={Colors.light.primaryStrong} />
         </View>
       </SafeAreaView>
     );
@@ -253,7 +254,7 @@ export default function ReportHistoryScreen() {
                   ]}
                 >
                   <LinearGradient
-                    colors={["#E8E8E8", "#F2F2F2"]}
+                    colors={[Colors.light.mutedBackground, Colors.light.background]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                     style={styles.weekTopBar}
@@ -281,7 +282,7 @@ export default function ReportHistoryScreen() {
                         </Text>
                       </View>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color="#3F7BFF" />
+                    <Ionicons name="chevron-forward" size={18} color={Colors.light.primaryStrong} />
                   </View>
                 </Pressable>
               ))
@@ -313,12 +314,12 @@ export default function ReportHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F6F6F6" },
+  safe: { flex: 1, backgroundColor: Colors.light.background },
   header: { height: 54, justifyContent: "center", paddingHorizontal: 14 },
   backBtn: { width: 40, height: 40, justifyContent: "center" },
   scroll: { paddingHorizontal: 18, paddingBottom: 18 },
-  title: { marginTop: 14, fontSize: 20, fontWeight: "700", color: "#111", lineHeight: 28 },
-  titleAccent: { color: "#3F7BFF", fontWeight: "700" },
+  title: { marginTop: 14, fontSize: 20, fontWeight: "700", color: Colors.light.text, lineHeight: 28 },
+  titleAccent: { color: Colors.light.primaryStrong, fontWeight: "700" },
   filterSection: {
     marginTop: 18,
   },
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 13,
     fontWeight: "600",
-    color: "#666",
+    color: Colors.light.subtleText,
   },
   filterRow: {
     gap: 8,
@@ -336,40 +337,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 34,
     borderRadius: 17,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.card,
     borderWidth: 1,
-    borderColor: "#E6E6E6",
+    borderColor: Colors.light.border,
     alignItems: "center",
     justifyContent: "center",
   },
   filterChipActive: {
-    backgroundColor: "#3F7BFF",
-    borderColor: "#3F7BFF",
+    backgroundColor: Colors.light.primaryStrong,
+    borderColor: Colors.light.primaryStrong,
   },
   filterChipText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#555",
+    color: Colors.light.subtleText,
   },
   filterChipTextActive: {
     color: "#FFFFFF",
   },
-  sectionLabel: { marginTop: 18, marginBottom: 10, fontSize: 13, fontWeight: "600", color: "#666" },
+  sectionLabel: { marginTop: 18, marginBottom: 10, fontSize: 13, fontWeight: "600", color: Colors.light.subtleText },
   listWrap: { marginTop: 10 },
   weekList: { gap: 10 },
   weekItem: {
     width: 349,
     alignSelf: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.card,
     borderRadius: 18,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 8 },
     elevation: 3,
     borderWidth: 1,
-    borderColor: "#F0F0F0",
+    borderColor: Colors.light.border,
   },
   weekTopBar: { width: "100%", height: 28 },
   weekItemContent: {
@@ -378,26 +379,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  weekTitle: { fontSize: 14, fontWeight: "600", color: "#111" },
-  weekRange: { fontSize: 12, fontWeight: "400", color: "#999" },
+  weekTitle: { fontSize: 14, fontWeight: "600", color: Colors.light.text },
+  weekRange: { fontSize: 12, fontWeight: "400", color: Colors.light.subtleText },
   weekMiniRow: {
     marginTop: 6,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
-  miniLabel: { fontSize: 11, fontWeight: "500", color: "#888" },
-  miniValueBlue: { fontSize: 12, fontWeight: "600", color: "#3F7BFF" },
-  miniUnit: { fontSize: 11, fontWeight: "400", color: "#888" },
-  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: "#DDD", marginHorizontal: 2 },
-  scoreText: { fontSize: 12, fontWeight: "500", color: "#666" },
+  miniLabel: { fontSize: 11, fontWeight: "500", color: Colors.light.subtleText },
+  miniValueBlue: { fontSize: 12, fontWeight: "600", color: Colors.light.primaryStrong },
+  miniUnit: { fontSize: 11, fontWeight: "400", color: Colors.light.subtleText },
+  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: Colors.light.border, marginHorizontal: 2 },
+  scoreText: { fontSize: 12, fontWeight: "500", color: Colors.light.subtleText },
   loadMoreBtn: {
     marginTop: 16,
     alignSelf: "center",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: Colors.light.mutedBackground,
   },
-  loadMoreText: { fontSize: 13, fontWeight: "600", color: "#333" },
+  loadMoreText: { fontSize: 13, fontWeight: "600", color: Colors.light.text },
 });

@@ -26,6 +26,7 @@ import {
 } from "./summaryMetrics";
 import { getMyProfile } from "../api/users";
 import { getSignupProfile } from "../utils/profileStorage";
+import Colors from "@/constants/Colors";
 
 const dayOfWeekToLabel = (dayOfWeek: string): string => {
   const map: Record<string, string> = {
@@ -171,7 +172,7 @@ export default function ReportDetailScreen() {
           </Pressable>
         </View>
         <View style={[styles.safe, { justifyContent: "center", alignItems: "center" }]}>
-          <ActivityIndicator size="large" color="#3F7BFF" />
+          <ActivityIndicator size="large" color={Colors.light.primaryStrong} />
         </View>
       </SafeAreaView>
     );
@@ -214,7 +215,7 @@ export default function ReportDetailScreen() {
 
         <View style={styles.statsWrap}>
           <LinearGradient
-            colors={["#E8E8E8", "#f2f2f2"]}
+            colors={[Colors.light.mutedBackground, Colors.light.background]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.statBarBg}
@@ -315,13 +316,13 @@ export default function ReportDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F6F6F6" },
+  safe: { flex: 1, backgroundColor: Colors.light.background },
 
   header: { height: 54, justifyContent: "center", paddingHorizontal: 14 },
   backBtn: { width: 40, height: 40, justifyContent: "center" },
   scrollContent: { paddingHorizontal: 18, paddingBottom: 40 },
-  title: { marginTop: 14, fontSize: 20, fontWeight: "700", color: "#111", lineHeight: 28 },
-  titleAccent: { color: "#3F7BFF", fontWeight: "700" },
+  title: { marginTop: 14, fontSize: 20, fontWeight: "700", color: Colors.light.text, lineHeight: 28 },
+  titleAccent: { color: Colors.light.primaryStrong, fontWeight: "700" },
   statsWrap: { width: 349, alignSelf: "center", marginTop: 18 },
   statBarBg: {
     width: 349,
@@ -337,26 +338,26 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   statCol: { alignItems: "center" },
-  statLabel: { fontSize: 13, fontWeight: "500", color: "#777" },
-  valueNumber: { marginTop: 6, fontSize: 15, fontWeight: "600", color: "#3F7BFF" },
-  valueUnit: { fontSize: 15, fontWeight: "600", color: "#111" },
-  statsDivider: { width: 349, height: 1, backgroundColor: "#E6E6E6", marginTop: 12 },
+  statLabel: { fontSize: 13, fontWeight: "500", color: Colors.light.subtleText },
+  valueNumber: { marginTop: 6, fontSize: 15, fontWeight: "600", color: Colors.light.primaryStrong },
+  valueUnit: { fontSize: 15, fontWeight: "600", color: Colors.light.text },
+  statsDivider: { width: 349, height: 1, backgroundColor: Colors.light.border, marginTop: 12 },
   clipboardWrap: { marginTop: 22, alignItems: "center" },
   paper: {
     width: 254,
     minHeight: 160,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.card,
     borderRadius: 18,
     paddingHorizontal: 18,
     paddingVertical: 16,
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOpacity: 0.12,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 10 },
     elevation: 4,
   },
-  paperTitle: { fontSize: 13, fontWeight: "600", color: "#666", marginBottom: 10 },
-  paperBody: { fontSize: 12.5, fontWeight: "400", color: "#666", lineHeight: 18 },
+  paperTitle: { fontSize: 13, fontWeight: "600", color: Colors.light.subtleText, marginBottom: 10 },
+  paperBody: { fontSize: 12.5, fontWeight: "400", color: Colors.light.subtleText, lineHeight: 18 },
   btn: {
     marginTop: 32,
     alignSelf: "center",

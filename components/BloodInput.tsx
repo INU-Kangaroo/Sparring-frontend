@@ -7,6 +7,8 @@ import {
   TextInput,
   Pressable,
   Platform,
+  Keyboard,
+  KeyboardAvoidingView
 } from "react-native";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -34,13 +36,30 @@ export default function BloodInputModal({
   const [time, setTime] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
 
-  const [date] = useState(new Date());
+  const handleSubmit = () => {
+    if (!value) return;
+    Keyboard.dismiss();
+
+    onSubmit({
+      title: type,
+      value,
+      measuredAt: time,
+    });
+  };
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          
+      
+      <Pressable style={styles.overlay} onPress={onClose}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ width: "100%" }}
+          >
+        >
+          <Pressable
+            style={styles.container}
+            onPress={(e) => e.stopPropagation()}
+          >
           <Text style={styles.title}>혈당 기록</Text>
 
           {/* 유형 선택 */}
@@ -78,6 +97,8 @@ export default function BloodInputModal({
             keyboardType="numeric"
             placeholder="예: 98"
             style={styles.input}
+            returnKeyType="done"
+            onSubmitEditing={handleSubmit}
           />
 
           {/* 시간 선택 */}
@@ -87,7 +108,7 @@ export default function BloodInputModal({
             onPress={() => setShowPicker(true)}
           >
             <Text style={styles.timeText}>
-              측정 시간: {time.toLocaleTimeString()}
+              {time.toLocaleTimeString()}
             </Text>
           </Pressable>
 
@@ -103,31 +124,22 @@ export default function BloodInputModal({
             />
           )}
 
-
-          {/* 버튼 */}
-          <Pressable
-            style={styles.submitBtn}
-            onPress={() => {
-              if (!value) return;
-
-              onSubmit({
-                title: type,
-                value,
-                measuredAt: new Date(),
-              });
-            }}
-          >
+          {/* 저장 버튼 */}
+          <Pressable style={styles.submitBtn} onPress={handleSubmit}>
             <Text style={styles.submitText}>저장</Text>
           </Pressable>
 
+          {/* 닫기 */}
           <Pressable onPress={onClose}>
             <Text style={styles.cancel}>닫기</Text>
           </Pressable>
-        </View>
-      </View>
+        </Pressable>
+        </KeyboardAvoidingView>
+      </Pressable>
     </Modal>
   );
 }
+
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,

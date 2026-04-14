@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sparring.kangaroo",
+       "newArchEnabled": false,
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSExceptionDomains": {
@@ -45,7 +46,6 @@
       "@react-native-community/datetimepicker",
       "expo-font",
       "expo-secure-store",
-      "expo-apple-authentication",
       [
         "expo-build-properties",
         {

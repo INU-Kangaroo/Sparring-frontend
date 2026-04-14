@@ -20,6 +20,8 @@ import {
   type HomeResponse,
 } from "../api/home";
 
+import { syncStepsFromHealthKit } from "../api/steps";
+
 const SCREEN_W = Dimensions.get("window").width;
 
 export default function MainScreen() {
@@ -43,16 +45,23 @@ export default function MainScreen() {
 
   /* ---------------- API ---------------- */
 
-  useEffect(() => {
-    (async () => {
-      const data = await getHome();
+useEffect(() => {
+  (async () => {
+    try {
+      console.log("걸음수 sync 시작");
+      await syncStepsFromHealthKit();
+      console.log("걸음수 sync 완료");
 
+      const data = await getHome();
       setHome(data);
 
       const converted = convertChartData(data.bloodSugarChart);
       setChart(converted);
-    })();
-  }, []);
+    } catch (e) {
+      console.log("걸음수 sync 실패", e);
+    }
+  })();
+}, []);
 
   if (!home) return null;
 
@@ -209,7 +218,7 @@ export default function MainScreen() {
 /* ---------------- styles ---------------- */
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F3F3F3" },
+  safe: { flex: 1, backgroundColor: "#ffffff" },
   header: {
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -265,6 +274,8 @@ const styles = StyleSheet.create({
 
 card: {
   backgroundColor: "#fff",
+  borderColor: "#EAEAEA",
+  borderWidth: 1,
   borderRadius: 16,
   paddingVertical: 20, 
   paddingHorizontal: 10,

@@ -111,7 +111,7 @@ export default function LoginScreen() {
             disabled={isLoginDisabled}
           >
             <Image
-              source={require("../../assets/images/login.png")}
+              source={require("../../assets/images/logo.png")}
               style={styles.leftIcon}
               resizeMode="contain"
             />
@@ -182,10 +182,10 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   leftIcon: {
-    width: 20,
-    height: 20,
+    width: 25,
+    height: 25,
     position: "absolute",
-    left: 18,
+    left: 20,
   },
   btnText: {
     fontSize: 14,

@@ -10,6 +10,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -306,7 +307,14 @@ export default function ChatAI() {
     if (isBot) {
       return (
         <View style={styles.rowLeft}>
-          <View style={styles.avatar} />
+          <View style={styles.avatar}>
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={{ width: 35, height: 40, borderRadius: 14 }}
+              resizeMode="cover"
+            />
+          </View>
+
           <View style={styles.leftBubbleWrap}>
             <Text style={styles.botName}>{BOT_NAME}</Text>
             <View style={styles.bubbleLeft}>
@@ -426,7 +434,7 @@ export default function ChatAI() {
               pressed && canSend && { opacity: 0.9 },
             ]}
           >
-            <Ionicons name="send" size={18} color="#CFCFCF" />
+            <Ionicons name="send" size={18} color="#D99197" />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -436,7 +444,7 @@ export default function ChatAI() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: "#F6F6F6" },
+  safe: { flex: 1, backgroundColor: "#ffffff" },
 
   header: {
     height: 64,
@@ -479,9 +487,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#DADADA",
     marginRight: 10,
     marginTop: 2,
+    justifyContent: "center",
+  alignItems: "center",
   },
-  leftBubbleWrap: { maxWidth: "78%" },
-  botName: { fontSize: 12, color: "#8C8C8C", marginBottom: 6 },
+  leftBubbleWrap: { maxWidth: "76%" },
+  botName: { fontSize: 12, color: "#D99197", marginBottom: 6 },
   bubbleLeft: {
     backgroundColor: "#E7E7E7",
     borderRadius: 18,
@@ -494,7 +504,7 @@ const styles = StyleSheet.create({
   rowRight: { alignItems: "flex-end", marginBottom: 18 },
   bubbleRight: {
     maxWidth: "78%",
-    backgroundColor: "#6FA8FF",
+    backgroundColor: "#D99197",
     borderRadius: 18,
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -525,8 +535,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderWidth: 1,
-    borderColor: "#E0E8FF",
-    shadowColor: "#4060FF",
+    borderColor: "#F2F2F2",
+    shadowColor: "#D99197",
     shadowOpacity: 0.06,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
@@ -535,7 +545,7 @@ const styles = StyleSheet.create({
   faqBtnText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#3F7BFF",
+    color: "#D99197",
   },
 
   // 입력 바

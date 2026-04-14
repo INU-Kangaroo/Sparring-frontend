@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 
 type HorizonLineProps = {
-  text: string;
+  text?: string;
 };
 
 const HorizonLine = ({ text }: HorizonLineProps) => {

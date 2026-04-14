@@ -210,7 +210,7 @@ export default function BloodPressureScreen() {
             style={styles.darkBtn}
             onPress={() => {
               setModalTitle("혈압 측정 방법");
-              setModalContent("편안히 앉아서 측정하세요");
+              setModalContent( "1. 편안히 5분 간 휴식을 취합니다.\n\n2. 커프를 심장 높이에 위치해둡니다.\n\n3. 측정 중 말, 움직임 등을 금지합니다.\n\n4. 같은 시간대에 반복 측정합니다." );
               setModalVisible(true);
             }}
           >
@@ -221,7 +221,7 @@ export default function BloodPressureScreen() {
             style={styles.darkBtn}
             onPress={() => {
               setModalTitle("정상 혈압 수치");
-              setModalContent("120/80 mmHg 이하");
+              setModalContent( "✔ 정상: 수축기 < 120, 이완기 < 80\n\n✔ 경계성 고혈압: 수축기 120~129, 이완기 < 80\n\n✔ 1차 고혈압: 수축기 130~139 또는 이완기 80~89\n\n✔ 2차 고혈압: 수축기 ≥ 140 또는 이완기 ≥ 90" );
               setModalVisible(true);
             }}
           >

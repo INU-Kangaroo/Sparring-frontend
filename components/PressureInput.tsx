@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   Modal,
   View,
@@ -7,9 +7,12 @@ import {
   Pressable,
   TextInput,
   Platform,
+  Keyboard,
+  KeyboardAvoidingView
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
+
 
 type Props = {
   visible: boolean;
@@ -38,6 +41,8 @@ export default function PressureInput({
   const [time, setTime] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
 
+  const dRef = useRef<TextInput>(null);
+
   useEffect(() => {
     if (!visible) return;
 
@@ -54,14 +59,21 @@ export default function PressureInput({
 
   const handleSave = async () => {
     if (!canSave) return;
+    Keyboard.dismiss();
     await onSubmit(Number(s), Number(d), time);
   };
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          
+      <Pressable style={styles.overlay} onPress={onClose}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ width: "100%" }}
+        >
+          <Pressable
+            style={styles.container}
+            onPress={(e) => e.stopPropagation()}
+      >
           <Text style={styles.title}>{title}</Text>
 
           {/* 수축기 */}
@@ -72,16 +84,21 @@ export default function PressureInput({
             keyboardType="numeric"
             placeholder="예: 120"
             style={styles.input}
+            returnKeyType="next"
+            onSubmitEditing={() => dRef.current?.focus()}
           />
 
           {/* 이완기 */}
           <Text style={styles.label}>이완기 (mmHg)</Text>
           <TextInput
+            ref={dRef}
             value={d}
             onChangeText={setD}
             keyboardType="numeric"
             placeholder="예: 80"
             style={styles.input}
+            returnKeyType="done"
+            onSubmitEditing={handleSave}
           />
 
           {/* 시간 */}
@@ -129,8 +146,9 @@ export default function PressureInput({
           <Pressable onPress={onClose}>
             <Text style={styles.cancel}>닫기</Text>
           </Pressable>
-        </View>
-      </View>
+        </Pressable>
+         </KeyboardAvoidingView>
+      </Pressable>
     </Modal>
   );
 }

@@ -1,4 +1,5 @@
 import { get, post } from "./index";
+import AppleHealthKit from "react-native-health";
 
 export type StepSource = "APPLE_HEALTH" | "GOOGLE_FIT" | "MANUAL" | string;
 
@@ -76,6 +77,65 @@ async function getStepRecords(params: StepRecordParams): Promise<StepsRecord[]> 
   } catch {
     return [];
   }
+}
+
+export async function syncStepsFromHealthKit() {
+  console.log("🚀 [SYNC] 시작");
+
+  return new Promise((resolve, reject) => {
+    const permissions = {
+      permissions: {
+        read: ["StepCount"], // 🔥 중요
+        write: [],
+      },
+    };
+
+    console.log("📌 [SYNC] initHealthKit 호출");
+
+    AppleHealthKit.initHealthKit(permissions, (err) => {
+      console.log("🧪 initHealthKit 콜백 들어옴");
+
+      if (err) {
+        console.log("❌ initHealthKit 에러:", err);
+        return reject(err);
+      }
+
+      console.log("✅ HealthKit 초기화 성공");
+
+      const options = {
+        date: new Date().toISOString(),
+      };
+
+      console.log("👣 걸음수 가져오기 시작");
+
+      AppleHealthKit.getStepCount(options, async (err, result) => {
+        console.log("🧪 getStepCount 콜백 들어옴");
+
+        if (err) {
+          console.log("❌ getStepCount 에러:", err);
+          return reject(err);
+        }
+
+        console.log("✅ 걸음수 가져오기 성공:", result);
+
+        const payload: StepSyncRequest = {
+          stepDate: new Date().toISOString().slice(0, 10),
+          steps: result.value,
+          source: "APPLE_HEALTH",
+        };
+
+        try {
+          console.log("📡 서버로 전송:", payload);
+          const res = await syncSteps(payload);
+          console.log("✅ 서버 응답:", res);
+          resolve(res);
+        } catch (e) {
+          console.log("❌ 서버 전송 실패:", e);
+          reject(e);
+        }
+      });
+    });
+  });
 }
 
 export async function syncSteps(payload?: StepSyncRequest) {

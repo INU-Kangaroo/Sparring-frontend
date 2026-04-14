@@ -1,5 +1,6 @@
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import Colors from "@/constants/Colors";
 
 type NextButtonProps = {
   title?: string;
@@ -21,7 +22,7 @@ export default function NextButton({
     >
       {disabled ? (
         <LinearGradient
-          colors={["#8C8C8C", "#8C8C8C"]}
+          colors={[Colors.light.stone, Colors.light.stone]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.button}
@@ -30,7 +31,7 @@ export default function NextButton({
         </LinearGradient>
       ) : (
         <LinearGradient
-          colors={["#D99197", "#D99197"]}
+          colors={[Colors.light.primary, Colors.light.primaryMuted]}
           start={{ x: 1, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.button}
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     overflow: "hidden",
 
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 5,

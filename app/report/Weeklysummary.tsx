@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ActivitySummary, Highlight } from "../api/insights";
+import Colors from "@/constants/Colors";
 
 type DayData = {
   day: string;
@@ -67,7 +68,7 @@ export default function WeeklySummary({
         </View>
         <View style={styles.gaugeTrack}>
           <LinearGradient
-            colors={["#0D99FF", "#1D4BFF"]}
+            colors={[Colors.light.primary, Colors.light.primaryStrong]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={[styles.gaugeFill, { width: `${measurePct}%` }]}
@@ -165,18 +166,18 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 8,
-    backgroundColor: "#1D4BFF",
+    backgroundColor: Colors.light.primaryStrong,
     alignItems: "center",
     justifyContent: "center",
   },
-  sectionBadgeText: { fontSize: 12, fontWeight: "800", color: "#fff" },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: "#111" },
+  sectionBadgeText: { fontSize: 12, fontWeight: "800", color: Colors.light.card },
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: Colors.light.text },
 
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.card,
     borderRadius: 18,
     padding: 18,
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -184,7 +185,7 @@ const styles = StyleSheet.create({
   },
   cardDivider: {
     height: 1,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: Colors.light.mutedBackground,
     marginVertical: 14,
   },
 
@@ -194,14 +195,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  statLabel: { fontSize: 14, fontWeight: "600", color: "#666" },
+  statLabel: { fontSize: 14, fontWeight: "600", color: Colors.light.subtleText },
   statValue: { fontSize: 14 },
-  statAccent: { fontWeight: "700", color: "#3F7BFF" },
-  statGray: { fontWeight: "600", color: "#999" },
+  statAccent: { fontWeight: "700", color: Colors.light.primaryStrong },
+  statGray: { fontWeight: "600", color: Colors.light.subtleText },
 
   gaugeTrack: {
     height: 8,
-    backgroundColor: "#EEF3FF",
+    backgroundColor: Colors.light.primarySurface,
     borderRadius: 999,
     overflow: "hidden",
     marginBottom: 4,
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
   gaugePct: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#3F7BFF",
+    color: Colors.light.primaryStrong,
     textAlign: "right",
     marginBottom: 4,
   },
@@ -220,28 +221,28 @@ const styles = StyleSheet.create({
   },
   activityCard: {
     flex: 1,
-    backgroundColor: "#F8FAFF",
+    backgroundColor: Colors.light.background,
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E6EEFF",
+    borderColor: Colors.light.primarySurfaceStrong,
   },
   activityLabel: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#7B86A7",
+    color: Colors.light.subtleText,
     marginBottom: 6,
   },
   activityValue: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#2F4FD7",
+    color: Colors.light.primaryStrong,
   },
   activitySub: {
     marginTop: 4,
     fontSize: 12,
     fontWeight: "700",
-    color: "#8B93A8",
+    color: Colors.light.subtleText,
   },
 
   dayRow: {
@@ -249,9 +250,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   dayCol: { alignItems: "center", gap: 4 },
-  dayLabel: { fontSize: 12, fontWeight: "600", color: "#999" },
+  dayLabel: { fontSize: 12, fontWeight: "600", color: Colors.light.subtleText },
   dayEmoji: { fontSize: 20 },
-  dayCount: { fontSize: 11, fontWeight: "600", color: "#555" },
+  dayCount: { fontSize: 11, fontWeight: "600", color: Colors.light.text },
 
   highlightsWrap: { gap: 12 },
   highlightRow: {

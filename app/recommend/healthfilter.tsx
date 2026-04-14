@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-nati
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchExerciseRecommendation, ExerciseRequest } from "../api/recommendation";
+import Colors from "@/constants/Colors";
 
 type Option = { id: string; label: string };
 
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
     borderColor: "#EFEFEF",
   },
   chipActive: {
-    backgroundColor: "#0D99FF",
+    backgroundColor: Colors.light.primaryStrong,
   },
   chipText: {
     fontSize: 15,

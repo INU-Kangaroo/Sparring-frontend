@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import Colors from "@/constants/Colors";
 
 type HomeFabProps = {
   onPress?: () => void;
@@ -13,12 +14,12 @@ export default function HomeFab({ onPress }: HomeFabProps) {
   return (
     <Pressable style={styles.fabWrap} onPress={onPress}>
       <LinearGradient
-        colors={["#D99197", "#D99197"]}
+        colors={[Colors.light.primary, Colors.light.primaryMuted]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.fab}
       >
-        <Ionicons name="home" size={22} color="#fff" />
+        <Ionicons name="home" size={22} color={Colors.light.card} />
       </LinearGradient>
     </Pressable>
   );
@@ -30,7 +31,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
 
     // iOS shadow
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,

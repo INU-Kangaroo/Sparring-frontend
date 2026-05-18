@@ -155,22 +155,23 @@ export async function refreshSupplementRecommendation(): Promise<SupplementRespo
 }
 
 export async function fetchFoodRecommendation(
-  body: FoodRecommendationRequest
+  params: FoodRecommendationRequest
 ): Promise<FoodRecommendationResponse> {
-
   const res = await post<FoodRecommendationResponse>(
-    `/api/recommendations/food?mealType=${body.mealType}`
+    "/api/recommendations/food",
+    undefined,
+    { params }
   );
-
   return unwrap<FoodRecommendationResponse>(res.data);
 }
+
 export async function refreshFoodRecommendation(
-  body: FoodRecommendationRequest
+  params: FoodRecommendationRequest
 ): Promise<FoodRecommendationResponse> {
-
   const res = await post<FoodRecommendationResponse>(
-    `/api/recommendations/food/refresh?mealType=${body.mealType}`
+    "/api/recommendations/food/refresh",
+    undefined,
+    { params }
   );
-
   return unwrap<FoodRecommendationResponse>(res.data);
 }

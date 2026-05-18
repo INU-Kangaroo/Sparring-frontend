@@ -1,6 +1,8 @@
 import { get, post } from "./index";
 import AppleHealthKit from "react-native-health";
 
+/* ---------------- types ---------------- */
+
 export type StepSource = "APPLE_HEALTH" | "GOOGLE_FIT" | "MANUAL" | string;
 
 export type StepSyncRequest = {
@@ -16,68 +18,24 @@ export type StepSyncResponse = {
   syncedAt?: string;
 };
 
-export type TodayStepsResponse = {
-  date?: string;
-  stepDate?: string;
-  steps?: number;
-  totalSteps?: number;
-  updatedAt?: string;
-};
+/* ---------------- utils ---------------- */
 
-export type StepsRecord = {
-  date?: string;
-  stepDate?: string;
-  steps?: number;
-  totalSteps?: number;
-};
-
-type StepRecordParams = {
-  period: "daily" | "weekly" | "monthly" | "range";
-  date?: string;
-  year?: number;
-  month?: number;
-  startDate?: string;
-  endDate?: string;
-};
-
-function unwrap<T = any>(resData: any): T {
-  if (resData == null) return resData as T;
-  if (typeof resData === "object" && "data" in resData) {
-    return resData.data as T;
-  }
-  return resData as T;
+function getTodayKST() {
+  // YYYY-MM-DD (로컬 기준)
+  return new Date().toLocaleDateString("en-CA");
 }
 
-function normalizeTodaySteps(data?: TodayStepsResponse | null): TodayStepsResponse {
-  const totalSteps = data?.totalSteps ?? data?.steps ?? 0;
-  return {
-    date: data?.date ?? data?.stepDate ?? "",
-    stepDate: data?.stepDate ?? data?.date ?? "",
-    steps: data?.steps ?? totalSteps,
-    totalSteps,
-    updatedAt: data?.updatedAt,
-  };
+function getTodayStart() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
 }
 
-function normalizeStepRecord(record: StepsRecord): StepsRecord {
-  const totalSteps = record?.totalSteps ?? record?.steps ?? 0;
-  return {
-    date: record?.date ?? record?.stepDate ?? "",
-    stepDate: record?.stepDate ?? record?.date ?? "",
-    steps: record?.steps ?? totalSteps,
-    totalSteps,
-  };
+function getNow() {
+  return new Date().toISOString();
 }
 
-async function getStepRecords(params: StepRecordParams): Promise<StepsRecord[]> {
-  try {
-    const res = await get("/api/records/steps", { params });
-    const data = unwrap<StepsRecord[] | any>(res.data ?? res);
-    return Array.isArray(data) ? data.map(normalizeStepRecord) : [];
-  } catch {
-    return [];
-  }
-}
+/* ---------------- MAIN SYNC ---------------- */
 
 export async function syncStepsFromHealthKit() {
   console.log("🚀 [SYNC] 시작");
@@ -85,48 +43,56 @@ export async function syncStepsFromHealthKit() {
   return new Promise((resolve, reject) => {
     const permissions = {
       permissions: {
-        read: ["StepCount"], // 🔥 중요
+        read: ["StepCount"],
         write: [],
       },
     };
 
-    console.log("📌 [SYNC] initHealthKit 호출");
+    console.log("📌 HealthKit init");
 
     AppleHealthKit.initHealthKit(permissions, (err) => {
-      console.log("🧪 initHealthKit 콜백 들어옴");
-
       if (err) {
-        console.log("❌ initHealthKit 에러:", err);
+        console.log("❌ initHealthKit 실패:", err);
         return reject(err);
       }
 
-      console.log("✅ HealthKit 초기화 성공");
+      console.log("✅ HealthKit init 성공");
 
       const options = {
-        date: new Date().toISOString(),
+        startDate: getTodayStart(),
+        endDate: getNow(),
       };
 
-      console.log("👣 걸음수 가져오기 시작");
+      console.log("👣 StepCount 요청 옵션:", options);
 
       AppleHealthKit.getStepCount(options, async (err, result) => {
-        console.log("🧪 getStepCount 콜백 들어옴");
-
         if (err) {
           console.log("❌ getStepCount 에러:", err);
           return reject(err);
         }
 
-        console.log("✅ 걸음수 가져오기 성공:", result);
+        console.log("📊 RAW HealthKit result:", result);
+
+        // 🔥 안전 파싱 (버전마다 구조 다름)
+        const steps =
+          result?.value ??
+          result?.quantity ??
+          result?.steps ??
+          result ??
+          0;
+
+        console.log("👣 PARSED steps:", steps);
 
         const payload: StepSyncRequest = {
-          stepDate: new Date().toISOString().slice(0, 10),
-          steps: result.value,
+          stepDate: getTodayKST(),
+          steps: Number(steps),
           source: "APPLE_HEALTH",
         };
 
+        console.log("📡 서버 전송 payload:", payload);
+
         try {
-          console.log("📡 서버로 전송:", payload);
-          const res = await syncSteps(payload);
+          const res = await post("/api/records/steps/sync", payload);
           console.log("✅ 서버 응답:", res);
           resolve(res);
         } catch (e) {
@@ -138,46 +104,28 @@ export async function syncStepsFromHealthKit() {
   });
 }
 
+/* ---------------- API WRAPPERS ---------------- */
+
 export async function syncSteps(payload?: StepSyncRequest) {
   try {
     const res = payload
       ? await post("/api/records/steps/sync", payload)
       : await post("/api/records/steps/sync");
-    return unwrap<StepSyncResponse | any>(res.data ?? res);
+
+    return res?.data ?? res;
   } catch (e) {
     console.error("steps sync error", e);
     return null;
   }
 }
 
-export async function getTodaySteps(): Promise<TodayStepsResponse> {
+/* ---------------- TODAY ---------------- */
+
+export async function getTodaySteps() {
   try {
     const res = await get("/api/records/steps/today");
-    return normalizeTodaySteps(unwrap<TodayStepsResponse>(res.data ?? res));
+    return res?.data ?? res;
   } catch {
-    return normalizeTodaySteps(null);
+    return { steps: 0 };
   }
-}
-
-export async function getSteps(
-  startDate: string,
-  endDate: string
-): Promise<StepsRecord[]> {
-  return getStepRecords({ period: "range", startDate, endDate });
-}
-
-export async function getDailySteps(date: string) {
-  return getStepRecords({ period: "daily", date });
-}
-
-export async function getWeeklySteps(date?: string) {
-  return getStepRecords({ period: "weekly", ...(date ? { date } : {}) });
-}
-
-export async function getMonthlySteps(year: number, month?: number) {
-  return getStepRecords({ period: "monthly", year, ...(month ? { month } : {}) });
-}
-
-export async function getStepLogs(startDate: string, endDate: string) {
-  return getStepRecords({ period: "range", startDate, endDate });
 }

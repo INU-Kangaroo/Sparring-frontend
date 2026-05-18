@@ -288,6 +288,7 @@ const styles = StyleSheet.create({
   },
 
   headerRow: {
+    marginTop: 23,
     flexDirection: "row",
     alignItems: "center",
   },
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     marginTop: 16,
     marginBottom: 70,
-    fontSize: 16,
+    fontSize: 14,
     lineHeight: 24,
     color: "#8C8C8C",
     fontFamily: PRETENDARD_MEDIUM,

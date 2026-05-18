@@ -65,8 +65,6 @@ useEffect(() => {
 
   if (!home) return null;
 
-  /* ---------------- UI ---------------- */
-
   return (
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         

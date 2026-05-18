@@ -13,70 +13,155 @@ import { router } from "expo-router";
 import { useOauthLogin } from "../../hooks/useOAuthLogin";
 import { useKakaoLogin } from "../../hooks/useKakaoLogin";
 
+import { getSurveyCompleted } from "../api/survey";
+
 export default function LoginScreen() {
   const google = useOauthLogin();
   const kakao = useKakaoLogin();
 
+  // 로그인 후 설문 여부 체크
+  const checkSurveyAndMove = async () => {
+    try {
+      console.log("설문 완료 여부 확인");
+
+      const surveyCompletedRes =
+        await getSurveyCompleted();
+
+      console.log(
+        "surveyCompletedRes =",
+        surveyCompletedRes
+      );
+
+      const completed =
+        surveyCompletedRes === true ||
+        surveyCompletedRes?.completed === true ||
+        surveyCompletedRes?.isCompleted === true ||
+        surveyCompletedRes?.data === true;
+
+      // 설문 완료
+      if (completed) {
+        console.log("메인 페이지 이동");
+
+        router.replace("/main/main");
+      } else {
+        // 설문 미완료
+        console.log("설문 페이지 이동");
+
+        router.replace("/survey");
+      }
+    } catch (error) {
+      console.log(
+        "설문 완료 여부 확인 실패 =",
+        error
+      );
+
+      Alert.alert(
+        "오류",
+        "사용자 정보를 불러오지 못했습니다."
+      );
+    }
+  };
+
+  // 구글 로그인
   const onGoogleLogin = async () => {
     try {
       console.log("구글 로그인 버튼 클릭");
+
       await google.login();
-      console.log("구글 로그인 성공 → /main/main 이동");
-      router.replace("/main/main");
+
+      console.log("구글 로그인 성공");
+
+      await checkSurveyAndMove();
     } catch (error) {
       console.log("구글 로그인 실패 =", error);
+
       const message =
-        error instanceof Error ? error.message : "구글 로그인에 실패했습니다.";
+        error instanceof Error
+          ? error.message
+          : "구글 로그인에 실패했습니다.";
+
       Alert.alert("로그인 실패", message);
     }
   };
 
+  // 카카오 로그인
   const onKakaoLogin = async () => {
     try {
       console.log("카카오 로그인 버튼 클릭");
+
       await kakao.login();
-      console.log("카카오 로그인 성공 → /main/main 이동");
-      router.replace("/main/main");
+
+      console.log("카카오 로그인 성공");
+
+      await checkSurveyAndMove();
     } catch (error) {
-      console.log("카카오 로그인 버튼 핸들러 실패 =", error);
+      console.log(
+        "카카오 로그인 버튼 핸들러 실패 =",
+        error
+      );
+
       const message =
-        error instanceof Error ? error.message : "카카오 로그인에 실패했습니다.";
+        error instanceof Error
+          ? error.message
+          : "카카오 로그인에 실패했습니다.";
+
       Alert.alert("로그인 실패", message);
     }
   };
 
   const goSignup = () => {
-    router.push({ pathname: "/sign-up/email" as any });
+    router.push({
+      pathname: "/sign-up/email" as any,
+    });
   };
 
   const goLogin = () => {
     router.push("/login/login");
   };
 
-  const isAnyLoading = google.isLoading || kakao.isLoading;
-  const isGoogleDisabled = google.disabled || kakao.isLoading;
+  const isAnyLoading =
+    google.isLoading || kakao.isLoading;
+
+  const isGoogleDisabled =
+    google.disabled || kakao.isLoading;
+
   const isLoginDisabled = isAnyLoading;
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView
+      style={styles.safe}
+      edges={["top", "bottom"]}
+    >
       <View style={styles.container}>
         <View style={styles.centerWrap}>
           <Text style={styles.topText}>
             나의 건강 시그널이 궁금하다면?
           </Text>
-           <Text style={styles.title}>Sparring과 같이 확인하기</Text>
+
+          <Text style={styles.title}>
+            Sparring과 같이 확인하기
+          </Text>
 
           <Image
             source={require("../../assets/images/logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.subtitle}>Sparring</Text>
+
+          <Text style={styles.subtitle}>
+            Sparring
+          </Text>
         </View>
 
         <View style={styles.buttonWrap}>
+          {/* 구글 로그인 */}
           <Pressable
-            style={[styles.socialBtn, isGoogleDisabled ? styles.disabledBtn : null]}
+            style={[
+              styles.socialBtn,
+              isGoogleDisabled
+                ? styles.disabledBtn
+                : null,
+            ]}
             onPress={onGoogleLogin}
             disabled={isGoogleDisabled}
           >
@@ -85,13 +170,22 @@ export default function LoginScreen() {
               style={styles.leftIcon}
               resizeMode="contain"
             />
+
             <Text style={styles.btnText}>
-              {google.isLoading ? "로그인 중..." : "Google 로그인"}
+              {google.isLoading
+                ? "로그인 중..."
+                : "Google 로그인"}
             </Text>
           </Pressable>
 
+          {/* 카카오 로그인 */}
           <Pressable
-            style={[styles.socialBtn, kakao.disabled ? styles.disabledBtn : null]}
+            style={[
+              styles.socialBtn,
+              kakao.disabled
+                ? styles.disabledBtn
+                : null,
+            ]}
             onPress={onKakaoLogin}
             disabled={kakao.disabled}
           >
@@ -100,13 +194,22 @@ export default function LoginScreen() {
               style={styles.leftIcon}
               resizeMode="contain"
             />
+
             <Text style={styles.btnText}>
-              {kakao.isLoading ? "로그인 중..." : "카카오 로그인"}
+              {kakao.isLoading
+                ? "로그인 중..."
+                : "카카오 로그인"}
             </Text>
           </Pressable>
 
+          {/* 일반 로그인 */}
           <Pressable
-            style={[styles.socialBtn, isLoginDisabled ? styles.disabledBtn : null]}
+            style={[
+              styles.socialBtn,
+              isLoginDisabled
+                ? styles.disabledBtn
+                : null,
+            ]}
             onPress={goLogin}
             disabled={isLoginDisabled}
           >
@@ -115,13 +218,22 @@ export default function LoginScreen() {
               style={styles.leftIcon}
               resizeMode="contain"
             />
+
             <Text style={styles.btnText}>
-              {isAnyLoading ? "로그인 중..." : "로그인"}
+              {isAnyLoading
+                ? "로그인 중..."
+                : "로그인"}
             </Text>
           </Pressable>
 
-          <Pressable onPress={goSignup} style={styles.signupWrap}>
-            <Text style={styles.signupText}>회원 가입하기</Text>
+          {/* 회원가입 */}
+          <Pressable
+            onPress={goSignup}
+            style={styles.signupWrap}
+          >
+            <Text style={styles.signupText}>
+              회원 가입하기
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -133,17 +245,23 @@ const BORDER = "#C4C4C4";
 const TEXT_GRAY = "#C4C4C4";
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+
   container: {
     flex: 1,
     paddingHorizontal: 24,
     justifyContent: "space-between",
   },
+
   centerWrap: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
+
   topText: {
     marginTop: 40,
     marginBottom: 10,
@@ -152,23 +270,31 @@ const styles = StyleSheet.create({
     color: "#000000",
     textAlign: "center",
   },
+
   title: {
     fontSize: 17,
     fontWeight: "700",
     color: "#000000",
   },
-  logo: { width: 300, height: 270,},
-    subtitle: {
+
+  logo: {
+    width: 300,
+    height: 270,
+  },
+
+  subtitle: {
     marginTop: -20,
     fontSize: 20,
     fontWeight: "700",
     color: "#000000",
   },
+
   buttonWrap: {
     paddingBottom: 40,
     gap: 12,
     alignItems: "center",
   },
+
   socialBtn: {
     width: "100%",
     maxWidth: 343,
@@ -181,26 +307,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     position: "relative",
   },
+
   leftIcon: {
     width: 25,
     height: 25,
     position: "absolute",
     left: 20,
   },
+
   btnText: {
     fontSize: 14,
     fontWeight: "600",
     color: TEXT_GRAY,
   },
+
   signupWrap: {
     marginTop: 8,
     paddingVertical: 8,
   },
+
   signupText: {
     fontSize: 12,
     color: "#C4C4C4",
     textDecorationLine: "underline",
     fontWeight: "600",
   },
-  disabledBtn: { opacity: 0.6 },
+
+  disabledBtn: {
+    opacity: 0.6,
+  },
 });

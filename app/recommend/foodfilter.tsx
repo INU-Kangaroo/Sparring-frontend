@@ -1,11 +1,23 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, TextInput } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  FlatList,
+  ActivityIndicator,
+  TextInput,
+  Keyboard,
+  ScrollView,
+  TouchableWithoutFeedback,
+} from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   fetchFoodRecommendation,
   type FoodRecommendationRequest,
 } from "../api/recommendation";
+import Colors from "@/constants/Colors";
 
 type Option = { id: string; label: string };
 
@@ -101,17 +113,27 @@ export default function FoodFilter() {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: "white" }}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
     <View style={styles.container}>
-      <Pressable onPress={() => router.back()} style={styles.backBtn}>
-        <Ionicons name="chevron-back" size={22} color="#111" />
-      </Pressable>
-      <Text style={styles.title}>필터 선택하기</Text>
-      <Text style={styles.subtitle}>식단 추천 조건</Text>
+      <View style={styles.headerRow}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={22} color="#111" />
+        </Pressable>
+
+        <Text style={styles.title}>식단 추천 받기 </Text>
+
+      </View>
 
       <View style={styles.topSpacer} />
 
       {/* ── 시간대 선택 ── */}
-      <Text style={styles.desc}>추천받고 싶은 시간대를 선택해주세요.</Text>
+      <Text style={styles.desc}>추천 받고 싶은 시간대를 선택해주세요.</Text>
       <View style={styles.mealRow}>
         {mealTimes.map((m) => (
           <Pressable
@@ -138,7 +160,7 @@ export default function FoodFilter() {
 
       <View style={styles.divider} />
 
-      <Text style={styles.desc}>현재 혈당은 선택 입력이에요. 있으면 그래프 참고값으로만 반영돼요.</Text>
+      <Text style={styles.desc}>현재 혈당은 선택 입력이에요. {'\n'}있으면 그래프 참고값으로만 반영돼요.</Text>
       <TextInput
         style={styles.glucoseInput}
         placeholder="예) 112"
@@ -151,8 +173,9 @@ export default function FoodFilter() {
       <View style={styles.divider} />
 
       {/* ── 알러지 선택 ── */}
-      <Text style={styles.desc}>알러지가 있는 음식만 골라주세요. 선택한 음식은 추천에서 최대한 제외해요.</Text>
-
+      <Text style={styles.desc}>
+        {"알러지가 있는 음식만 골라주세요. \n해당 음식은 추천에서 제외돼요."}
+      </Text>
       <View style={styles.noneRow}>
         <Chip
           label={noneOption.label}
@@ -186,6 +209,8 @@ export default function FoodFilter() {
         )}
       </Pressable>
     </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -220,26 +245,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
     paddingHorizontal: 22,
-    paddingTop: 12,
+    paddingTop: 30,
+  },
+  headerRow: {
+  marginTop: 30,
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 6,
   },
   backBtn: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    backgroundColor: "#F4F4F4",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 14,
   },
   topSpacer: {
     height: 32,
   },
 
   title: {
-    fontSize: 25,
+    fontSize: 22,
     color: "#000000",
     fontFamily: PRETENDARD,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   subtitle: {
     marginTop: 10,
@@ -268,7 +296,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   mealChipActive: {
-    backgroundColor: "#0D99FF",
+    backgroundColor: Colors.light.primaryStrong,
   },
   mealChipInactive: {
     backgroundColor: "#FFFFFF",
@@ -315,7 +343,7 @@ const styles = StyleSheet.create({
   },
   gridRow: {
     justifyContent: "flex-start",
-    gap: 14,
+    gap: 28,
     marginBottom: 14,
   },
 
@@ -333,7 +361,7 @@ const styles = StyleSheet.create({
     borderColor: "#EFEFEF",
   },
   chipActive: {
-    backgroundColor: "#0D99FF",
+    backgroundColor: Colors.light.primaryStrong,
   },
   chipText: {
     fontSize: 15,
@@ -343,17 +371,16 @@ const styles = StyleSheet.create({
   chipTextActive: { color: "#FFFFFF" },
 
   // 저장 버튼
-  saveBtn: {
-    position: "absolute",
-    bottom: 34,
-    alignSelf: "center",
-    width: 129,
-    height: 44,
-    borderRadius: 20,
-    backgroundColor: "#3D3D3D",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+ saveBtn: {
+  marginTop: -130,
+  width: 129,
+  height: 44,
+  borderRadius: 16,
+  backgroundColor: "#3D3D3D",
+  alignItems: "center",
+  justifyContent: "center",
+  alignSelf: "center",
+},
   saveText: {
     fontSize: 16,
     color: "#FFFFFF",

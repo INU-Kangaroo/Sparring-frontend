@@ -70,7 +70,7 @@ useEffect(() => {
   return (
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         
-        <SidebarMenu exposeOpen={handleExposeOpen} />
+      
         <View style={styles.header}>
           <Pressable onPress={() => openSidebar?.()}>
             <Ionicons name="menu" size={24} color="#091441" />

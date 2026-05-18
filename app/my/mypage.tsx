@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { getMyDashboard, getMyProfile } from "../api/users";
+import Colors from "@/constants/Colors";
 import {
   getSignupProfile,
   getSurveyAnswersFromStorage,
@@ -334,7 +335,7 @@ export default function MyPage() {
           style={({ pressed }) => pressed && { opacity: 0.9 }}
         >
           <LinearGradient
-            colors={["#6FA8FF", "#5A80FF"]}
+            colors={[Colors.light.primary, Colors.light.primaryStrong]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.homeBtn}
@@ -348,7 +349,7 @@ export default function MyPage() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F5F5F5" },
+  safe: { flex: 1, backgroundColor: Colors.light.background },
   container: { flex: 1, paddingHorizontal: 18 },
   scrollContent: { paddingBottom: 120 },
   contentWrapper: { marginTop: 44 },
@@ -357,22 +358,22 @@ const styles = StyleSheet.create({
     width: 339,
     height: 96,
     alignSelf: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.card,
     borderRadius: 30,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     marginTop: 14,
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
     elevation: 3,
   },
-  avatar: { width: 58, height: 58, borderRadius: 999, backgroundColor: "#E6E6E6" },
+  avatar: { width: 58, height: 58, borderRadius: 999, backgroundColor: Colors.light.mutedBackground },
   profileTextArea: { marginLeft: 14, justifyContent: "center" },
-  userName: { fontSize: 15, fontWeight: "600", color: "#111" },
-  myInfoLink: { marginTop: 6, fontSize: 12, fontWeight: "500", color: "#9A9A9A" },
+  userName: { fontSize: 15, fontWeight: "600", color: Colors.light.text },
+  myInfoLink: { marginTop: 6, fontSize: 12, fontWeight: "500", color: Colors.light.subtleText },
 
   sectionHeader: {
     flexDirection: "row",
@@ -383,16 +384,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sectionIcon: { fontSize: 16 },
-  sectionTitle: { fontSize: 15, fontWeight: "800", color: "#222" },
+  sectionTitle: { fontSize: 15, fontWeight: "800", color: "#0D0D0D" },
 
   card: {
     width: 339,
     alignSelf: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.card,
     borderRadius: 22,
     paddingVertical: 18,
     paddingHorizontal: 20,
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
@@ -406,21 +407,21 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   statItem: { alignItems: "center", flex: 1 },
-  statLabel: { fontSize: 12, fontWeight: "600", color: "#999", marginBottom: 6 },
+  statLabel: { fontSize: 12, fontWeight: "600", color: Colors.light.subtleText, marginBottom: 6 },
   statValue: { fontSize: 16 },
-  statAccent: { fontSize: 22, fontWeight: "800", color: "#3F7BFF" },
-  statUnit: { fontSize: 13, fontWeight: "600", color: "#555" },
-  statDividerV: { width: 1, height: 40, backgroundColor: "#F0F0F0" },
-  statDividerH: { height: 1, backgroundColor: "#F0F0F0", marginVertical: 12 },
+  statAccent: { fontSize: 22, fontWeight: "800", color: Colors.light.primary },
+  statUnit: { fontSize: 13, fontWeight: "600", color: Colors.light.subtleText },
+  statDividerV: { width: 1, height: 40, backgroundColor: Colors.light.border },
+  statDividerH: { height: 1, backgroundColor: Colors.light.border, marginVertical: 12 },
 
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  infoLabel: { fontSize: 13, fontWeight: "600", color: "#888" },
-  infoValue: { fontSize: 13, fontWeight: "600", color: "#222" },
-  infoValueAccent: { fontSize: 13, fontWeight: "700", color: "#3F7BFF" },
+  infoLabel: { fontSize: 13, fontWeight: "600", color: Colors.light.subtleText },
+  infoValue: { fontSize: 13, fontWeight: "600", color: Colors.light.text },
+  infoValueAccent: { fontSize: 13, fontWeight: "700", color: Colors.light.primary },
 
   homeBar: {
     position: "absolute",
@@ -435,7 +436,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOpacity: 0.2,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },

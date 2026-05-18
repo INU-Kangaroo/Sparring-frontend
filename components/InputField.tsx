@@ -6,6 +6,8 @@ type InputFieldProps = {
   placeholder?: string;
   keyboardType?: KeyboardTypeOptions;
   secure?: boolean;
+  returnKeyType?: "done" | "next";
+  onSubmitEditing?: () => void;
 };
 
 export default function InputField({
@@ -14,6 +16,8 @@ export default function InputField({
   placeholder,
   keyboardType = "default",
   secure = false,
+  returnKeyType,
+  onSubmitEditing,
 }: InputFieldProps) {
   return (
     <TextInput
@@ -22,7 +26,8 @@ export default function InputField({
       placeholder={placeholder}
       keyboardType={keyboardType}
       secureTextEntry={secure}
-    z
+       returnKeyType={returnKeyType}        
+      onSubmitEditing={onSubmitEditing}     
     />
   );
 }

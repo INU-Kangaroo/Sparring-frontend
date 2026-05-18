@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet, Alert,  Keyboard, TouchableWithoutFeedback } from "react-native";
 import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
@@ -31,6 +31,7 @@ export default function Stats() {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
         <View style={styles.header}>
           <BackButton onPress={() => router.back()} />
@@ -72,6 +73,7 @@ export default function Stats() {
         <NextButton title="다음" onPress={handleNext} />
       </View>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 

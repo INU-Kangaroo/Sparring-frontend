@@ -7,6 +7,8 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  Keyboard, 
+  TouchableWithoutFeedback
 } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -92,6 +94,7 @@ export default function Survey() {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <ScrollView contentContainerStyle={styles.container}>
           <View style={styles.header}>
@@ -188,6 +191,7 @@ export default function Survey() {
         </View>
       </ScrollView>
     </View>
+     </TouchableWithoutFeedback>
   );
 }
 

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Keyboard, TouchableWithoutFeedback  } from "react-native";
 import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
@@ -31,6 +31,7 @@ export default function Verify() {
     if (code.some((v) => v === "")) return;
 
     try {
+      Keyboard.dismiss(); // 👈 추가
       setLoading(true);
       await verifyCodeApi({ email, code: codeStr, verificationId });
       router.push("/sign-up/password");
@@ -65,6 +66,7 @@ export default function Verify() {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
         <View style={styles.header}>
           <BackButton onPress={() => router.back()} />
@@ -96,6 +98,7 @@ export default function Verify() {
         <NextButton title={loading ? "검증 중..." : "다음"} onPress={handleNext} />
       </View>
     </View>
+   </TouchableWithoutFeedback>
   );
 }
 

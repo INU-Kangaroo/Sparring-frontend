@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet, Alert, Keyboard, TouchableWithoutFeedback } from "react-native";
 import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
@@ -52,12 +52,13 @@ export default function EmailLogin() {
 };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <BackButton onPress={() => router.back()} />
-          <SignupProgress step={1} />  
-        </View>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={styles.container}>
+          <View style={{ flex: 1, backgroundColor: "#fff" }}>
+          <View style={styles.header}>
+            <BackButton onPress={() => router.back()} />
+            <SignupProgress step={1} />  
+          </View>
          
 
              <Text style={styles.heading}>건강한 일상을 위한 첫 스파링!</Text>
@@ -74,13 +75,16 @@ export default function EmailLogin() {
           onChangeText={setEmail}
           placeholder="inu@inu.ac.kr"
           keyboardType="email-address"
+          returnKeyType="done"        
+          onSubmitEditing={nextPage} 
         />
       </View>
 
-      <View style={{ marginBottom: 20, width: "100%" }}>
+      <View style={{ marginTop: "auto", width: "100%" }}>
         <NextButton title={loading ? "전송 중..." : "다음"} onPress={nextPage} />
       </View>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 

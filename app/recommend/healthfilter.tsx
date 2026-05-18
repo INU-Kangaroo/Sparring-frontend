@@ -1,10 +1,29 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ActivityIndicator,
+  ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
+  Alert,
+} from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { fetchExerciseRecommendation, ExerciseRequest } from "../api/recommendation";
 
-type Option = { id: string; label: string };
+import {
+  fetchExerciseRecommendation,
+  ExerciseRequest,
+} from "../api/recommendation";
+
+import Colors from "@/constants/Colors";
+
+type Option = {
+  id: string;
+  label: string;
+};
 
 const PRETENDARD = "Pretendard";
 const PRETENDARD_MEDIUM = "Pretendard-Medium";
@@ -14,11 +33,13 @@ const DURATION_MAP: Record<string, ExerciseRequest["duration"]> = {
   "30to60": "MEDIUM",
   over60: "LONG",
 };
+
 const INTENSITY_MAP: Record<string, ExerciseRequest["intensity"]> = {
   low: "LOW",
   mid: "MODERATE",
   high: "HIGH",
 };
+
 const LOCATION_MAP: Record<string, ExerciseRequest["location"]> = {
   indoor: "INDOOR",
   outdoor: "OUTDOOR",
@@ -31,7 +52,11 @@ function getApiErrorMessage(error: unknown) {
   const message = (error as any)?.message;
 
   if (status) {
-    const detail = responseData?.message ?? responseData?.errors ?? JSON.stringify(responseData ?? {});
+    const detail =
+      responseData?.message ??
+      responseData?.errors ??
+      JSON.stringify(responseData ?? {});
+
     return `활동 추천 호출 실패 (${status})\n${detail}`;
   }
 
@@ -50,9 +75,17 @@ function Chip({
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
+      style={[
+        styles.chip,
+        active ? styles.chipActive : styles.chipInactive,
+      ]}
     >
-      <Text style={[styles.chipText, active ? styles.chipTextActive : styles.chipTextInactive]}>
+      <Text
+        style={[
+          styles.chipText,
+          active ? styles.chipTextActive : styles.chipTextInactive,
+        ]}
+      >
         {label}
       </Text>
     </Pressable>
@@ -88,21 +121,30 @@ export default function HealthFilter() {
   );
 
   const [selectedTime, setSelectedTime] = useState<string>("30to60");
-  const [selectedIntensity, setSelectedIntensity] = useState<string>("mid");
-  const [selectedPlace, setSelectedPlace] = useState<string>("indoor");
+  const [selectedIntensity, setSelectedIntensity] =
+    useState<string>("mid");
+  const [selectedPlace, setSelectedPlace] =
+    useState<string>("indoor");
+
   const [loading, setLoading] = useState(false);
 
-  const canSave = selectedTime !== "" && selectedIntensity !== "" && selectedPlace !== "";
+  const canSave =
+    selectedTime !== "" &&
+    selectedIntensity !== "" &&
+    selectedPlace !== "";
 
   const onSave = async () => {
     if (!canSave || loading) return;
+
     setLoading(true);
+
     try {
       const result = await fetchExerciseRecommendation({
         duration: DURATION_MAP[selectedTime],
         intensity: INTENSITY_MAP[selectedIntensity],
         location: LOCATION_MAP[selectedPlace],
       });
+
       router.push({
         pathname: "/recommend/healthdetail",
         params: {
@@ -114,156 +156,240 @@ export default function HealthFilter() {
       });
     } catch (e) {
       console.error("exercise recommendation error", e);
-      alert(getApiErrorMessage(e));
+
+      Alert.alert("오류", getApiErrorMessage(e));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Pressable onPress={() => router.back()} style={styles.backBtn}>
-        <Ionicons name="chevron-back" size={22} color="#111" />
-      </Pressable>
-      <Text style={styles.title}>활동 추천 필터</Text>
-      <Text style={styles.subtitle}>원하는 활동 조건을 선택하고 추천을 받아보세요</Text>
-
-      <View style={{ height: 78 }} />
-
-      <Text style={styles.question}>원하는 활동 시간을 골라주세요.</Text>
-      <View style={styles.row}>
-        {timeOptions.map((o) => (
-          <Chip
-            key={o.id}
-            label={o.label}
-            active={selectedTime === o.id}
-            onPress={() => setSelectedTime(o.id)}
-          />
-        ))}
-      </View>
-
-      <Text style={[styles.question, { marginTop: 22 }]}>원하는 활동 강도를 골라주세요.</Text>
-      <View style={styles.row}>
-        {intensityOptions.map((o) => (
-          <Chip
-            key={o.id}
-            label={o.label}
-            active={selectedIntensity === o.id}
-            onPress={() => setSelectedIntensity(o.id)}
-          />
-        ))}
-      </View>
-
-      <Text style={[styles.question, { marginTop: 22 }]}>원하는 활동 장소를 골라주세요.</Text>
-      <View style={styles.row}>
-        {placeOptions.map((o) => (
-          <Chip
-            key={o.id}
-            label={o.label}
-            active={selectedPlace === o.id}
-            onPress={() => setSelectedPlace(o.id)}
-          />
-        ))}
-      </View>
-
-      <Pressable
-        onPress={onSave}
-        disabled={!canSave || loading}
-        style={[styles.saveBtn, !canSave ? styles.saveBtnDisabled : styles.saveBtnEnabled]}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <Text style={[styles.saveText, !canSave && styles.saveTextDisabled]}>추천 받기</Text>
-        )}
-      </Pressable>
-    </View>
+        <View style={styles.container}>
+          {/* 헤더 */}
+          <View style={styles.headerRow}>
+            <Pressable
+              onPress={() => router.back()}
+              style={styles.backBtn}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={22}
+                color="#111"
+              />
+            </Pressable>
+
+            <Text style={styles.title}>활동 추천 필터</Text>
+          </View>
+
+          <Text style={styles.subtitle}>
+            원하는 활동 조건을 선택하고 추천을 받아보세요
+          </Text>
+
+          {/* 활동 시간 */}
+          <Text style={styles.question}>
+            원하는 활동 시간을 골라주세요.
+          </Text>
+
+          <View style={styles.row}>
+            {timeOptions.map((o) => (
+              <Chip
+                key={o.id}
+                label={o.label}
+                active={selectedTime === o.id}
+                onPress={() => setSelectedTime(o.id)}
+              />
+            ))}
+          </View>
+
+          {/* 활동 강도 */}
+          <Text style={[styles.question, styles.sectionSpacing]}>
+            원하는 활동 강도를 골라주세요.
+          </Text>
+
+          <View style={styles.row}>
+            {intensityOptions.map((o) => (
+              <Chip
+                key={o.id}
+                label={o.label}
+                active={selectedIntensity === o.id}
+                onPress={() => setSelectedIntensity(o.id)}
+              />
+            ))}
+          </View>
+
+          {/* 활동 장소 */}
+          <Text style={[styles.question, styles.sectionSpacing]}>
+            원하는 활동 장소를 골라주세요.
+          </Text>
+
+          <View style={styles.row}>
+            {placeOptions.map((o) => (
+              <Chip
+                key={o.id}
+                label={o.label}
+                active={selectedPlace === o.id}
+                onPress={() => setSelectedPlace(o.id)}
+              />
+            ))}
+          </View>
+
+          {/* 버튼 */}
+          <Pressable
+            onPress={onSave}
+            disabled={!canSave || loading}
+            style={[
+              styles.saveBtn,
+              !canSave
+                ? styles.saveBtnDisabled
+                : styles.saveBtnEnabled,
+            ]}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text
+                style={[
+                  styles.saveText,
+                  !canSave && styles.saveTextDisabled,
+                ]}
+              >
+                저장
+              </Text>
+            )}
+          </Pressable>
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+
+  scrollContent: {
+    paddingBottom: 60,
+  },
+
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 22,
-    paddingTop: 12,
+    paddingTop: 60,
   },
+
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
   backBtn: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    backgroundColor: "#F4F4F4",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 14,
+    marginRight: 6,
   },
+
   title: {
     fontSize: 25,
     color: "#000000",
     fontFamily: PRETENDARD,
     fontWeight: "800",
   },
+
   subtitle: {
-    marginTop: 10,
-    fontSize: 18,
-    color: "#000000",
+    marginLeft: 20,
+    marginTop: 16,
+    marginBottom: 70,
+    fontSize: 16,
+    lineHeight: 24,
+    color: "#8C8C8C",
     fontFamily: PRETENDARD_MEDIUM,
   },
+
   question: {
     fontSize: 16,
     color: "#000000",
     fontFamily: PRETENDARD_MEDIUM,
   },
+
+  sectionSpacing: {
+    marginTop: 50,
+  },
+
   row: {
     marginTop: 16,
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 14,
-    justifyContent: "flex-start",
   },
+
   chip: {
-    width: 90,
+    width: 100,
     height: 44,
-    borderRadius: 20,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
   },
+
   chipInactive: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#EFEFEF",
+    borderColor: "#E5E5E5",
   },
+
   chipActive: {
-    backgroundColor: "#0D99FF",
+    backgroundColor: Colors.light.primaryStrong,
   },
+
   chipText: {
     fontSize: 15,
     fontFamily: PRETENDARD_MEDIUM,
   },
-  chipTextInactive: { color: "#000000" },
-  chipTextActive: { color: "#FFFFFF" },
+
+  chipTextInactive: {
+    color: "#000000",
+  },
+
+  chipTextActive: {
+    color: "#FFFFFF",
+  },
+
   saveBtn: {
-    position: "absolute",
-    bottom: 34,
+    marginTop: 100,
     alignSelf: "center",
-    width: 129,
-    height: 44,
-    borderRadius: 20,
+    width: 140,
+    height: 48,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
+
   saveBtnEnabled: {
     backgroundColor: "#3D3D3D",
   },
+
   saveBtnDisabled: {
     backgroundColor: "#D9D9D9",
   },
+
   saveText: {
     fontSize: 16,
     color: "#FFFFFF",
     fontFamily: PRETENDARD_MEDIUM,
   },
+
   saveTextDisabled: {
-    color: "#FFFFFF",
     opacity: 0.7,
   },
 });

@@ -72,6 +72,7 @@ export default function Login() {
         onChangeText={setEmail}
         placeholder="inu@inu.ac.kr"
         keyboardType="email-address"
+        returnKeyType="next"        
       />
 
       {email.length > 0 && !isValidEmail && (
@@ -91,6 +92,8 @@ export default function Login() {
         onChangeText={setPassword}
         placeholder="비밀번호 입력"
         secure
+        returnKeyType="done"
+        onSubmitEditing={handleLogin}
       />
 
       {password.length === 0 && (
@@ -140,3 +143,4 @@ const styles = StyleSheet.create({
   errorRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
   errorText: { fontSize: 12, color: "#e53935", marginLeft: 4 },
 });
+

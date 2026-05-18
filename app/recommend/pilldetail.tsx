@@ -25,6 +25,7 @@ import {
   refreshSupplementRecommendation,
   Supplement,
 } from "../api/recommendation";
+import Colors from "@/constants/Colors";
 
 const { height: H } = Dimensions.get("window");
 
@@ -154,7 +155,7 @@ export default function SupplementDetail() {
   if (loading) {
     return (
       <View style={[styles.safe, { alignItems: "center", justifyContent: "center" }]}>
-        <ActivityIndicator size="large" color="#0D99FF" />
+        <ActivityIndicator size="large" color={Colors.light.primaryStrong} />
         <Text style={{ marginTop: 12, color: "#888", fontSize: 14 }}>
           영양제 추천을 불러오는 중...
         </Text>
@@ -207,9 +208,9 @@ export default function SupplementDetail() {
           {/* 새로고침 버튼 */}
           <Pressable onPress={handleRefresh} style={styles.refreshBtn} disabled={refreshing}>
             {refreshing ? (
-              <ActivityIndicator size="small" color="#0D99FF" />
+              <ActivityIndicator size="small" color={Colors.light.primaryStrong} />
             ) : (
-              <Ionicons name="refresh" size={20} color="#0D99FF" />
+              <Ionicons name="refresh" size={20} color={Colors.light.primaryStrong} />
             )}
           </Pressable>
         </View>
@@ -233,7 +234,7 @@ export default function SupplementDetail() {
             >
               {isActive ? (
                 <LinearGradient
-                  colors={["#0D99FF", "#1D4BFF"]}
+                  colors={[Colors.light.primary, Colors.light.primaryStrong]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.btnActive}
@@ -269,7 +270,7 @@ export default function SupplementDetail() {
       <GestureDetector gesture={pan}>
         <Animated.View style={[styles.sheet, sheetStyle]}>
           <LinearGradient
-            colors={["#61ADFF", "#AFD3FF"]}
+            colors={[Colors.light.primaryMuted, Colors.light.primarySurfaceStrong]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.sheetGradient}
@@ -300,7 +301,7 @@ export default function SupplementDetail() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: { flex: 1, backgroundColor: Colors.light.card },
   centerState: {
     alignItems: "center",
     justifyContent: "center",
@@ -308,19 +309,19 @@ const styles = StyleSheet.create({
   },
   stateText: {
     marginTop: 16,
-    color: "#888",
+    color: Colors.light.subtleText,
     fontSize: 15,
     textAlign: "center",
   },
   stateButton: {
     marginTop: 18,
-    backgroundColor: "#EEF6FF",
+    backgroundColor: Colors.light.primarySurface,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   stateButtonText: {
-    color: "#0D99FF",
+    color: Colors.light.primaryStrong,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -336,7 +337,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#F4F4F4",
+    backgroundColor: Colors.light.mutedBackground,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -344,12 +345,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#EEF6FF",
+    backgroundColor: Colors.light.primarySurface,
     alignItems: "center",
     justifyContent: "center",
   },
-  h1: { fontSize: 23, fontWeight: "700", color: "#111111" },
-  h2: { marginTop: 10, marginBottom: 20, fontSize: 15, color: "#666666" },
+  h1: { fontSize: 23, fontWeight: "700", color: Colors.light.text },
+  h2: { marginTop: 10, marginBottom: 20, fontSize: 15, color: Colors.light.subtleText },
 
   listContent: {
     paddingHorizontal: 24,
@@ -361,7 +362,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 18,
     paddingVertical: 16,
-    shadowColor: "#1D4BFF",
+    shadowColor: Colors.light.primaryStrong,
     shadowOpacity: 0.25,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
@@ -454,7 +455,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     width: "100%",
     borderRadius: 18,
-    backgroundColor: "rgba(29, 130, 239, 0.55)",
+    backgroundColor: "#fae3e5",
     paddingHorizontal: 16,
     paddingVertical: 16,
   },

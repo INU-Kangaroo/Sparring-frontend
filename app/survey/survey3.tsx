@@ -7,6 +7,8 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  Keyboard, 
+  TouchableWithoutFeedback 
 } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -110,9 +112,10 @@ export default function Survey3Screen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <BackButton onPress={() => router.back()} />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={{ flex: 1, backgroundColor: "#fff" }}>
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+          <BackButton onPress={() => router.back()} />
 
         <Text style={styles.heading}>건강 상태를 더 정확하게 알려드릴게요</Text>
         <Text style={styles.heading2}>첫 이용 전 설문을 진행해주세요</Text>
@@ -217,6 +220,7 @@ export default function Survey3Screen() {
         <View style={{ height: 30 }} />
       </ScrollView>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -231,7 +235,7 @@ const styles = StyleSheet.create({
   star: { fontSize: 13, color: "#e53935" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
   chip: { paddingHorizontal: 14, height: 34, borderRadius: 18, backgroundColor: "#747474", justifyContent: "center" },
-  chipSelected: { backgroundColor: "#1435b9f6" },
+  chipSelected: { backgroundColor: "#262626" },
   chipText: { color: "#fff", fontSize: 13, fontWeight: "500" },
   chipTextSelected: { fontWeight: "700" },
   input: {

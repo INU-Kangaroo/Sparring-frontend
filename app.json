@@ -14,25 +14,30 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "entitlements": {
+          "com.apple.developer.healthkit": true
+        },
       "supportsTablet": true,
       "bundleIdentifier": "com.sparring.kangaroo",
-       "newArchEnabled": false,
-      "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSExceptionDomains": {
-            "43.202.179.177": {
-              "NSExceptionAllowsInsecureHTTPLoads": true,
-              "NSIncludesSubdomains": true
+      "newArchEnabled": false,
+        "infoPlist": {
+          "NSHealthShareUsageDescription": "걸음 수와 건강 데이터를 읽어 운동 기록 서비스를 제공합니다.",
+          "NSHealthUpdateUsageDescription": "건강 데이터를 저장하여 운동 기록 서비스를 제공합니다.",
+          "NSAppTransportSecurity": {
+            "NSExceptionDomains": {
+              "43.202.179.177": {
+                "NSExceptionAllowsInsecureHTTPLoads": true,
+                "NSIncludesSubdomains": true
+              }
             }
           }
-        }
-      }
+}
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.kangaroo",
+      "package": "com.sparring.kangaroo",
       "usesCleartextTraffic": true,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false

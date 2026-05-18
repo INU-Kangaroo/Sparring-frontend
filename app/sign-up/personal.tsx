@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,11 @@ import {
   TextInput,
   Pressable,
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Platform,
+  ScrollView
 } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -28,6 +33,9 @@ export default function Personal() {
 
   const [loading, setLoading] = useState(false);
 
+  const monthRef = useRef<TextInput>(null);
+  const dayRef = useRef<TextInput>(null);
+
   const handleSubmit = async () => {
     if (!nickname || !gender || !year || !month || !day) {
       Alert.alert("입력 필요", "모든 정보를 입력해주세요.");
@@ -49,7 +57,6 @@ export default function Personal() {
 
     try {
       setLoading(true);
-
       setDraft(payload);
 
       await signupApi(payload);
@@ -68,119 +75,153 @@ export default function Personal() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <View style={styles.container}>
-        
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <BackButton onPress={() => router.back()} />
-          <SignupProgress step={4} />
-        </View>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={{ flex: 1, backgroundColor: "#fff" }}>
 
-        {/* 타이틀 */}
-        <Text style={styles.heading}>건강한 일상을 위한 첫 스파링!</Text>
-        <Text style={styles.heading2}>함께 시작해볼까요?</Text>
-
-        {/* 닉네임 */}
-        <Text style={styles.subtext}>닉네임을 입력해주세요.</Text>
-        <View style={styles.labelRow}>
-          <Text style={styles.subtext2}>닉네임</Text>
-          <Text style={styles.star}> *</Text>
-        </View>
-
-        <TextInput
-          style={styles.input}
-          placeholder="닉네임 입력"
-          value={nickname}
-          onChangeText={setNickname}
-        />
-
-        {/* 성별 */}
-        <Text style={styles.subtext}>성별을 선택해주세요.</Text>
-        <View style={styles.labelRow}>
-          <Text style={styles.subtext2}>성별</Text>
-          <Text style={styles.star}> *</Text>
-        </View>
-
-        <View style={styles.genderRow}>
-          <Pressable
-            style={[
-              styles.genderBtn,
-              gender === "male" && styles.selectedBtn,
-            ]}
-            onPress={() => setGender("male")}
+        {/* 입력 영역만 KeyboardAvoidingView */}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        ><ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
           >
-            <Text
-              style={[
-                styles.genderText,
-                gender === "male" && styles.selectedText,
-              ]}
-            >
-              남성
-            </Text>
-          </Pressable>
+          <View style={styles.container}>
 
-          <Pressable
-            style={[
-              styles.genderBtn,
-              gender === "female" && styles.selectedBtn,
-            ]}
-            onPress={() => setGender("female")}
-          >
-            <Text
-              style={[
-                styles.genderText,
-                gender === "female" && styles.selectedText,
-              ]}
-            >
-              여성
-            </Text>
-          </Pressable>
+            {/* 헤더 */}
+            <View style={styles.header}>
+              <BackButton onPress={() => router.back()} />
+              <SignupProgress step={4} />
+            </View>
+
+            {/* 타이틀 */}
+            <Text style={styles.heading}>건강한 일상을 위한 첫 스파링!</Text>
+            <Text style={styles.heading2}>함께 시작해볼까요?</Text>
+
+            {/* 닉네임 */}
+            <Text style={styles.subtext}>닉네임을 입력해주세요.</Text>
+            <View style={styles.labelRow}>
+              <Text style={styles.subtext2}>닉네임</Text>
+              <Text style={styles.star}> *</Text>
+            </View>
+
+            <TextInput
+              style={styles.input}
+              placeholder="닉네임 입력"
+              value={nickname}
+              onChangeText={setNickname}
+              returnKeyType="done"
+            />
+
+            {/* 성별 */}
+            <Text style={styles.subtext}>성별을 선택해주세요.</Text>
+            <View style={styles.labelRow}>
+              <Text style={styles.subtext2}>성별</Text>
+              <Text style={styles.star}> *</Text>
+            </View>
+
+            <View style={styles.genderRow}>
+              <Pressable
+                style={[
+                  styles.genderBtn,
+                  gender === "male" && styles.selectedBtn,
+                ]}
+                onPress={() => setGender("male")}
+              >
+                <Text
+                  style={[
+                    styles.genderText,
+                    gender === "male" && styles.selectedText,
+                  ]}
+                >
+                  남성
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.genderBtn,
+                  gender === "female" && styles.selectedBtn,
+                ]}
+                onPress={() => setGender("female")}
+              >
+                <Text
+                  style={[
+                    styles.genderText,
+                    gender === "female" && styles.selectedText,
+                  ]}
+                >
+                  여성
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* 생년월일 */}
+            <Text style={styles.subtext}>생년월일을 입력해주세요.</Text>
+            <View style={styles.labelRow}>
+              <Text style={styles.subtext2}>생년월일</Text>
+              <Text style={styles.star}> *</Text>
+            </View>
+
+            <View style={styles.dateRow}>
+              {/* YEAR */}
+              <TextInput
+                style={styles.dateInput}
+                placeholder="YYYY"
+                keyboardType="number-pad"
+                maxLength={4}
+                value={year}
+                onChangeText={(text) => {
+                  setYear(text);
+                  if (text.length === 4) {
+                    monthRef.current?.focus();
+                  }
+                }}
+              />
+
+              {/* MONTH */}
+              <TextInput
+                ref={monthRef}
+                style={styles.dateInput}
+                placeholder="MM"
+                keyboardType="number-pad"
+                maxLength={2}
+                value={month}
+                onChangeText={(text) => {
+                  setMonth(text);
+                  if (text.length === 2) {
+                    dayRef.current?.focus();
+                  }
+                }}
+              />
+
+              {/* DAY */}
+              <TextInput
+                ref={dayRef}
+                style={styles.dateInput}
+                placeholder="DD"
+                keyboardType="number-pad"
+                maxLength={2}
+                value={day}
+                onChangeText={setDay}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+            </View>
+          </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+
+        {/* ✅ 버튼은 바깥 (고정됨) */}
+        <View style={styles.bottomButton}>
+          <NextButton
+            title={loading ? "가입 중..." : "다음"}
+            onPress={handleSubmit}
+          />
         </View>
 
-        {/* 생년월일 */}
-        <Text style={styles.subtext}>생년월일을 입력해주세요.</Text>
-        <View style={styles.labelRow}>
-          <Text style={styles.subtext2}>생년월일</Text>
-          <Text style={styles.star}> *</Text>
-        </View>
-
-        <View style={styles.dateRow}>
-          <TextInput
-            style={styles.dateInput}
-            placeholder="YYYY"
-            keyboardType="number-pad"
-            maxLength={4}
-            value={year}
-            onChangeText={setYear}
-          />
-          <TextInput
-            style={styles.dateInput}
-            placeholder="MM"
-            keyboardType="number-pad"
-            maxLength={2}
-            value={month}
-            onChangeText={setMonth}
-          />
-          <TextInput
-            style={styles.dateInput}
-            placeholder="DD"
-            keyboardType="number-pad"
-            maxLength={2}
-            value={day}
-            onChangeText={setDay}
-          />
-        </View>
       </View>
-
-      {/* 하단 버튼 */}
-      <View style={{ marginBottom: 20, width: "100%" }}>
-        <NextButton
-          title={loading ? "가입 중..." : "다음"}
-          onPress={handleSubmit}
-        />
-      </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -190,6 +231,11 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 30,
     backgroundColor: "#fff",
+  },
+
+  bottomButton: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
 
   header: {
@@ -232,7 +278,6 @@ const styles = StyleSheet.create({
 
   labelRow: {
     flexDirection: "row",
-    alignSelf: "flex-start",
   },
 
   input: {

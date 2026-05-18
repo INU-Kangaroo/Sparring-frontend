@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Keyboard, TouchableWithoutFeedback   } from "react-native";
 import { useRouter } from "expo-router";
 
 import BackButton from "../../components/BackButton";
@@ -59,12 +59,13 @@ export default function Survey2Screen() {
     };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <BackButton onPress={() => router.back()} />
-          <SignupProgress step={3} />
-        </View>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={{ flex: 1, backgroundColor: "#fff" }}>
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <BackButton onPress={() => router.back()} />
+            <SignupProgress step={3} />
+          </View>
         <Text style={styles.heading}>나의 건강 시그널 확인하고 싶다면?</Text>
         <Text style={styles.heading2}>운동 습관을 알려주세요</Text>
 
@@ -159,6 +160,7 @@ export default function Survey2Screen() {
         <View style={{ height: 30 }} />
       </ScrollView>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 

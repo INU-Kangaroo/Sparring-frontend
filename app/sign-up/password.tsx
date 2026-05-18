@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet,  Keyboard, TouchableWithoutFeedback } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -29,6 +29,7 @@ export default function Password() {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
      <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <View style={styles.container}>
         <View style={styles.header}>
@@ -50,6 +51,7 @@ export default function Password() {
         onChangeText={setPassword}
         placeholder="1234abcd!"
         secure
+        returnKeyType="next"
       />
 
       {!isValidPassword && password.length > 0 && (
@@ -71,6 +73,8 @@ export default function Password() {
         onChangeText={setConfirm}
         placeholder="1234abcd!"
         secure
+        returnKeyType="done"
+        onSubmitEditing={handleNext}
       />
 
       {confirm.length > 0 && !isMatch && (
@@ -85,6 +89,7 @@ export default function Password() {
       </View>
     </View>
     </View>
+     </TouchableWithoutFeedback>
   );
 }
 

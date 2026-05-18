@@ -55,7 +55,6 @@ export default function BloodInputModal({
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ width: "100%" }}
           >
-        >
           <Pressable
             style={styles.container}
             onPress={(e) => e.stopPropagation()}

@@ -15,6 +15,7 @@ import { getTodaySteps } from "../api/steps";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import Colors from "@/constants/Colors";
 
 type MealType = "아침" | "점심" | "저녁" | "간식";
 
@@ -229,14 +230,14 @@ export default function InputScreen() {
             ))}
 
             <Pressable onPress={addFood} style={styles.addBtn}>
-              <Ionicons name="add-circle-outline" size={20} color="#5A80FF" />
+              <Ionicons name="add-circle-outline" size={20} color={Colors.light.primaryStrong} />
               <Text style={styles.addBtnText}>식사 추가</Text>
             </Pressable>
           </View>
 
           <View style={styles.activityCard}>
             <View style={styles.activityHeader}>
-              <Ionicons name="walk-outline" size={20} color="#5A80FF" />
+              <Ionicons name="walk-outline" size={20} color={Colors.light.primaryStrong} />
               <Text style={styles.activityTitle}>오늘의 운동</Text>
             </View>
             <Text style={styles.activityBody}>
@@ -270,7 +271,7 @@ export default function InputScreen() {
         <View style={styles.saveBar}>
           <Pressable onPress={handleSave} style={{ borderRadius: 999 }}>
             <LinearGradient
-              colors={["#0D99FF", "#1D4BFF"]}
+              colors={[Colors.light.primary, Colors.light.primaryStrong]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.saveBtn}
@@ -288,7 +289,7 @@ export default function InputScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: Colors.light.background,
   },
   header: {
     flexDirection: "row",
@@ -297,26 +298,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 56,
     paddingBottom: 16,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.card,
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    borderBottomColor: Colors.light.border,
   },
   backBtn: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#F4F4F4",
+    backgroundColor: Colors.light.mutedBackground,
     alignItems: "center",
     justifyContent: "center",
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#1a1a1a",
+    color: Colors.light.text,
   },
   headerSub: {
     fontSize: 12,
-    color: "#aaa",
+    color: Colors.light.subtleText,
     marginTop: 2,
     fontWeight: "500",
   },
@@ -329,20 +330,20 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#222",
+    color: Colors.light.text,
     marginBottom: 6,
   },
   sectionBody: {
     fontSize: 13,
     lineHeight: 20,
-    color: "#666",
+    color: Colors.light.subtleText,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.card,
     borderRadius: 20,
     padding: 18,
     marginBottom: 14,
-    shadowColor: "#4060FF",
+    shadowColor: Colors.light.primaryStrong,
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -358,20 +359,20 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 8,
-    backgroundColor: "#EEF3FF",
+    backgroundColor: Colors.light.primarySurface,
     alignItems: "center",
     justifyContent: "center",
   },
   cardIndexText: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#5A80FF",
+    color: Colors.light.primaryStrong,
   },
   cardLabel: {
     flex: 1,
     fontSize: 14,
     fontWeight: "700",
-    color: "#333",
+    color: Colors.light.text,
   },
   removeBtn: {
     padding: 2,
@@ -379,20 +380,20 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#999",
+    color: Colors.light.subtleText,
     marginBottom: 6,
     marginTop: 4,
     letterSpacing: 0.3,
   },
   input: {
-    backgroundColor: "#F8F9FF",
+    backgroundColor: Colors.light.background,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
     color: "#222",
     borderWidth: 1,
-    borderColor: "#ECEEFF",
+    borderColor: Colors.light.border,
     marginBottom: 12,
   },
   rowFields: {
@@ -409,45 +410,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 10,
-    backgroundColor: "#F4F4F4",
+    backgroundColor: Colors.light.mutedBackground,
     borderWidth: 1,
-    borderColor: "#ECECEC",
+    borderColor: Colors.light.border,
   },
   chipSmallActive: {
-    backgroundColor: "#EEF3FF",
-    borderColor: "#5A80FF",
+    backgroundColor: Colors.light.primarySurface,
+    borderColor: Colors.light.primaryStrong,
   },
   chipSmallText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#aaa",
+    color: Colors.light.subtleText,
   },
   chipSmallTextActive: {
-    color: "#1D4BFF",
+    color: Colors.light.primaryStrong,
   },
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.light.card,
     borderRadius: 16,
     borderWidth: 1,
     borderStyle: "dashed",
-    borderColor: "#C7D4FF",
+    borderColor: Colors.light.lineStrong,
     paddingVertical: 14,
   },
   addBtnText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#5A80FF",
+    color: Colors.light.primaryStrong,
   },
   activityCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.light.card,
     borderRadius: 20,
     padding: 18,
     marginTop: 16,
-    shadowColor: "#4060FF",
+    shadowColor: Colors.light.primaryStrong,
     shadowOpacity: 0.05,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -462,12 +463,12 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontSize: 15,
     fontWeight: "800",
-    color: "#222",
+    color: Colors.light.text,
   },
   activityBody: {
     fontSize: 13,
     lineHeight: 20,
-    color: "#666",
+    color: Colors.light.subtleText,
   },
   activityMetricRow: {
     flexDirection: "row",
@@ -476,11 +477,11 @@ const styles = StyleSheet.create({
   },
   activityMetric: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: Colors.light.background,
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#ECEEFF",
+    borderColor: Colors.light.border,
   },
   activityWideMetric: {
     marginTop: 10,
@@ -488,19 +489,19 @@ const styles = StyleSheet.create({
   activityMetricLabel: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#8A8A8A",
+    color: Colors.light.subtleText,
     marginBottom: 6,
   },
   activityMetricValue: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#222",
+    color: Colors.light.text,
   },
   saveBar: {
     paddingHorizontal: 20,
     paddingBottom: 24,
     paddingTop: 12,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: Colors.light.background,
   },
   saveBtn: {
     height: 52,
@@ -513,6 +514,6 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 15,
     fontWeight: "800",
-    color: "#fff",
+    color: Colors.light.card,
   },
 });

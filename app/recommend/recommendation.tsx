@@ -8,15 +8,19 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
+  ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import Colors from "@/constants/Colors";
+import SidebarMenu from "@/components/Sidebar";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
-const ACTIVE_GRADIENT = ["#0D99FF", "#1D4BFF"] as const;
-const INACTIVE_BG = "#EDEDED";
+const ACTIVE_GRADIENT = [Colors.light.primary, Colors.light.primaryStrong] as const;
+const INACTIVE_BG = Colors.light.mutedBackground;
 
 type CardKey = "diet" | "workout" | "supp";
 type CardItem = { key: CardKey; title: string };
@@ -53,7 +57,8 @@ export default function RecommendationScreen() {
   const activeKey: CardKey = base[mod(activeIndex, base.length)].key;
 
   const listRef = useRef<FlatList<CardItem>>(null);
-
+  const [openSidebar, setOpenSidebar] = useState<(() => void) | null>(null);
+  
   useEffect(() => {
     requestAnimationFrame(() => {
       listRef.current?.scrollToIndex({ index: START_INDEX, animated: false });
@@ -100,15 +105,31 @@ export default function RecommendationScreen() {
     setActiveIndex(rawIndex);
   };
 
+
+  const handleExposeOpen = useCallback((openFn: () => void) => {
+      setOpenSidebar(() => openFn);
+    }, []);
+
   const handleEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const x = e.nativeEvent.contentOffset.x;
     syncActiveFromOffset(x);
   };
 
   return (
-    <View style={styles.container}>
+
+  <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+
+   
+          <View style={styles.header}>
+              <Pressable onPress={() => openSidebar?.()}>
+                  <Ionicons name="menu" size={24} color="#091441" />
+              </Pressable>
+          </View>
+
+     <ScrollView contentContainerStyle={styles.container}>
+      <SidebarMenu exposeOpen={handleExposeOpen} />
+
       <Text style={styles.h1}>추천 페이지</Text>
-      <Text style={styles.h2}>추천 페이지</Text>
 
       <View style={{ marginTop: 40 }}>
         <FlatList
@@ -181,7 +202,7 @@ export default function RecommendationScreen() {
           }}
         />
 
-        {/* ✅ 영양성분일 때도 자리 유지 - opacity로만 숨김 */}
+        {/* 영양성분일 때도 자리 유지 - opacity로만 숨김 */}
         <Pressable
           onPress={activeKey !== "supp" ? goFilter : undefined}
           style={[styles.filterBtn, activeKey === "supp" && { opacity: 0 }]}
@@ -207,14 +228,14 @@ export default function RecommendationScreen() {
         >
           <View style={styles.logBtnLeft}>
             <View style={styles.logIconBox}>
-              <Ionicons name="pencil" size={18} color="#5A80FF" />
+              <Ionicons name="pencil" size={18} color={Colors.light.primaryStrong} />
             </View>
             <View>
               <Text style={styles.logBtnTitle}>오늘 식사 기록 입력</Text>
               <Text style={styles.logBtnSub}>식후 반응과 운동 흐름을 함께 살펴봐요</Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#C0C0C0" />
+          <Ionicons name="chevron-forward" size={20} color={Colors.light.stone} />
         </Pressable>
       </View>
 
@@ -225,7 +246,7 @@ export default function RecommendationScreen() {
           style={({ pressed }) => [pressed && { opacity: 0.9 }]}
         >
           <LinearGradient
-            colors={["#6FA8FF", "#5A80FF"]}
+            colors={[Colors.light.primary, Colors.light.primaryStrong]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.homeBtn}
@@ -234,26 +255,33 @@ export default function RecommendationScreen() {
           </LinearGradient>
         </Pressable>
       </View>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
-    backgroundColor: "white",
-    paddingHorizontal: 22,
-    paddingTop: 16,
-    paddingBottom: 110,
   },
-  h1: { fontSize: 26, fontWeight: "800", marginTop: 8 },
-  h2: { fontSize: 16, fontWeight: "600", marginTop: 10 },
+  container: {
+    backgroundColor: Colors.light.background,
+    padding: 20,
+  },
+  header: {
+    backgroundColor: Colors.light.background,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingTop: 12,
+    paddingHorizontal: 20,
+  },
+  h1: { fontSize: 22, fontWeight: "800", marginTop: 8 },
 
   cardBase: {
     borderRadius: 22,
-    padding: 18,
+    padding: 22,
     justifyContent: "space-between",
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOpacity: 0.14,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
@@ -262,10 +290,10 @@ const styles = StyleSheet.create({
   cardInactive: {
     backgroundColor: INACTIVE_BG,
     borderWidth: 1,
-    borderColor: "#E2E2E2",
+    borderColor: Colors.light.border,
   },
-  cardTitleActive: { color: "white", fontSize: 18, fontWeight: "800" },
-  cardTitleInactive: { color: "#B7B7B7", fontSize: 18, fontWeight: "800" },
+  cardTitleActive: { color: Colors.light.card, fontSize: 18, fontWeight: "800" },
+  cardTitleInactive: { color: Colors.light.stone, fontSize: 18, fontWeight: "800" },
 
   dots: {
     width: "100%",
@@ -281,17 +309,17 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "white",
+    borderColor: Colors.light.card,
     opacity: 0.85,
   },
-  dotActive: { backgroundColor: "white", opacity: 1 },
+  dotActive: { backgroundColor: Colors.light.card, opacity: 1 },
 
   filterBtn: { alignItems: "center", marginTop: 14 },
-  filterText: { color: "#b7b7b7", fontWeight: "700" },
+  filterText: { color: Colors.light.stone, fontWeight: "700" },
   filterUnderline: {
     width: 86,
     height: 2,
-    backgroundColor: "#d9d9d9",
+    backgroundColor: Colors.light.border,
     marginTop: 6,
     borderRadius: 999,
   },
@@ -307,11 +335,11 @@ const styles = StyleSheet.create({
   logTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#1a1a1a",
+    color: Colors.light.text,
   },
   logSubtitle: {
     fontSize: 13,
-    color: "#aaa",
+    color: Colors.light.subtleText,
     marginTop: 4,
     fontWeight: "500",
   },
@@ -319,12 +347,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F6F8FF",
+    backgroundColor: Colors.light.primarySurface,
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 18,
     borderWidth: 1,
-    borderColor: "#E4ECFF",
+    borderColor: Colors.light.primarySurfaceStrong,
   },
   logBtnLeft: {
     flexDirection: "row",
@@ -335,29 +363,27 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#EEF3FF",
+    backgroundColor: Colors.light.primarySurfaceStrong,
     alignItems: "center",
     justifyContent: "center",
   },
   logBtnTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#222",
+    color: Colors.light.text,
   },
   logBtnSub: {
     fontSize: 12,
-    color: "#aaa",
+    color: Colors.light.subtleText,
     marginTop: 2,
     fontWeight: "500",
   },
 
   homeBar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 24,
-    alignItems: "center",
+    flexDirection: "row",
     justifyContent: "center",
+    marginTop: 40,
+    marginBottom: 20,
   },
   homeBtn: {
     width: 120,
@@ -365,7 +391,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
+    shadowColor: Colors.light.ink,
     shadowOpacity: 0.15,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },

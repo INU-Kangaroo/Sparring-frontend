@@ -223,7 +223,7 @@ export default function BloodSugarScreen() {
             style={styles.darkBtn}
             onPress={() => {
               setModalTitle("정상 수치");
-              setModalContent( "✔ 공복 혈당: 70-99 mg/dL\n\n✔ 식후 2시간 혈당: 140 mg/dL 미만" );
+              setModalContent( "✔ 공복 혈당: 100 mg/dL 미만 \n\n✔ 식후 2시간 혈당: 140 mg/dL 미만" );
               setModalVisible(true);
             }}
           >

@@ -35,6 +35,7 @@ import {
   ExerciseRequest,
   ExerciseResponse,
 } from "../api/recommendation";
+import Colors from "@/constants/Colors";
 
 const { width: W, height: H } = Dimensions.get("window");
 
@@ -332,9 +333,9 @@ export default function HealthDetail() {
             disabled={refreshing}
           >
             {refreshing ? (
-              <ActivityIndicator size="small" color="#0D99FF" />
+              <ActivityIndicator size="small" color={Colors.light.primaryStrong} />
             ) : (
-              <Ionicons name="refresh" size={20} color="#0D99FF" />
+              <Ionicons name="refresh" size={20} color={Colors.light.primaryStrong} />
             )}
           </Pressable>
         </View>
@@ -357,7 +358,7 @@ export default function HealthDetail() {
             >
               {isActive ? (
                 <LinearGradient
-                  colors={["#0D99FF", "#1D4BFF"]}
+                  colors={[Colors.light.primary, Colors.light.primaryStrong]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.btnActive}
@@ -388,7 +389,7 @@ export default function HealthDetail() {
         <GestureDetector gesture={pan}>
           <Animated.View style={[styles.sheet, sheetStyle]}>
             <LinearGradient
-              colors={["#61ADFF", "#AFD3FF"]}
+              colors={[Colors.light.primaryMuted, Colors.light.primarySurfaceStrong]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.sheetGradient}
@@ -453,7 +454,7 @@ export default function HealthDetail() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  safe: { flex: 1, backgroundColor: Colors.light.card },
 
   // 헤더
   header: { paddingHorizontal: 24 },
@@ -467,7 +468,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#F4F4F4",
+    backgroundColor: Colors.light.mutedBackground,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -475,12 +476,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#EEF6FF",
+    backgroundColor: Colors.light.primarySurface,
     alignItems: "center",
     justifyContent: "center",
   },
-  h1: { fontSize: 23, fontWeight: "700", color: "#111111" },
-  h2: { marginTop: 10, marginBottom: 20, fontSize: 15, color: "#666666" },
+  h1: { fontSize: 23, fontWeight: "700", color: Colors.light.text },
+  h2: { marginTop: 10, marginBottom: 20, fontSize: 15, color: Colors.light.subtleText },
 
   listContent: {
     paddingHorizontal: 24,
@@ -493,7 +494,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 18,
     paddingVertical: 14,
-    shadowColor: "#1D4BFF",
+    shadowColor: Colors.light.primaryStrong,
     shadowOpacity: 0.25,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
@@ -611,7 +612,7 @@ const styles = StyleSheet.create({
 
   workoutRow: {
     borderRadius: 20,
-    backgroundColor: "#1D82EF",
+    backgroundColor: Colors.light.primaryStrong,
     paddingHorizontal: 18,
     height: 54,
     flexDirection: "row",
@@ -625,7 +626,7 @@ const styles = StyleSheet.create({
   cautionBox: {
     width: "100%",
     borderRadius: 18,
-    backgroundColor: "rgba(29, 130, 239, 0.55)",
+    backgroundColor: "#fae3e5",
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
@@ -656,7 +657,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 20,
-    backgroundColor: "#0D99FF",
+    backgroundColor: Colors.light.primaryStrong,
   },
   emptyBackText: {
     color: "#fff",

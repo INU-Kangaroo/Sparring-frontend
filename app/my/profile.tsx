@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import Colors from "@/constants/Colors";
 
 import {
   changeMyPassword,
@@ -658,7 +659,7 @@ const styles = StyleSheet.create({
     color: "#111",
   },
   saveButton: {
-    backgroundColor: "#3F7BFF",
+    backgroundColor: Colors.light.primaryStrong,
     paddingHorizontal: 14,
     height: 34,
     borderRadius: 17,
@@ -715,7 +716,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   addText: {
-    color: "#2F6BFF",
+    color: Colors.light.primaryStrong,
     fontWeight: "600",
   },
   input: {
@@ -814,7 +815,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E6E6E6",
   },
   modalBtnConfirm: {
-    backgroundColor: "#3F7BFF",
+    backgroundColor: Colors.light.primaryStrong,
   },
   modalBtnWithdraw: {
     backgroundColor: "#FF4444",

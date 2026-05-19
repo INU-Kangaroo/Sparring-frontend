@@ -12,9 +12,9 @@ import {
   Platform,
   Image,
 } from "react-native";
+import Markdown from "react-native-markdown-display";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import Colors from "@/constants/Colors";
 import {
   ChatbotApiMessage,
   ChatbotSession,
@@ -80,6 +80,84 @@ const buildSessionTitle = (text: string) => {
 
   return trimmed.length > 20 ? `${trimmed.slice(0, 20)}...` : trimmed;
 };
+
+const isMarkdownBlockLine = (line: string) =>
+  /^(\s*[-*+]\s+|\s*\d+\.\s+|#{1,6}\s+|>\s+|```|\s{4,}|\t)/.test(line);
+
+const normalizeMarkdownForDisplay = (text: string) => {
+  const normalized = text.replace(/\r\n/g, "\n").trim();
+  if (!normalized) return "";
+
+  const lines = normalized.split("\n");
+  const output: string[] = [];
+  let paragraph: string[] = [];
+
+  const flushParagraph = () => {
+    if (paragraph.length === 0) return;
+    output.push(paragraph.join(" ").replace(/\s{2,}/g, " ").trim());
+    paragraph = [];
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushParagraph();
+      if (output[output.length - 1] !== "") {
+        output.push("");
+      }
+      continue;
+    }
+
+    if (isMarkdownBlockLine(line)) {
+      flushParagraph();
+      output.push(line);
+      continue;
+    }
+
+    paragraph.push(trimmed);
+  }
+
+  flushParagraph();
+
+  return output.join("\n").replace(/\n{3,}/g, "\n\n");
+};
+
+const getMarkdownStyles = (isBot: boolean) =>
+  isBot
+    ? {
+        body: styles.leftMarkdownBody,
+        paragraph: styles.markdownParagraph,
+        strong: styles.leftMarkdownStrong,
+        em: styles.leftMarkdownEm,
+        list_item: styles.leftMarkdownListItem,
+        bullet_list_icon: styles.leftMarkdownBody,
+        bullet_list_content: styles.leftMarkdownListContent,
+        ordered_list_icon: styles.leftMarkdownBody,
+        ordered_list_content: styles.leftMarkdownListContent,
+        code_inline: styles.leftMarkdownInlineCode,
+        code_block: styles.leftMarkdownCodeBlock,
+        fence: styles.leftMarkdownCodeBlock,
+        blockquote: styles.leftMarkdownBlockquote,
+        link: styles.leftMarkdownLink,
+      }
+    : {
+        body: styles.rightMarkdownBody,
+        paragraph: styles.markdownParagraph,
+        strong: styles.rightMarkdownStrong,
+        em: styles.rightMarkdownEm,
+        list_item: styles.rightMarkdownListItem,
+        bullet_list_icon: styles.rightMarkdownBody,
+        bullet_list_content: styles.rightMarkdownListContent,
+        ordered_list_icon: styles.rightMarkdownBody,
+        ordered_list_content: styles.rightMarkdownListContent,
+        code_inline: styles.rightMarkdownInlineCode,
+        code_block: styles.rightMarkdownCodeBlock,
+        fence: styles.rightMarkdownCodeBlock,
+        blockquote: styles.rightMarkdownBlockquote,
+        link: styles.rightMarkdownLink,
+      };
 
 export default function ChatAI() {
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
@@ -302,6 +380,12 @@ export default function ChatAI() {
   const onSend = () => sendMessage(input);
   const onFaqPress = (q: string) => sendMessage(q);
 
+  const renderMessageMarkdown = (text: string, isBot: boolean) => (
+    <Markdown style={getMarkdownStyles(isBot)}>
+      {normalizeMarkdownForDisplay(text)}
+    </Markdown>
+  );
+
   const renderItem = ({ item }: { item: ChatMessage }) => {
     const isBot = item.role === "bot";
 
@@ -319,7 +403,7 @@ export default function ChatAI() {
           <View style={styles.leftBubbleWrap}>
             <Text style={styles.botName}>{BOT_NAME}</Text>
             <View style={styles.bubbleLeft}>
-              <Text style={styles.leftText}>{item.text}</Text>
+              {renderMessageMarkdown(item.text, true)}
             </View>
           </View>
         </View>
@@ -329,7 +413,7 @@ export default function ChatAI() {
     return (
       <View style={styles.rowRight}>
         <View style={styles.bubbleRight}>
-          <Text style={styles.rightText}>{item.text}</Text>
+          {renderMessageMarkdown(item.text, false)}
         </View>
       </View>
     );
@@ -489,9 +573,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
     marginTop: 2,
     justifyContent: "center",
-  alignItems: "center",
+    alignItems: "center",
   },
-  leftBubbleWrap: { maxWidth: "76%" },
+  leftBubbleWrap: { maxWidth: "84%" },
   botName: { fontSize: 12, color: "#D99197", marginBottom: 6 },
   bubbleLeft: {
     backgroundColor: "#E7E7E7",
@@ -499,7 +583,32 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
   },
-  leftText: { fontSize: 14, color: "#333", lineHeight: 20 },
+  leftMarkdownBody: { fontSize: 14, color: "#333", lineHeight: 22 },
+  leftMarkdownStrong: { color: "#333", fontWeight: "700" },
+  leftMarkdownEm: { color: "#333", fontStyle: "italic" },
+  leftMarkdownListItem: { color: "#333", lineHeight: 22, marginTop: 2, marginBottom: 2 },
+  leftMarkdownListContent: { color: "#333", lineHeight: 22, flexShrink: 1 },
+  leftMarkdownInlineCode: {
+    color: "#333",
+    backgroundColor: "#DCDCDC",
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  leftMarkdownCodeBlock: {
+    color: "#333",
+    backgroundColor: "#DCDCDC",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  leftMarkdownBlockquote: {
+    color: "#333",
+    borderLeftWidth: 3,
+    borderLeftColor: "#C6C6C6",
+    paddingLeft: 8,
+  },
+  leftMarkdownLink: { color: "#295EA8", textDecorationLine: "underline" },
 
   // 유저
   rowRight: { alignItems: "flex-end", marginBottom: 18 },
@@ -510,7 +619,33 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
   },
-  rightText: { fontSize: 14, color: "#fff", lineHeight: 20 },
+  rightMarkdownBody: { fontSize: 14, color: "#fff", lineHeight: 22 },
+  rightMarkdownStrong: { color: "#fff", fontWeight: "700" },
+  rightMarkdownEm: { color: "#fff", fontStyle: "italic" },
+  rightMarkdownListItem: { color: "#fff", lineHeight: 22, marginTop: 2, marginBottom: 2 },
+  rightMarkdownListContent: { color: "#fff", lineHeight: 22, flexShrink: 1 },
+  rightMarkdownInlineCode: {
+    color: "#fff",
+    backgroundColor: "#C57C84",
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  rightMarkdownCodeBlock: {
+    color: "#fff",
+    backgroundColor: "#C57C84",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  rightMarkdownBlockquote: {
+    color: "#fff",
+    borderLeftWidth: 3,
+    borderLeftColor: "#E9B3B7",
+    paddingLeft: 8,
+  },
+  rightMarkdownLink: { color: "#FFF3DA", textDecorationLine: "underline" },
+  markdownParagraph: { marginTop: 0, marginBottom: 8 },
 
   // FAQ 섹션 - 세로 나열
   faqSection: {

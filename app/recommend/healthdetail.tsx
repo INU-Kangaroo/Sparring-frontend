@@ -626,7 +626,7 @@ const styles = StyleSheet.create({
   cautionBox: {
     width: "100%",
     borderRadius: 18,
-    backgroundColor: "#fae3e5)",
+    backgroundColor: "#D99197",
     paddingHorizontal: 16,
     paddingVertical: 16,
   },

@@ -314,11 +314,11 @@ export default function ReportScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.light.background },
 
-  header: { height: 54, justifyContent: "center", paddingHorizontal: 14 },
+  header: { height: 40, justifyContent: "center", paddingHorizontal: 14 },
   backBtn: { width: 40, height: 40, justifyContent: "center" },
-  scrollContent: { paddingHorizontal: 18, paddingBottom: 40 },
-  title: { marginTop: 14, fontSize: 20, fontWeight: "700", color: Colors.light.text, lineHeight: 28 },
-  titleAccent: { color: Colors.light.primary, fontWeight: "700" },
+  scrollContent: { paddingHorizontal: 18, paddingBottom: 50 },
+  title: { marginTop: 14, marginLeft: 20, fontSize: 20, fontWeight: "700", color: Colors.light.text, lineHeight: 28 },
+  titleAccent: { marginLeft: 20, color: Colors.light.primary, fontWeight: "700" },
   statsWrap: { width: 349, alignSelf: "center", marginTop: 18 },
   statBarBg: {
     width: 349,

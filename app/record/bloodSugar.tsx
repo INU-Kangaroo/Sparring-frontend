@@ -29,18 +29,18 @@ import {
   //deleteBloodSugarLog, 
 } from "../api/bloodSugar";
 
-// -------- utils --------
+
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const toYmd = (d: Date) =>
   `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const toHm = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 const formatTime = (d: Date) => toHm(d);
-// ----------------------
+
 
 const screenWidth = Dimensions.get("window").width;
 
 type BloodRecordUI = {
-  id: number; // ✅ 중요 (삭제용)
+  id: number; 
   glucoseLevel: number;
   measuredAt: Date;
   measurementLabel: string;
@@ -53,7 +53,7 @@ function normalizeDaily(raw: any): BloodRecordUI[] {
 
   return arr
     .map((it: any) => ({
-      id: it?.id, // ✅ 추가
+      id: it?.id, 
       glucoseLevel: Number(it?.glucoseLevel),
       measuredAt: new Date(it?.measuredAt),
       measurementLabel: it?.measurementLabel ?? "",
@@ -99,7 +99,6 @@ export default function BloodSugarScreen() {
     fetchDaily();
   }, [selectedYmd]);
 
-  // ✅ 삭제 함수
   const handleDelete = (id: number) => {
     Alert.alert("삭제", "정말 삭제하시겠습니까?", [
       { text: "취소" },

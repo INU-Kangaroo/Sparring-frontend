@@ -28,13 +28,11 @@ import {
   getBloodPressureDaily,
 } from "../api/bloodPressure";
 
-// -------- utils --------
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const toYmd = (d: Date) =>
   `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const toHm = (d: Date) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 const formatTime = (d: Date) => toHm(d);
-// ----------------------
 
 const screenWidth = Dimensions.get("window").width;
 

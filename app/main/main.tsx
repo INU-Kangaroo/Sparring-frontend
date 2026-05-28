@@ -286,9 +286,9 @@ card: {
 
   messageAccent: {
     width: 3,
-    height: 24,
     backgroundColor: "#222",
     marginRight: 10,
+    borderRadius: 2,
   },
 
   messageText: {

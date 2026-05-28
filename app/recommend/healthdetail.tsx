@@ -1,14 +1,13 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   Pressable,
   ScrollView,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -18,7 +17,7 @@ import Animated, {
   useAnimatedReaction,
   runOnJS,
 } from "react-native-reanimated";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { Gesture } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 
 import {
@@ -28,11 +27,11 @@ import {
 } from "../api/recommendation";
 
 import Colors from "@/constants/Colors";
+import RecommendationHeader from "./components/RecommendationHeader";
+import RecommendationCard from "./components/RecommendationCard";
+import RecommendationBottomSheet from "./components/RecommendationBottomSheet";
 
-const { height: H } = Dimensions.get("window");
-
-const SHEET_TOP = 110;
-const SHEET_BOTTOM = H - 170;
+const MAX_OPEN_TOP = 110;
 
 type WorkoutItem = {
   id: string;
@@ -124,6 +123,7 @@ function PrecautionBox({ bullets }: { bullets: string[] }) {
 }
 
 export default function HealthDetail() {
+  const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
   const params = useLocalSearchParams<{
@@ -182,16 +182,30 @@ export default function HealthDetail() {
   };
 
   // Bottom Sheet
+  const SHEET_BOTTOM = Math.max(160, screenHeight - 170);
+  const [contentHeight, setContentHeight] = useState(0);
+  const OPEN_CONTENT_MARGIN = 24;
+  const OPEN_THRESHOLD = 8;
+  const SHEET_CHROME_HEIGHT = 72;
+  const openTop = Math.max(
+    MAX_OPEN_TOP,
+    //screenHeight - (contentHeight + SHEET_CHROME_HEIGHT) - OPEN_CONTENT_MARGIN
+  );
+
   const top = useSharedValue(SHEET_BOTTOM);
 
   const startTop = useSharedValue(SHEET_BOTTOM);
 
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  useEffect(() => {
+    top.value = SHEET_BOTTOM;
+  }, [SHEET_BOTTOM, top]);
+
   useAnimatedReaction(
     () => top.value,
     (v) => {
-      runOnJS(setSheetOpen)(Math.abs(v - SHEET_TOP) < 10);
+      runOnJS(setSheetOpen)(Math.abs(v - openTop) <= OPEN_THRESHOLD);
     }
   );
 
@@ -203,18 +217,18 @@ export default function HealthDetail() {
       const nextTop = startTop.value + e.translationY;
 
       top.value = Math.min(
-        Math.max(nextTop, SHEET_TOP),
+        Math.max(nextTop, openTop),
         SHEET_BOTTOM
       );
     })
     .onEnd((e) => {
-      const mid = (SHEET_TOP + SHEET_BOTTOM) / 2;
+      const mid = (openTop + SHEET_BOTTOM) / 2;
 
       const shouldOpen =
         e.velocityY < -500 ? true : top.value < mid;
 
       top.value = withSpring(
-        shouldOpen ? SHEET_TOP : SHEET_BOTTOM,
+        shouldOpen ? openTop : SHEET_BOTTOM,
         {
           damping: 18,
           stiffness: 180,
@@ -225,6 +239,14 @@ export default function HealthDetail() {
   const sheetStyle = useAnimatedStyle(() => ({
     top: top.value,
   }));
+
+  const openSheet = (item: WorkoutItem) => {
+    setSelected(item);
+    top.value = withSpring(openTop, {
+      damping: 18,
+      stiffness: 180,
+    });
+  };
 
   if (data.length === 0) {
     return (
@@ -274,50 +296,13 @@ export default function HealthDetail() {
         },
       ]}
     >
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.leftHeader}>
-            <Pressable
-              onPress={() =>
-                router.push("/recommend/recommendation")
-              }
-              style={styles.backBtn}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={24}
-                color="#111"
-              />
-            </Pressable>
-
-            <Text style={styles.headerTitle}>운동</Text>
-          </View>
-
-          <Pressable
-            onPress={handleRefresh}
-            style={styles.refreshBtn}
-            disabled={refreshing}
-          >
-            {refreshing ? (
-              <ActivityIndicator
-                size="small"
-                color={Colors.light.primaryStrong}
-              />
-            ) : (
-              <Ionicons
-                name="refresh"
-                size={20}
-                color={Colors.light.primaryStrong}
-              />
-            )}
-          </Pressable>
-        </View>
-
-        <Text style={styles.h2}>
-         현재 혈당 기반, 맞춤 운동 추천
-        </Text>
-      </View>
+      <RecommendationHeader
+        title="운동"
+        subtitle="현재 혈당 기반, 맞춤 운동 추천"
+        onBack={() => router.push("/recommend/recommendation")}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      />
 
       {/* 운동 리스트 */}
       <ScrollView
@@ -328,55 +313,14 @@ export default function HealthDetail() {
           const isActive = selected?.id === item.id;
 
           return (
-            <Pressable
+            <RecommendationCard
               key={item.id}
-              onPress={() => setSelected(item)}
-              style={({ pressed }) => [
-                pressed && { opacity: 0.85 },
-              ]}
-            >
-              {isActive ? (
-                <LinearGradient
-                  colors={[
-                    Colors.light.primary,
-                    Colors.light.primaryStrong,
-                  ]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.btnActive}
-                >
-                  <View style={styles.btnRow}>
-                    <Text style={styles.btnNameActive}>
-                      {item.name}
-                    </Text>
-
-                    <Text style={styles.btnKcalActive}>
-                      {item.badgeText}
-                    </Text>
-                  </View>
-
-                  <Text style={styles.btnInfoActive}>
-                    {item.subInfo}
-                  </Text>
-                </LinearGradient>
-              ) : (
-                <View style={styles.btnInactive}>
-                  <View style={styles.btnRow}>
-                    <Text style={styles.btnName}>
-                      {item.name}
-                    </Text>
-
-                    <Text style={styles.btnKcal}>
-                      {item.badgeText}
-                    </Text>
-                  </View>
-
-                  <Text style={styles.btnInfo}>
-                    {item.subInfo}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
+              isActive={isActive}
+              onPress={() => openSheet(item)}
+              title={item.name}
+              rightText={item.badgeText}
+              subText={item.subInfo}
+            />
           );
         })}
 
@@ -385,29 +329,13 @@ export default function HealthDetail() {
 
       {/* Bottom Sheet */}
       {selected && (
-        <GestureDetector gesture={pan}>
-          <Animated.View
-            style={[styles.sheet, sheetStyle]}
-          >
-            <LinearGradient
-              colors={[
-                Colors.light.primaryMuted,
-                Colors.light.primarySurfaceStrong,
-              ]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.sheetGradient}
-            >
-              <View style={styles.sheetHandle} />
-
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                scrollEnabled={sheetOpen}
-                nestedScrollEnabled
-                contentContainerStyle={
-                  styles.sheetScrollContent
-                }
-              >
+        <RecommendationBottomSheet
+          gesture={pan}
+          animatedStyle={sheetStyle}
+          sheetOpen={sheetOpen}
+          contentBottomPadding={34}
+          onContentHeightChange={setContentHeight}
+        >
                 <Text style={styles.sheetTitle}>
                   {selected.name}
                 </Text>
@@ -459,12 +387,7 @@ export default function HealthDetail() {
                     />
                   </>
                 )}
-
-                <View style={{ height: 140 }} />
-              </ScrollView>
-            </LinearGradient>
-          </Animated.View>
-        </GestureDetector>
+        </RecommendationBottomSheet>
       )}
     </View>
   );
@@ -476,157 +399,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.card,
   },
 
-  header: {
-    paddingHorizontal: 24,
-  },
-
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  leftHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.light.text,
-  },
-
-  backBtn: {
-    paddingRight: 6,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  refreshBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: Colors.light.primarySurface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  h2: {
-    marginLeft: 10,
-    marginBottom: 20,
-    fontSize: 15,
-    color: Colors.light.subtleText,
-  },
-
   listContent: {
     paddingHorizontal: 24,
     gap: 12,
     paddingTop: 4,
-  },
-
-  btnActive: {
-    borderRadius: 15,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    shadowColor: Colors.light.primaryStrong,
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 4,
-  },
-
-  btnNameActive: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#fff",
-    flex: 1,
-    lineHeight: 22,
-  },
-
-  btnKcalActive: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#fff",
-    flexShrink: 0,
-    marginLeft: 12,
-  },
-
-  btnInfoActive: {
-    marginTop: 5,
-    fontSize: 12,
-    color: "rgba(255,255,255,0.8)",
-  },
-
-  btnInactive: {
-    borderRadius: 15,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-
-  btnName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111",
-    flex: 1,
-    lineHeight: 22,
-  },
-
-  btnKcal: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111",
-    flexShrink: 0,
-    marginLeft: 12,
-  },
-
-  btnInfo: {
-    marginTop: 5,
-    fontSize: 12,
-    color: "#666",
-  },
-
-  btnRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  // BottomSheet
-  sheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    maxHeight: H - 80,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    overflow: "hidden",
-  },
-
-  sheetGradient: {
-    flex: 1,
-    paddingTop: 10,
-  },
-
-  sheetHandle: {
-    alignSelf: "center",
-    width: 90,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    marginBottom: 22,
-  },
-
-  sheetScrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 140,
   },
 
   sheetTitle: {
@@ -634,7 +410,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#fff",
     textAlign: "center",
-    marginBottom: 4,
+    marginTop: 12,
+    marginBottom: 6,
   },
 
   sheetKcal: {
@@ -650,7 +427,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "rgba(255,255,255,0.75)",
     textAlign: "center",
-    marginBottom: 18,
+    marginBottom: 8,
   },
 
   divider: {
@@ -678,7 +455,7 @@ const styles = StyleSheet.create({
 
   workoutRow: {
     borderRadius: 20,
-    backgroundColor: Colors.light.primaryStrong,
+    backgroundColor: "rgba(205, 125, 132, 0.75)",
     paddingHorizontal: 18,
     height: 54,
     flexDirection: "row",
@@ -701,7 +478,7 @@ const styles = StyleSheet.create({
   cautionBox: {
     width: "100%",
     borderRadius: 18,
-    backgroundColor: "#D99197",
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
@@ -709,7 +486,7 @@ const styles = StyleSheet.create({
   cautionTitle: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "#fff",
     textAlign: "center",
     marginBottom: 2,
   },
@@ -723,7 +500,7 @@ const styles = StyleSheet.create({
   bulletDot: {
     fontSize: 14,
     lineHeight: 20,
-    color: "#FFFFFF",
+    color: "#fff",
   },
 
   bulletText: {
@@ -731,7 +508,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     fontWeight: "600",
-    color: "rgba(255,255,255,0.92)",
+    color: "#fff",
   },
 
   emptyBackBtn: {

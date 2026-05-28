@@ -18,6 +18,7 @@ import SidebarMenu from "@/components/Sidebar";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
+const SCREEN_HORIZONTAL_PADDING = 20;
 
 const ACTIVE_GRADIENT = [Colors.light.primary, Colors.light.primaryStrong] as const;
 const INACTIVE_BG = Colors.light.mutedBackground;
@@ -41,7 +42,8 @@ export default function RecommendationScreen() {
   const CARD_HEIGHT = 309;
   const GAP = 18;
   const ITEM_WIDTH = CARD_WIDTH + GAP;
-  const SIDE_PADDING = (width - CARD_WIDTH) / 2;
+  const carouselViewportWidth = width - SCREEN_HORIZONTAL_PADDING * 2;
+  const SIDE_PADDING = (carouselViewportWidth - CARD_WIDTH) / 2;
 
   const LOOP = 60;
   const data = useMemo(() => {
@@ -268,7 +270,7 @@ const styles = StyleSheet.create({
   },
   container: {
     backgroundColor: Colors.light.background,
-    padding: 20,
+    padding: SCREEN_HORIZONTAL_PADDING,
   },
   header: {
     backgroundColor: Colors.light.background,

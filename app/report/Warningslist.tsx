@@ -79,10 +79,10 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 18,
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    elevation: 4,
   },
   cardDivider: {
     height: 1,

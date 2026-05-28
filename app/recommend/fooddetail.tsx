@@ -7,8 +7,8 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -18,7 +18,7 @@ import Animated, {
   useAnimatedReaction,
   runOnJS,
 } from "react-native-reanimated";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { Gesture } from "react-native-gesture-handler";
 import Svg, { Polyline, Line, Text as SvgText, Circle, Defs, LinearGradient as SvgGradient, Stop, Path } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -28,11 +28,11 @@ import {
 } from "../api/recommendation";
 import { predictBloodSugar, type BloodSugarPredictionResponse } from "../api/prediction";
 import Colors from "@/constants/Colors";
+import RecommendationHeader from "./components/RecommendationHeader";
+import RecommendationCard from "./components/RecommendationCard";
+import RecommendationBottomSheet from "./components/RecommendationBottomSheet";
 
-const { width: W, height: H } = Dimensions.get("window");
-
-const SHEET_TOP = 110;
-const SHEET_BOTTOM = H - 170;
+const { width: W } = Dimensions.get("window");
 
 function clamp(v: number, min: number, max: number) {
   "worklet";
@@ -346,9 +346,17 @@ function GlucoseGraph({ data }: { data: { t: number; v: number }[] }) {
   return (
     <Svg width={GRAPH_W} height={GRAPH_H}>
       <Defs>
-        <SvgGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="rgba(255,255,255,0.45)" />
-          <Stop offset="100%" stopColor="rgba(255,255,255,0.02)" />
+        <SvgGradient
+          id="areaGrad"
+          x1="0"
+          y1={String(PAD_T)}
+          x2="0"
+          y2={String(PAD_T + innerH)}
+          gradientUnits="userSpaceOnUse"
+        >
+          <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.5} />
+          <Stop offset="55%" stopColor="#FFFFFF" stopOpacity={0.25} />
+          <Stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
         </SvgGradient>
       </Defs>
 
@@ -363,7 +371,7 @@ function GlucoseGraph({ data }: { data: { t: number; v: number }[] }) {
             y1={toY(v)}
             x2={PAD_L + innerW}
             y2={toY(v)}
-            stroke="rgba(255,255,255,0.25)"
+            stroke="rgba(255,255,255,0.22)"
             strokeWidth={1}
             strokeDasharray="4,4"
           />
@@ -371,7 +379,7 @@ function GlucoseGraph({ data }: { data: { t: number; v: number }[] }) {
             x={PAD_L - 4}
             y={toY(v) + 4}
             fontSize={9}
-            fill="rgba(255,255,255,0.8)"
+            fill="rgba(255,255,255,0.58)"
             textAnchor="end"
           >
             {v}
@@ -385,7 +393,7 @@ function GlucoseGraph({ data }: { data: { t: number; v: number }[] }) {
         y1={PAD_T + innerH}
         x2={PAD_L + innerW}
         y2={PAD_T + innerH}
-        stroke="rgba(255,255,255,0.4)"
+        stroke="rgba(255,255,255,0.28)"
         strokeWidth={1}
       />
 
@@ -396,7 +404,7 @@ function GlucoseGraph({ data }: { data: { t: number; v: number }[] }) {
           x={toX(d.t)}
           y={PAD_T + innerH + 14}
           fontSize={9}
-          fill="rgba(255,255,255,0.8)"
+          fill="rgba(255,255,255,0.58)"
           textAnchor="middle"
         >
           +{d.t}분
@@ -407,8 +415,8 @@ function GlucoseGraph({ data }: { data: { t: number; v: number }[] }) {
       <Polyline
         points={points}
         fill="none"
-        stroke="white"
-        strokeWidth={2.5}
+        stroke="rgba(255,255,255,0.94)"
+        strokeWidth={2.2}
         strokeLinejoin="round"
         strokeLinecap="round"
       />
@@ -419,10 +427,10 @@ function GlucoseGraph({ data }: { data: { t: number; v: number }[] }) {
           key={i}
           cx={toX(d.t)}
           cy={toY(d.v)}
-          r={3.5}
-          fill="white"
-          stroke="rgba(255,255,255,0.5)"
-          strokeWidth={1.5}
+          r={3.2}
+          fill="rgba(255,255,255,0.95)"
+          stroke="rgba(255,255,255,0.4)"
+          strokeWidth={1.2}
         />
       ))}
     </Svg>
@@ -438,7 +446,16 @@ function NutrientRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function hasNutrientValue(value: string) {
+  const raw = String(value ?? "").trim();
+  if (!raw || raw === "-" || raw.toLowerCase() === "nan") return false;
+  const n = Number(raw.replace(/[^\d.-]/g, ""));
+  if (Number.isFinite(n) && n <= 0) return false;
+  return true;
+}
+
 export default function DietRecommendScreen() {
+  const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     data?: string;
@@ -496,14 +513,21 @@ export default function DietRecommendScreen() {
   }, [data]);
 
   // ── Bottom Sheet ──────────────────────────────────────────
+  const SHEET_TOP = 110;
+  const SHEET_BOTTOM = Math.max(160, screenHeight - 170);
+
   const top = useSharedValue(SHEET_BOTTOM);
   const startTop = useSharedValue(SHEET_BOTTOM);
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  useEffect(() => {
+    top.value = SHEET_BOTTOM;
+  }, [SHEET_BOTTOM, top]);
+
   useAnimatedReaction(
     () => top.value,
     (v) => {
-      runOnJS(setSheetOpen)(Math.abs(v - SHEET_TOP) < 10);
+      runOnJS(setSheetOpen)(Math.abs(v - SHEET_TOP) <= 6);
     }
   );
 
@@ -527,6 +551,22 @@ export default function DietRecommendScreen() {
     setSelected(item);
     top.value = withSpring(SHEET_TOP, { damping: 18, stiffness: 180 });
   };
+
+  const nutrientRows = useMemo(
+    () =>
+      [
+        { label: "탄수화물", value: selected?.carbs ?? "-" },
+        { label: "당류", value: selected?.sugar ?? "-" },
+        { label: "식이섬유", value: selected?.fiber ?? "-" },
+        { label: "단백질", value: selected?.protein ?? "-" },
+        { label: "지방", value: selected?.fat ?? "-" },
+        { label: "포화지방", value: selected?.saturatedFat ?? "-" },
+        { label: "트랜스지방", value: selected?.transFat ?? "-" },
+        { label: "콜레스테롤", value: selected?.cholesterol ?? "-" },
+        { label: "나트륨", value: selected?.sodium ?? "-" },
+      ].filter((item) => hasNutrientValue(item.value)),
+    [selected]
+  );
 
   const handleRefresh = async () => {
     if (refreshing) return;
@@ -650,47 +690,13 @@ export default function DietRecommendScreen() {
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top + 40 }]}>
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.leftHeader}>
-            <Pressable
-              onPress={() => router.push("/recommend/recommendation")}
-              style={styles.backBtn}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={24}
-                color="#111"
-              />
-            </Pressable>
-
-            <Text style={styles.headerTitle}>식단</Text>
-          </View>
-
-          <Pressable
-            onPress={handleRefresh}
-            style={styles.refreshBtn}
-            disabled={refreshing}
-          >
-            {refreshing ? (
-              <ActivityIndicator
-                size="small"
-                color={Colors.light.primaryStrong}
-              />
-            ) : (
-              <Ionicons
-                name="refresh"
-                size={20}
-                color={Colors.light.primaryStrong}
-              />
-            )}
-          </Pressable>
-        </View>
-
-        <Text style={styles.h2}>
-          현재 건강 상태 기반, 맞춤 식단 추천
-        </Text>
-      </View>
+      <RecommendationHeader
+        title="식단"
+        subtitle="현재 건강 상태 기반, 맞춤 식단 추천"
+        onBack={() => router.push("/recommend/recommendation")}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      />
 
       {/* 음식 버튼 리스트 */}
       <ScrollView
@@ -700,68 +706,28 @@ export default function DietRecommendScreen() {
         {data.map((item) => {
           const isActive = selected.id === item.id;
           return (
-            <Pressable
+            <RecommendationCard
               key={item.id}
+              isActive={isActive}
               onPress={() => openSheet(item)}
-              style={({ pressed }) => [pressed && { opacity: 0.85 }]}
-            >
-              {isActive ? (
-                <LinearGradient
-                  colors={[Colors.light.primary, Colors.light.primaryStrong]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.foodBtnActive}
-                >
-                  <View style={styles.foodBtnRow}>
-                    <Text style={styles.foodBtnNameActive}>{item.name}</Text>
-                    <Text style={styles.foodBtnKcalActive}>{item.kcal}kcal</Text>
-                  </View>
-                  {item.reactionTags.length > 0 ? (
-                    <Text style={styles.foodBtnServingActive}>
-                      {item.reactionTags.join(" · ")}
-                    </Text>
-                  ) : null}
-                  <Text style={styles.foodBtnServingActive}>{item.menuSummary}</Text>
-                </LinearGradient>
-              ) : (
-                <View style={styles.foodBtnInactive}>
-                  <View style={styles.foodBtnRow}>
-                    <Text style={styles.foodBtnName}>{item.name}</Text>
-                    <Text style={styles.foodBtnKcal}>{item.kcal}kcal</Text>
-                  </View>
-                  {item.reactionTags.length > 0 ? (
-                    <Text style={styles.foodBtnServing}>{item.reactionTags.join(" · ")}</Text>
-                  ) : null}
-                  <Text style={styles.foodBtnServing}>{item.menuSummary}</Text>
-                </View>
-              )}
-            </Pressable>
+              title={item.name}
+              rightText={`${item.kcal}kcal`}
+              subText={item.reactionTags.length > 0 ? item.reactionTags.join(" · ") : undefined}
+              subText2={item.menuSummary}
+            />
           );
         })}
         <View style={{ height: 160 }} />
       </ScrollView>
 
       {/* 바텀 시트 */}
-      <Animated.View style={[styles.sheet, sheetStyle]}>
-        <LinearGradient
-          colors={[Colors.light.primaryMuted, Colors.light.primarySurfaceStrong]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.sheetGradient}
-        >
-          <GestureDetector gesture={pan}>
-            <View style={styles.sheetHandleTouchArea}>
-              <View style={styles.sheetHandle} />
-            </View>
-          </GestureDetector>
-
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={styles.sheetScrollContent}
-            scrollEnabled={sheetOpen}
-            nestedScrollEnabled
-            showsVerticalScrollIndicator={false}
-          >
+      <RecommendationBottomSheet
+        gesture={pan}
+        animatedStyle={sheetStyle}
+        sheetOpen={sheetOpen}
+        dragOnHandleOnly
+        contentBottomPadding={34}
+      >
               {/* 음식 이름 + kcal */}
               <Text style={styles.sheetTitle}>{selected.name}</Text>
               <Text style={styles.sheetKcal}>{selected.kcal}kcal</Text>
@@ -831,18 +797,16 @@ export default function DietRecommendScreen() {
               ) : null}
 
               {/* 영양성분 */}
-              <Text style={styles.sectionLabel}>영양성분</Text>
-              <View style={styles.nutrientsWrap}>
-                <NutrientRow label="탄수화물" value={selected.carbs} />
-                <NutrientRow label="당류" value={selected.sugar} />
-                <NutrientRow label="식이섬유" value={selected.fiber} />
-                <NutrientRow label="단백질" value={selected.protein} />
-                <NutrientRow label="지방" value={selected.fat} />
-                <NutrientRow label="포화지방" value={selected.saturatedFat} />
-                <NutrientRow label="트랜스지방" value={selected.transFat} />
-                <NutrientRow label="콜레스테롤" value={selected.cholesterol} />
-                <NutrientRow label="나트륨" value={selected.sodium} />
-              </View>
+              {nutrientRows.length > 0 ? (
+                <>
+                  <Text style={styles.sectionLabel}>영양성분</Text>
+                  <View style={styles.nutrientsWrap}>
+                    {nutrientRows.map((item) => (
+                      <NutrientRow key={item.label} label={item.label} value={item.value} />
+                    ))}
+                  </View>
+                </>
+              ) : null}
 
               {selected.reasons.length > 0 ? (
                 <>
@@ -859,10 +823,7 @@ export default function DietRecommendScreen() {
                 </>
               ) : null}
 
-            <View style={{ height: 100 }} />
-          </ScrollView>
-        </LinearGradient>
-      </Animated.View>
+      </RecommendationBottomSheet>
     </View>
   );
 }
@@ -892,131 +853,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  header: { paddingHorizontal: 24 },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.light.text,
-  },
-  leftHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  backBtn: {
-    width: 36,
-    height: 36, 
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  refreshBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: Colors.light.primarySurface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  h2: { marginLeft: 10, marginTop: 10, marginBottom: 20, fontSize: 15, color: Colors.light.subtleText },
-
   listContent: {
     paddingHorizontal: 24,
     gap: 12,
     paddingTop: 4,
   },
-
-  // 활성 버튼
-  foodBtnActive: {
-    borderRadius: 15,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    shadowColor: Colors.light.primaryStrong,
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 4,
-  },
-  foodBtnKcalActive: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#fff",
-    flexShrink: 0,
-    marginLeft: 12,
-  },
-  foodBtnServingActive: { marginTop: 5, fontSize: 12, color: "rgba(255,255,255,0.8)" },
-
-  // 비활성 버튼
-  foodBtnInactive: {
-    borderRadius: 15,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  foodBtnKcal: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111",
-    flexShrink: 0,
-    marginLeft: 12,
-  },
-  foodBtnServing: { marginTop: 5, fontSize: 12, color: "#666" },
-  foodBtnRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    // alignItems: "flex-start",
-    // gap: 8,
-    alignItems: "center",
-  },
-  foodBtnNameActive: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#fff",
-    flex: 1,
-    lineHeight: 22,
-  },
-  foodBtnName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111",
-    flex: 1,
-    lineHeight: 22,
-  },
-
-  // 바텀시트
-  sheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: H,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    overflow: "hidden",
-  },
-  sheetGradient: { flex: 1, paddingTop: 10 },
-  sheetHandleTouchArea: {
-    alignSelf: "stretch",
-    alignItems: "center",
-    paddingBottom: 8,
-  },
-  sheetHandle: {
-    alignSelf: "center",
-    width: 90,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.75)",
-    marginBottom: 22,
-  },
-  sheetScrollContent: { paddingHorizontal: 20, paddingBottom: 120 },
 
   sheetTitle: {
     fontSize: 18,
@@ -1036,7 +877,7 @@ const styles = StyleSheet.create({
   sheetServing: {
     fontSize: 12,
     fontWeight: "600",
-    color: "rgba(255,255,255,0.75)",
+    color: "#9E8A88",
     textAlign: "center",
     marginBottom: 8,
   },
@@ -1045,6 +886,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "rgba(255,255,255,0.8)",
     textAlign: "center",
+    marginBottom: 18,
+  },
+  detailTagWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "center",
     marginBottom: 18,
   },
   detailTag: {
@@ -1108,7 +956,7 @@ const styles = StyleSheet.create({
   peakMeta: {
     marginTop: 4,
     fontSize: 11,
-    color: "rgba(255,255,255,0.75)",
+    color: "#9E8A88",
   },
 
   divider: {
@@ -1128,7 +976,7 @@ const styles = StyleSheet.create({
   nutrientsWrap: { gap: 10 },
   nutrientRow: {
     borderRadius: 20,
-    backgroundColor: Colors.light.primaryStrong,
+    backgroundColor: "rgba(205, 125, 132, 0.75)",
     paddingHorizontal: 18,
     height: 54,
     flexDirection: "row",

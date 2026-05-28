@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   mealChipActive: {
-    backgroundColor: Colors.light.primaryStrong,
+    backgroundColor: "rgba(217, 145, 151, 1)",
   },
   mealChipInactive: {
     backgroundColor: "#FFFFFF",

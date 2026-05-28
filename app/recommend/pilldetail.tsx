@@ -3,12 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   Pressable,
   ScrollView,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -18,7 +17,7 @@ import Animated, {
   useAnimatedReaction,
   runOnJS,
 } from "react-native-reanimated";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { Gesture } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 
 import {
@@ -28,11 +27,11 @@ import {
 } from "../api/recommendation";
 
 import Colors from "@/constants/Colors";
+import RecommendationHeader from "./components/RecommendationHeader";
+import RecommendationCard from "./components/RecommendationCard";
+import RecommendationBottomSheet from "./components/RecommendationBottomSheet";
 
-const { height: H } = Dimensions.get("window");
-
-const SHEET_TOP = 110;
-const SHEET_BOTTOM = H - 170;
+const MAX_OPEN_TOP = 110;
 
 type SupplementItem = {
   id: string;
@@ -106,6 +105,7 @@ function CautionBox({
 }
 
 export default function SupplementDetail() {
+  const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
   const [data, setData] = useState<
@@ -177,6 +177,10 @@ export default function SupplementDetail() {
   };
 
   // Bottom Sheet
+  const SHEET_BOTTOM = Math.max(160, screenHeight - 170);
+  const OPEN_THRESHOLD = 8;
+  const openTop = MAX_OPEN_TOP;
+
   const top = useSharedValue(SHEET_BOTTOM);
 
   const startTop =
@@ -185,11 +189,15 @@ export default function SupplementDetail() {
   const [sheetOpen, setSheetOpen] =
     useState(false);
 
+  useEffect(() => {
+    top.value = SHEET_BOTTOM;
+  }, [SHEET_BOTTOM, top]);
+
   useAnimatedReaction(
     () => top.value,
     (v) => {
       runOnJS(setSheetOpen)(
-        Math.abs(v - SHEET_TOP) < 10
+        Math.abs(v - openTop) <= OPEN_THRESHOLD
       );
     }
   );
@@ -203,13 +211,13 @@ export default function SupplementDetail() {
         startTop.value + e.translationY;
 
       top.value = Math.min(
-        Math.max(nextTop, SHEET_TOP),
+        Math.max(nextTop, openTop),
         SHEET_BOTTOM
       );
     })
     .onEnd((e) => {
       const mid =
-        (SHEET_TOP + SHEET_BOTTOM) / 2;
+        (openTop + SHEET_BOTTOM) / 2;
 
       const shouldOpen =
         e.velocityY < -500
@@ -218,7 +226,7 @@ export default function SupplementDetail() {
 
       top.value = withSpring(
         shouldOpen
-          ? SHEET_TOP
+          ? openTop
           : SHEET_BOTTOM,
         {
           damping: 18,
@@ -230,6 +238,17 @@ export default function SupplementDetail() {
   const sheetStyle = useAnimatedStyle(() => ({
     top: top.value,
   }));
+
+  const openSheet = (item: SupplementItem) => {
+    setSelected(item);
+    top.value = withSpring(
+      openTop,
+      {
+        damping: 18,
+        stiffness: 180,
+      }
+    );
+  };
 
   if (loading) {
     return (
@@ -265,7 +284,7 @@ export default function SupplementDetail() {
         <Ionicons
           name="medkit-outline"
           size={48}
-          color="#ccc"
+          color={"#ccc"}
         />
 
         <Text style={styles.stateText}>
@@ -301,7 +320,7 @@ export default function SupplementDetail() {
         <Ionicons
           name="leaf-outline"
           size={48}
-          color="#ccc"
+          color={"#ccc"}
         />
 
         <Text style={styles.stateText}>
@@ -335,58 +354,13 @@ export default function SupplementDetail() {
         },
       ]}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.leftHeader}>
-            <Pressable
-              onPress={() =>
-                router.push(
-                  "/recommend/recommendation"
-                )
-              }
-              style={styles.backBtn}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={24}
-                color="#111"
-              />
-            </Pressable>
-
-            <Text style={styles.headerTitle}>
-              영양성분
-            </Text>
-          </View>
-
-          <Pressable
-            onPress={handleRefresh}
-            style={styles.refreshBtn}
-            disabled={refreshing}
-          >
-            {refreshing ? (
-              <ActivityIndicator
-                size="small"
-                color={
-                  Colors.light.primaryStrong
-                }
-              />
-            ) : (
-              <Ionicons
-                name="refresh"
-                size={20}
-                color={
-                  Colors.light.primaryStrong
-                }
-              />
-            )}
-          </Pressable>
-        </View>
-
-        <Text style={styles.h2}>
-          현재 건강 상태 기반, 맞춤 영양성분 추천
-        </Text>
-      </View>
+      <RecommendationHeader
+        title="영양성분"
+        subtitle="현재 건강 상태 기반, 맞춤 영양성분 추천"
+        onBack={() => router.push("/recommend/recommendation")}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      />
 
       {/* 리스트 */}
       <ScrollView
@@ -400,60 +374,13 @@ export default function SupplementDetail() {
             selected?.id === item.id;
 
           return (
-            <Pressable
+            <RecommendationCard
               key={item.id}
-              onPress={() =>
-                setSelected(item)
-              }
-              style={({ pressed }) => [
-                pressed && {
-                  opacity: 0.85,
-                },
-              ]}
-            >
-              {isActive ? (
-                <LinearGradient
-                  colors={[
-                    Colors.light.primary,
-                    Colors.light
-                      .primaryStrong,
-                  ]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.btnActive}
-                >
-                  <Text
-                    style={
-                      styles.btnNameActive
-                    }
-                  >
-                    {item.name}
-                  </Text>
-
-                  <Text
-                    style={
-                      styles.btnDoseActive
-                    }
-                  >
-                    {item.doseSummary}
-                  </Text>
-                </LinearGradient>
-              ) : (
-                <View
-                  style={
-                    styles.btnInactive
-                  }
-                >
-                  <Text style={styles.btnName}>
-                    {item.name}
-                  </Text>
-
-                  <Text style={styles.btnDose}>
-                    {item.doseSummary}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
+              isActive={isActive}
+              onPress={() => openSheet(item)}
+              title={item.name}
+              subText={item.doseSummary}
+            />
           );
         })}
 
@@ -461,32 +388,12 @@ export default function SupplementDetail() {
       </ScrollView>
 
       {/* BottomSheet */}
-      <GestureDetector gesture={pan}>
-        <Animated.View
-          style={[styles.sheet, sheetStyle]}
-        >
-          <LinearGradient
-            colors={[
-              Colors.light.primaryMuted,
-              Colors.light
-                .primarySurfaceStrong,
-            ]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.sheetGradient}
-          >
-            <View style={styles.sheetHandle} />
-
-            <ScrollView
-              showsVerticalScrollIndicator={
-                false
-              }
-              scrollEnabled={sheetOpen}
-              nestedScrollEnabled
-              contentContainerStyle={
-                styles.sheetScrollContent
-              }
-            >
+      <RecommendationBottomSheet
+        gesture={pan}
+        animatedStyle={sheetStyle}
+        sheetOpen={sheetOpen}
+        contentBottomPadding={34}
+      >
               <Text style={styles.sheetTitle}>
                 {selected.name}
               </Text>
@@ -505,12 +412,7 @@ export default function SupplementDetail() {
                 title="주의사항"
                 bullets={selected.cautions}
               />
-
-              <View style={{ height: 140 }} />
-            </ScrollView>
-          </LinearGradient>
-        </Animated.View>
-      </GestureDetector>
+      </RecommendationBottomSheet>
     </View>
   );
 }
@@ -555,147 +457,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  header: {
-    paddingHorizontal: 24,
-  },
-
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  leftHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  backBtn: {
-    paddingRight: 6,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  refreshBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor:
-      Colors.light.primarySurface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.light.text,
-  },
-
-  h2: {
-    marginLeft: 10,
-    marginBottom: 20,
-    fontSize: 15,
-    color: Colors.light.subtleText,
-    lineHeight: 22,
-  },
-
   listContent: {
     paddingHorizontal: 24,
     gap: 12,
     paddingTop: 4,
-  },
-
-  btnActive: {
-    borderRadius: 15,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    shadowColor:
-      Colors.light.primaryStrong,
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    elevation: 4,
-  },
-
-  btnInactive: {
-    borderRadius: 15,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    elevation: 2,
-  },
-
-  btnNameActive: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#fff",
-    lineHeight: 22,
-  },
-
-  btnDoseActive: {
-    marginTop: 5,
-    fontSize: 12.5,
-    fontWeight: "600",
-    color: "rgba(255,255,255,0.85)",
-    lineHeight: 18,
-  },
-
-  btnName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111",
-    lineHeight: 22,
-  },
-  btnDose: {
-    marginTop: 5,
-    fontSize: 12.5,
-    fontWeight: "500",
-    color: "#888",
-    lineHeight: 18,
-  },
-
-  // BottomSheet
-  sheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    maxHeight: H - 80,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    overflow: "hidden",
-  },
-
-  sheetGradient: {
-    flex: 1,
-    paddingTop: 10,
-    minHeight: H,
-  },
-
-  sheetHandle: {
-    alignSelf: "center",
-    width: 90,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor:
-      "rgba(255,255,255,0.9)",
-    marginBottom: 22,
-  },
-
-  sheetScrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 140,
   },
 
   sheetTitle: {
@@ -703,37 +468,36 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#fff",
     textAlign: "center",
+    marginTop: 12,
     marginBottom: 6,
   },
 
   sheetDose: {
     fontSize: 13,
     fontWeight: "600",
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(255,255,255,0.9)",
     textAlign: "center",
-    marginBottom: 18,
   },
 
   sheetDesc: {
     fontSize: 13,
     fontWeight: "600",
     lineHeight: 24,
-    color: "rgba(255,255,255,0.95)",
+    color: "rgba(255,255,255,0.9)",
     textAlign: "center",
     paddingHorizontal: 10,
   },
 
   divider: {
     height: 1,
-    backgroundColor:
-      "rgba(255,255,255,0.4)",
-    marginVertical: 20,
+    backgroundColor: "rgba(255,255,255,0.4)",
+    marginBottom: 18,
   },
 
   cautionBox: {
     width: "100%",
     borderRadius: 18,
-    backgroundColor: "#D99197",
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
@@ -741,7 +505,7 @@ const styles = StyleSheet.create({
   cautionTitle: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "#fff",
     textAlign: "center",
     marginBottom: 2,
   },
@@ -755,7 +519,7 @@ const styles = StyleSheet.create({
   bulletDot: {
     fontSize: 14,
     lineHeight: 20,
-    color: "#FFFFFF",
+    color: "#fff",
   },
 
   bulletText: {
@@ -763,6 +527,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     fontWeight: "600",
-    color: "rgba(255,255,255,0.92)",
+    color: "#fff",
   },
 });

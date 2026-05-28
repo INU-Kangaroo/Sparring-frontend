@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   },
 
   chipActive: {
-    backgroundColor: Colors.light.primaryStrong,
+    backgroundColor: "rgba(217, 145, 151, 1)",
   },
 
   chipText: {

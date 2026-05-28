@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
 import ScoreCard from "./Scorecard";
@@ -203,12 +202,6 @@ export default function ReportScreen() {
         </Text>
 
         <View style={styles.statsWrap}>
-          <LinearGradient
-            colors={[Colors.light.mutedBackground, Colors.light.background]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.statBarBg}
-          />
           <View style={styles.statsContent}>
             <View style={styles.statCol}>
               <Text style={styles.statLabel}>기록일</Text>
@@ -236,7 +229,6 @@ export default function ReportScreen() {
               </Text>
             </View>
           </View>
-          <View style={styles.statsDivider} />
         </View>
 
         <View style={styles.clipboardWrap}>
@@ -312,32 +304,32 @@ export default function ReportScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.light.background },
+  safe: { flex: 1, backgroundColor: "#ffffff" },
 
   header: { height: 40, justifyContent: "center", paddingHorizontal: 14 },
   backBtn: { width: 40, height: 40, justifyContent: "center" },
   scrollContent: { paddingHorizontal: 18, paddingBottom: 50 },
   title: { marginTop: 14, marginLeft: 20, fontSize: 20, fontWeight: "700", color: Colors.light.text, lineHeight: 28 },
   titleAccent: { marginLeft: 20, color: Colors.light.primary, fontWeight: "700" },
-  statsWrap: { width: 349, alignSelf: "center", marginTop: 18 },
-  statBarBg: {
-    width: 349,
-    height: 32,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
+  statsWrap: {
+    marginTop: 18,
+    borderRadius: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   statsContent: {
-    width: 349,
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 26,
-    paddingTop: 10,
   },
   statCol: { alignItems: "center" },
   statLabel: { fontSize: 13, fontWeight: "500", color: Colors.light.subtleText },
   valueNumber: { marginTop: 6, fontSize: 15, fontWeight: "600", color: Colors.light.primaryStrong },
   valueUnit: { fontSize: 15, fontWeight: "600", color: Colors.light.text },
-  statsDivider: { width: 349, height: 1, backgroundColor: Colors.light.border, marginTop: 12 },
   clipboardWrap: { marginTop: 22, alignItems: "center" },
   clipTop: { width: 180, height: 60, marginBottom: -10, zIndex: 2 },
   paper: {
@@ -347,7 +339,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingHorizontal: 18,
     paddingVertical: 16,
-    shadowColor: Colors.light.ink,
+    shadowColor: Colors.light.text,
     shadowOpacity: 0.12,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 10 },
@@ -366,4 +358,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   btnText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
+
 });

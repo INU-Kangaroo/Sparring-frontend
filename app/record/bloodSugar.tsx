@@ -156,7 +156,11 @@ export default function BloodSugarScreen() {
               display={Platform.OS === "ios" ? "compact" : "default"}
               onChange={(e, d) => {
                 if (d) setDate(d);
-                setShowDatePicker(false);
+
+                // 안드로이드에서 선택 동시에 마무리 
+                // if (Platform.OS === "android") {
+                //   setShowDatePicker(false);
+                // }
               }}
             />
           )}
@@ -170,7 +174,7 @@ export default function BloodSugarScreen() {
         <View style={{ marginTop: 10 }}>
           {!loading && records.length === 0 ? (
             <Text style={styles.emptyText}>
-              아직 기록이 없어요. 아래 버튼으로 추가해줘!
+              아직 기록이 없어요. 아래 버튼으로 추가해보세요!
             </Text>
           ) : (
             records.map((r, idx) => (
@@ -212,7 +216,7 @@ export default function BloodSugarScreen() {
             style={styles.darkBtn}
             onPress={() => { 
               setModalTitle("혈당 측정 방법"); 
-              setModalContent( "1. 손을 깨끗이 씻고 말립니다.\n\n" + "2. 테스트 스트립을 측정기에 삽입합니다.\n\n" + "3. 채혈기로 손가락 끝을 살짝 찔러 혈액을 채취합니다.\n\n" + "4. 혈액을 테스트 스트립에 묻힙니다.\n\n" + "5. 결과를 기록합니다." ); 
+              setModalContent( "1. 손을 깨끗이 씻고 말립니다.\n\n" + "2. 테스트 스트립을 측정기에 삽입합니다.\n\n" + "3. 채혈기로 손가락 끝을 찔러 혈액을 채취합니다.\n\n" + "4. 혈액을 테스트 스트립에 묻힙니다.\n\n" + "5. 결과를 기록합니다." ); 
               setModalVisible(true); }}
           >
             <Text style={styles.darkBtnText}>혈당 측정 방법</Text>
@@ -338,12 +342,13 @@ const styles = StyleSheet.create({
   dateText: { color: "#fff", fontWeight: "800" },
 
   sectionTitle: {
-    fontSize: 16,
+    marginLeft: 4,
+    fontSize: 20,
     fontWeight: "800",
     marginBottom: 6,
   },
 
-  emptyText: { color: "#777", fontSize: 12 },
+  emptyText: { color: "#777", marginLeft: 4, fontSize: 12 },
 
   card: {
     backgroundColor: "#F7F7F7",
@@ -384,7 +389,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 20,
   },
 
   darkBtnText: { color: "#fff" },

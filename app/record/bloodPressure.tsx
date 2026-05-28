@@ -138,7 +138,11 @@ export default function BloodPressureScreen() {
               display={Platform.OS === "ios" ? "compact" : "default"}
               onChange={(e, d) => {
                 if (d) setDate(d);
-                setShowDatePicker(false);
+
+                // 안드로이드에서 선택 동시에 마무리 
+                // if (Platform.OS === "android") {
+                //   setShowDatePicker(false);
+                // }
               }}
             />
           )}
@@ -152,7 +156,7 @@ export default function BloodPressureScreen() {
         <View style={{ marginTop: 10 }}>
           {!loading && records.length === 0 ? (
             <Text style={styles.emptyText}>
-              아직 기록이 없어요. 아래 버튼으로 추가해줘!
+              아직 기록이 없어요. 아래 버튼으로 추가해보세요!
             </Text>
           ) : (
             records.map((r, idx) => (
@@ -219,7 +223,7 @@ export default function BloodPressureScreen() {
             style={styles.darkBtn}
             onPress={() => {
               setModalTitle("정상 혈압 수치");
-              setModalContent( "✔ 정상: 수축기 < 120, 이완기 < 80\n\n✔ 경계성 고혈압: 수축기 120~129, 이완기 < 80\n\n✔ 1차 고혈압: 수축기 130~139 또는 이완기 80~89\n\n✔ 2차 고혈압: 수축기 ≥ 140 또는 이완기 ≥ 90" );
+              setModalContent( "✔ 정상: 수축기 < 120, 이완기 < 80\n\n✔ 경계성 고혈압: 수축기 120~129, 이완기 < 80\n\n✔ 1차 고혈압: 수축기 130~139 || 이완기 80~89\n\n✔ 2차 고혈압: 수축기 ≥ 140 || 이완기 ≥ 90" );
               setModalVisible(true);
             }}
           >
@@ -318,12 +322,13 @@ const styles = StyleSheet.create({
   dateText: { color: "#fff", fontWeight: "800" },
 
   sectionTitle: {
-    fontSize: 16,
+    marginLeft: 4,
+    fontSize: 20,
     fontWeight: "800",
     marginBottom: 6,
   },
 
-  emptyText: { color: "#777", fontSize: 12 },
+  emptyText: { color: "#777", marginLeft: 4, fontSize: 12 },
 
   card: {
     backgroundColor: "#F7F7F7",

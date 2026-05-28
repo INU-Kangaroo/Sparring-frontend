@@ -111,17 +111,22 @@ export default function BloodInputModal({
             </Text>
           </Pressable>
 
-          {showPicker && (
+         {showPicker && (
+          <View style={{ height: 180, justifyContent: "center" }}>
             <DateTimePicker
               value={time}
               mode="time"
               display={Platform.OS === "ios" ? "spinner" : "default"}
               onChange={(e, selected) => {
-                setShowPicker(false);
                 if (selected) setTime(selected);
+
+                if (Platform.OS === "android") {
+                  setShowPicker(false);
+                }
               }}
             />
-          )}
+          </View>
+        )}
 
           {/* 저장 버튼 */}
           <Pressable style={styles.submitBtn} onPress={handleSubmit}>

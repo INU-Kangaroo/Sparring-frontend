@@ -126,14 +126,14 @@ export default function FoodFilter() {
           <Ionicons name="chevron-back" size={22} color="#111" />
         </Pressable>
 
-        <Text style={styles.title}>식단 추천 받기 </Text>
-
+        <Text style={styles.title}>맞춤 식단 제안</Text>
       </View>
+      <Text style={styles.subtitle}>나에게 맞춘 조건, 나만을 위한 식단 유형</Text>
 
       <View style={styles.topSpacer} />
 
       {/* ── 시간대 선택 ── */}
-      <Text style={styles.desc}>추천 받고 싶은 시간대를 선택해주세요.</Text>
+      <Text style={styles.desc}>추천 시간대 선택</Text>
       <View style={styles.mealRow}>
         {mealTimes.map((m) => (
           <Pressable
@@ -160,7 +160,8 @@ export default function FoodFilter() {
 
       <View style={styles.divider} />
 
-      <Text style={styles.desc}>현재 혈당은 선택 입력이에요. {'\n'}있으면 그래프 참고값으로만 반영돼요.</Text>
+      <Text style={styles.desc}>현재 혈당 입력 (선택사항)</Text>
+      <Text style={styles.desc2}>입력시 그래프의 정밀도 향상</Text>
       <TextInput
         style={styles.glucoseInput}
         placeholder="예) 112"
@@ -174,7 +175,7 @@ export default function FoodFilter() {
 
       {/* ── 알러지 선택 ── */}
       <Text style={styles.desc}>
-        {"알러지가 있는 음식만 골라주세요. \n해당 음식은 추천에서 제외돼요."}
+       알러지 제외 식품 설정
       </Text>
       <View style={styles.noneRow}>
         <Chip
@@ -270,14 +271,24 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   subtitle: {
+    marginLeft: 12,
     marginTop: 10,
-    fontSize: 18,
-    color: "#000000",
+    fontSize: 14,
+    lineHeight: 24,
+    color: "#8C8C8C",
     fontFamily: PRETENDARD_MEDIUM,
   },
   desc: {
+    marginLeft: 8,
     fontSize: 16,
     color: "#000000",
+    fontFamily: PRETENDARD_MEDIUM,
+  },
+  desc2: {
+    marginLeft: 8,
+    marginTop: 5,
+    fontSize: 13,
+    color: "#707070",
     fontFamily: PRETENDARD_MEDIUM,
   },
 

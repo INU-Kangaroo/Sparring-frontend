@@ -32,7 +32,7 @@ export default function RecommendationScreen() {
     () => [
       { key: "diet", title: "식단" },
       { key: "workout", title: "운동" },
-      { key: "supp", title: "영양제" },
+      { key: "supp", title: "영양성분" },
     ],
     []
   );
@@ -73,7 +73,7 @@ export default function RecommendationScreen() {
 
   const goDetailByKey = (key: CardKey) => {
     if (key === "diet") router.push("/recommend/foodfilter");
-    else if (key === "workout") router.push("/recommend/healthdetail");
+    else if (key === "workout") router.push("/recommend/healthfilter");
     else router.push("/recommend/pilldetail");
   };
 
@@ -118,8 +118,6 @@ export default function RecommendationScreen() {
   return (
 
   <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-
-   
           <View style={styles.header}>
               <Pressable onPress={() => openSidebar?.()}>
                   <Ionicons name="menu" size={24} color="#091441" />
@@ -202,13 +200,17 @@ export default function RecommendationScreen() {
           }}
         />
 
-        {/* 영양성분일 때도 자리 유지 - opacity로만 숨김 */}
-        <Pressable
-          onPress={activeKey !== "supp" ? goFilter : undefined}
-          style={[styles.filterBtn, activeKey === "supp" && { opacity: 0 }]}
-          pointerEvents={activeKey === "supp" ? "none" : "auto"}
-        >
-          <Text style={styles.filterText}>필터 선택하기</Text>
+          <Pressable
+            onPress={goFilter}
+            style={styles.filterBtn}
+          >
+          <Text style={styles.filterText}>
+            {activeKey === "diet"
+              ? "식단 필터"
+              : activeKey === "workout"
+              ? "운동 필터"
+              : "영양성분 필터"}
+          </Text>
           <View style={styles.filterUnderline} />
         </Pressable>
       </View>

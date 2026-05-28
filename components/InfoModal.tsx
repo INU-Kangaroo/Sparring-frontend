@@ -20,7 +20,7 @@ export default function InfoModal({
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable onPress={() => {}} style={styles.cardWrap}>
           <LinearGradient
-            colors={[ "#f6f6f6f0", "#f6f6f6f0"]}
+            colors={[ "#f6f6f6fd", "#f6f6f6f0"]}
             start={{ x: 1, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -44,8 +44,10 @@ const styles = StyleSheet.create({
   },
   cardWrap: {
     width: "100%",
-    borderRadius: 10,
+    borderRadius: 20,
     overflow: "hidden",
+    borderColor: "#D99197",
+    borderWidth: 0.8,
 
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },

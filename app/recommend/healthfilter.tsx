@@ -185,16 +185,16 @@ export default function HealthFilter() {
               />
             </Pressable>
 
-            <Text style={styles.title}>활동 추천 필터</Text>
+            <Text style={styles.title}>맞춤 운동 제안</Text>
           </View>
 
           <Text style={styles.subtitle}>
-            원하는 활동 조건을 선택하고 추천을 받아보세요
+            나에게 맞춘 조건, 나만을 위한 운동 유형
           </Text>
 
           {/* 활동 시간 */}
           <Text style={styles.question}>
-            원하는 활동 시간을 골라주세요.
+            운동 시간대 설정
           </Text>
 
           <View style={styles.row}>
@@ -210,7 +210,7 @@ export default function HealthFilter() {
 
           {/* 활동 강도 */}
           <Text style={[styles.question, styles.sectionSpacing]}>
-            원하는 활동 강도를 골라주세요.
+            운동 강도 설정
           </Text>
 
           <View style={styles.row}>
@@ -226,7 +226,7 @@ export default function HealthFilter() {
 
           {/* 활동 장소 */}
           <Text style={[styles.question, styles.sectionSpacing]}>
-            원하는 활동 장소를 골라주세요.
+            선호하는 장소 유형 설정
           </Text>
 
           <View style={styles.row}>
@@ -309,9 +309,9 @@ const styles = StyleSheet.create({
   },
 
   subtitle: {
-    marginLeft: 20,
+    marginLeft: 8,
     marginTop: 16,
-    marginBottom: 70,
+    marginBottom: 60,
     fontSize: 14,
     lineHeight: 24,
     color: "#8C8C8C",
@@ -319,13 +319,14 @@ const styles = StyleSheet.create({
   },
 
   question: {
+    marginLeft: 5,
     fontSize: 16,
     color: "#000000",
     fontFamily: PRETENDARD_MEDIUM,
   },
 
   sectionSpacing: {
-    marginTop: 50,
+    marginTop: 60,
   },
 
   row: {

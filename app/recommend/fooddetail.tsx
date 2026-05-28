@@ -31,8 +31,9 @@ import Colors from "@/constants/Colors";
 
 const { width: W, height: H } = Dimensions.get("window");
 
-const SHEET_TOP = 100;
-const SHEET_BOTTOM = H - 280;
+const SHEET_TOP = 110;
+const SHEET_BOTTOM = H - 170;
+
 function clamp(v: number, min: number, max: number) {
   "worklet";
   return Math.min(Math.max(v, min), max);
@@ -150,41 +151,6 @@ function clampScore(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-function deriveFoodSignals(item: Record<string, any>) {
-  const scoreFromApi = Number(item?.glucoseFriendlyScore ?? item?.score);
-  if (Number.isFinite(scoreFromApi)) {
-    const glucoseFriendlyScore = clampScore(scoreFromApi);
-    return {
-      glucoseFriendlyScore,
-      reactionLevel:
-        item?.reactionGrade ??
-        item?.responseLevel ??
-        (glucoseFriendlyScore >= 85 ? "안정적" : glucoseFriendlyScore >= 70 ? "보통" : "주의"),
-      reactionTags:
-        Array.isArray(item?.reasonTags) && item.reasonTags.length > 0
-          ? item.reasonTags.map(String).slice(0, 3)
-          : [],
-    };
-  }
-
-  const carbs = toNumber(item?.carbs);
-  const sugar = toNumber(item?.sugar);
-  const fiber = toNumber(item?.fiber);
-  const glucoseFriendlyScore = clampScore(82 - carbs * 0.35 - sugar * 1.2 + fiber * 3);
-
-  return {
-    glucoseFriendlyScore,
-    reactionLevel:
-      glucoseFriendlyScore >= 85 ? "안정적" : glucoseFriendlyScore >= 70 ? "보통" : "주의",
-    reactionTags: [
-      fiber >= 5 ? "식이섬유 높음" : null,
-      sugar <= 5 ? "당류 부담 적음" : null,
-      carbs <= 30 ? "탄수화물 부담 낮음" : null,
-      item?.categoryMedium ? String(item.categoryMedium) : null,
-    ].filter(Boolean) as string[],
-  };
-}
-
 function applyCurrentGlucose(
   data: { t: number; v: number }[],
   currentGlucose?: number
@@ -236,15 +202,11 @@ function normalizeFoodItems(payload: FoodRecommendationResponse | null): DietIte
     const isCardResponse = normalizedItem?.title || menus.length > 0 || normalizedItem?.recommendationCardId;
 
     return {
-      ...deriveFoodSignals({
-        ...normalizedItem,
-        carbs: nutrients?.carbs ?? normalizedItem?.carbs,
-        sugar: nutrients?.sugar ?? normalizedItem?.sugar,
-        fiber: nutrients?.fiber ?? normalizedItem?.fiber,
-        protein: nutrients?.protein ?? normalizedItem?.protein,
-        fat: nutrients?.fat ?? normalizedItem?.fat,
-        sodium: nutrients?.sodium ?? normalizedItem?.sodium,
-      }),
+      glucoseFriendlyScore: Number(normalizedItem?.glucoseFriendlyScore ?? 0),
+      reactionLevel: String(normalizedItem?.reactionLevel ?? ""),
+      reactionTags: Array.isArray(normalizedItem?.reactionTags)
+        ? normalizedItem.reactionTags.map(String)
+        : [],
       id: String(normalizedItem?.recommendationCardId ?? normalizedItem?.foodId ?? index),
       foodId: Number.isFinite(Number(normalizedItem?.foodId))
         ? Number(normalizedItem.foodId)
@@ -688,22 +650,46 @@ export default function DietRecommendScreen() {
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top + 40 }]}>
-      {/* 헤더 */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
-          <Pressable onPress={() => router.push("/recommend/recommendation")} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={22} color="#111" />
-          </Pressable>
-          <Pressable onPress={handleRefresh} style={styles.refreshBtn} disabled={refreshing}>
+          <View style={styles.leftHeader}>
+            <Pressable
+              onPress={() => router.push("/recommend/recommendation")}
+              style={styles.backBtn}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={24}
+                color="#111"
+              />
+            </Pressable>
+
+            <Text style={styles.headerTitle}>식단</Text>
+          </View>
+
+          <Pressable
+            onPress={handleRefresh}
+            style={styles.refreshBtn}
+            disabled={refreshing}
+          >
             {refreshing ? (
-              <ActivityIndicator size="small" color={Colors.light.primaryStrong} />
+              <ActivityIndicator
+                size="small"
+                color={Colors.light.primaryStrong}
+              />
             ) : (
-              <Ionicons name="refresh" size={20} color={Colors.light.primaryStrong} />
+              <Ionicons
+                name="refresh"
+                size={20}
+                color={Colors.light.primaryStrong}
+              />
             )}
           </Pressable>
         </View>
-        <Text style={styles.h1}>식단</Text>
-        <Text style={styles.h2}>현재 건강상태에 맞는 음식을 추천해드려요</Text>
+
+        <Text style={styles.h2}>
+          현재 건강 상태 기반, 맞춤 식단 추천
+        </Text>
       </View>
 
       {/* 음식 버튼 리스트 */}
@@ -730,16 +716,6 @@ export default function DietRecommendScreen() {
                     <Text style={styles.foodBtnNameActive}>{item.name}</Text>
                     <Text style={styles.foodBtnKcalActive}>{item.kcal}kcal</Text>
                   </View>
-                  <View style={styles.signalRow}>
-                    <View style={styles.signalBadgeActive}>
-                      <Text style={styles.signalBadgeTextActive}>
-                        혈당 친화 {item.glucoseFriendlyScore}점
-                      </Text>
-                    </View>
-                    <View style={styles.signalBadgeActive}>
-                      <Text style={styles.signalBadgeTextActive}>{item.reactionLevel}</Text>
-                    </View>
-                  </View>
                   {item.reactionTags.length > 0 ? (
                     <Text style={styles.foodBtnServingActive}>
                       {item.reactionTags.join(" · ")}
@@ -752,16 +728,6 @@ export default function DietRecommendScreen() {
                   <View style={styles.foodBtnRow}>
                     <Text style={styles.foodBtnName}>{item.name}</Text>
                     <Text style={styles.foodBtnKcal}>{item.kcal}kcal</Text>
-                  </View>
-                  <View style={styles.signalRow}>
-                    <View style={styles.signalBadge}>
-                      <Text style={styles.signalBadgeText}>
-                        혈당 친화 {item.glucoseFriendlyScore}점
-                      </Text>
-                    </View>
-                    <View style={styles.signalBadge}>
-                      <Text style={styles.signalBadgeText}>{item.reactionLevel}</Text>
-                    </View>
                   </View>
                   {item.reactionTags.length > 0 ? (
                     <Text style={styles.foodBtnServing}>{item.reactionTags.join(" · ")}</Text>
@@ -805,18 +771,6 @@ export default function DietRecommendScreen() {
                   {[selected.origin, selected.categoryText].filter(Boolean).join(" | ")}
                 </Text>
               ) : null}
-              <View style={styles.detailSignalWrap}>
-                <View style={styles.detailSignalChip}>
-                  <Text style={styles.detailSignalText}>
-                    혈당 친화 점수 {selected.glucoseFriendlyScore}
-                  </Text>
-                </View>
-                <View style={styles.detailSignalChip}>
-                  <Text style={styles.detailSignalText}>
-                    식후 반응 수준 {selected.reactionLevel}
-                  </Text>
-                </View>
-              </View>
               {selected.reactionTags.length > 0 ? (
                 <View style={styles.detailTagWrap}>
                   {selected.reactionTags.map((tag) => (
@@ -943,7 +897,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 12,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: Colors.light.text,
+  },
+  leftHeader: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   backBtn: {
     width: 36,
@@ -959,8 +922,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  h1: { fontSize: 23, fontWeight: "700", color: Colors.light.text },
-  h2: { marginTop: 10, marginBottom: 20, fontSize: 15, color: Colors.light.subtleText },
+  h2: { marginLeft: 10, marginTop: 10, marginBottom: 20, fontSize: 15, color: Colors.light.subtleText },
 
   listContent: {
     paddingHorizontal: 24,
@@ -992,7 +954,7 @@ const styles = StyleSheet.create({
   foodBtnInactive: {
     borderRadius: 15,
     paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingVertical: 16,
     backgroundColor: "#fff",
     shadowColor: "#000",
     shadowOpacity: 0.06,
@@ -1008,40 +970,12 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   foodBtnServing: { marginTop: 5, fontSize: 12, color: "#666" },
-  signalRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 8,
-  },
-  signalBadge: {
-    backgroundColor: Colors.light.primarySurface,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  signalBadgeActive: {
-    backgroundColor: "rgba(255,255,255,0.16)",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  signalBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: Colors.light.primaryStrong,
-  },
-  signalBadgeTextActive: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#fff",
-  },
-
   foodBtnRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 8,
+    // alignItems: "flex-start",
+    // gap: 8,
+    alignItems: "center",
   },
   foodBtnNameActive: {
     fontSize: 15,
@@ -1080,7 +1014,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: "rgba(255,255,255,0.75)",
-    marginBottom: 16,
+    marginBottom: 22,
   },
   sheetScrollContent: { paddingHorizontal: 20, paddingBottom: 120 },
 
@@ -1111,31 +1045,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "rgba(255,255,255,0.8)",
     textAlign: "center",
-    marginBottom: 18,
-  },
-  detailSignalWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-  detailSignalChip: {
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  detailSignalText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  detailTagWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 8,
     marginBottom: 18,
   },
   detailTag: {

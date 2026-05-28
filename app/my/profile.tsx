@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveButtonDisabled: {
-    backgroundColor: "#B9C8F7",
+    backgroundColor: "#262626",
   },
   saveButtonText: {
     fontSize: 13,
@@ -812,10 +812,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalBtnCancel: {
-    backgroundColor: "#E6E6E6",
+    backgroundColor: "#e4e4e4",
   },
   modalBtnConfirm: {
-    backgroundColor: Colors.light.primaryStrong,
+    backgroundColor: "#D99197"
   },
   modalBtnWithdraw: {
     backgroundColor: "#FF4444",
